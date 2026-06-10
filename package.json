@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "npm run migrate",
+    "build": "echo \"No build step required for HoldOff web service\"",
     "migrate": "node migrate.js"
   },
   "dependencies": {
