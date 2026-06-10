@@ -1,0 +1,37 @@
+<%- include('partials/layout_header') %>
+<style>
+  .spiral-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    z-height: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+  .spiral-overlay h2 { color: var(--accent); }
+  .spiral-timer { font-size: 3rem; font-weight: bold; margin: 1rem 0; }
+  .spiral-quiz { display: none; margin-top: 2rem; }
+</style>
+<div class="spiral-overlay" id="spiralOverlay" style="display:none;">
+  <h2>Spiral Lock Active</h2>
+  <p>You've sent 3+ messages without a reply. To protect your peace, we've paused messaging.</p>
+  <div class="spiral-timer" id="spiralTimer">05:00</div>
+  <button id="unlockQuizBtn" class="btn">Take Reappraisal Quiz to Unlock</button>
+  
+  <div class="spiral-quiz" id="spiralQuiz">
+    <p>1. Is it possible they are simply busy right now?</p>
+    <input type="text" id="q1">
+    <p>2. How will double-texting make you feel 5 minutes from now?</p>
+    <input type="text" id="q2">
+    <p>3. What is a healthier way to self-soothe right now?</p>
+    <input type="text" id="q3">
+    <button id="submitQuizBtn" class="btn">Submit & Unlock</button>
+  </div>
+</div>
+<script>
+  // Frontend timer and logic mock implementation
+  // Integrate this into main frontend logic
+</script>

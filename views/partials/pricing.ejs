@@ -1,0 +1,382 @@
+<section class="pricing-section">
+  <div class="pricing-section__inner">
+    <p class="section-eyebrow">HoldOff plans</p>
+    <h2 class="pricing-section__headline">Two tiers. One goal.</h2>
+    <p class="pricing-section__sub">Cancel anytime. CashApp accepted.</p>
+
+    <!-- Weekly/Monthly/Annual toggle -->
+    <div class="pricing-toggle">
+      <button class="pricing-toggle__btn" id="pricingWeeklyBtn" onclick="setPricingBilling('weekly')">Weekly</button>
+      <button class="pricing-toggle__btn pricing-toggle__btn--active" id="pricingMonthlyBtn" onclick="setPricingBilling('monthly')">Monthly</button>
+      <button class="pricing-toggle__btn" id="pricingAnnualBtn" onclick="setPricingBilling('annual')">Annual <span class="pricing-toggle__save">Save ~17%</span></button>
+    </div>
+
+    <div class="pricing-cards">
+      <!-- Online tier -->
+      <div class="pricing-card">
+        <div class="pricing-card__name">HoldOff Online</div>
+        <div class="pricing-card__price" id="pricingOnlinePrice">$9.99<span>/mo</span></div>
+        <div class="pricing-card__savings" id="pricingOnlineSavings" style="display:none">Save ~17% vs monthly</div>
+        <ul class="pricing-card__features">
+          <li>Unlimited web verdicts</li>
+          <li>All future web features</li>
+          <li>Email support</li>
+        </ul>
+        <button class="pricing-card__btn" onclick="pricingSelectTier('online')">Get Online</button>
+      </div>
+
+      <!-- App tier -->
+      <div class="pricing-card pricing-card--featured">
+        <div class="pricing-card__badge">Most popular</div>
+        <div class="pricing-card__name">HoldOff App</div>
+        <div class="pricing-card__price" id="pricingAppPrice">$14.99<span>/mo</span></div>
+        <div class="pricing-card__savings" id="pricingAppSavings" style="display:none">Save ~17% vs monthly</div>
+        <ul class="pricing-card__features">
+          <li>Everything in Online</li>
+          <li>Android SMS auto-intercept</li>
+          <li>App-exclusive features</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="pricing-card__btn pricing-card__btn--primary" onclick="pricingSelectTier('app')">Get App →</button>
+      </div>
+    </div>
+
+    <!-- Lifetime option -->
+    <div class="pricing-lifetime">
+      <div class="pricing-lifetime__inner">
+        <div class="pricing-lifetime__left">
+          <div class="pricing-lifetime__name">HoldOff Lifetime</div>
+          <div class="pricing-lifetime__price">$299 <span>once</span></div>
+        </div>
+        <ul class="pricing-lifetime__features">
+          <li>Everything in App</li>
+          <li>No recurring — ever</li>
+          <li>Lifetime + all future features free</li>
+        </ul>
+        <button class="pricing-lifetime__btn" onclick="pricingSelectTier('lifetime')">Get Lifetime →</button>
+      </div>
+    </div>
+
+    <p class="pricing-cashapp">CashApp accepted. Refunds automatic within 1–5 business days.</p>
+  </div>
+</section>
+
+<style>
+  .pricing-section {
+    background: var(--fg);
+    padding: var(--space-3xl) 2rem;
+  }
+  .pricing-section__inner {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .pricing-section__headline {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 600;
+    color: var(--bg);
+    letter-spacing: -0.03em;
+    margin: 0.5rem 0;
+    line-height: 1.2;
+  }
+  .pricing-section__sub {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+
+  .pricing-toggle {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 2.5rem;
+    gap: 0;
+  }
+  .pricing-toggle__btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.55rem 1.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .pricing-toggle__btn--active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .pricing-toggle__save {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    margin-left: 0.35rem;
+    font-weight: 700;
+  }
+
+  .pricing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    max-width: 560px;
+    margin: 0 auto 0.75rem;
+  }
+  .pricing-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: left;
+    position: relative;
+  }
+  .pricing-card--featured {
+    border-color: var(--accent);
+    background: rgba(201,123,93,0.05);
+  }
+  .pricing-card__badge {
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.7rem;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .pricing-card__name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .pricing-card__price {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--bg);
+    letter-spacing: -0.03em;
+    margin-bottom: 0.15rem;
+  }
+  .pricing-card__price span {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--muted);
+    font-family: var(--font-body);
+  }
+  .pricing-card__savings {
+    font-size: 0.75rem;
+    color: #4CAF50;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  .pricing-card__features {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .pricing-card__features li {
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding-left: 1rem;
+    position: relative;
+    line-height: 1.4;
+  }
+  .pricing-card__features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .pricing-card__btn {
+    display: block;
+    width: 100%;
+    padding: 0.65rem;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .pricing-card__btn:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--muted);
+  }
+  .pricing-card__btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .pricing-card__btn--primary:hover {
+    background: var(--accent-deep);
+    border-color: var(--accent-deep);
+  }
+
+  .pricing-lifetime {
+    max-width: 560px;
+    margin: 0 auto 1.25rem;
+  }
+  .pricing-lifetime__inner {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .pricing-lifetime__left {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .pricing-lifetime__name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .pricing-lifetime__price {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--bg);
+    letter-spacing: -0.03em;
+  }
+  .pricing-lifetime__price span {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--muted);
+    font-family: var(--font-body);
+  }
+  .pricing-lifetime__features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .pricing-lifetime__features li {
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding-left: 1rem;
+    position: relative;
+  }
+  .pricing-lifetime__features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .pricing-lifetime__btn {
+    align-self: flex-start;
+    padding: 0.65rem 1.25rem;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .pricing-lifetime__btn:hover { background: rgba(201,123,93,0.1); }
+
+  .pricing-cashapp {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .pricing-cards { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  var pricingBilling = 'monthly';
+  var pricingPrices = {
+    weekly:  { online: '$4.99<span>/wk</span>', app: '$7.49<span>/wk</span>', save: false },
+    monthly: { online: '$9.99<span>/mo</span>', app: '$14.99<span>/mo</span>', save: false },
+    annual:  { online: '$99<span>/yr</span>', app: '$149<span>/yr</span>', save: true },
+  };
+  window.setPricingBilling = function(billing) {
+    pricingBilling = billing;
+    var btns = ['pricingWeeklyBtn','pricingMonthlyBtn','pricingAnnualBtn'];
+    btns.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('pricing-toggle__btn--active');
+    });
+    var activeId = billing === 'weekly' ? 'pricingWeeklyBtn' : billing === 'annual' ? 'pricingAnnualBtn' : 'pricingMonthlyBtn';
+    var activeEl = document.getElementById(activeId);
+    if (activeEl) activeEl.classList.add('pricing-toggle__btn--active');
+
+    var p = pricingPrices[billing] || pricingPrices.monthly;
+    var onlinePrice = document.getElementById('pricingOnlinePrice');
+    var appPrice = document.getElementById('pricingAppPrice');
+    var onlineSavings = document.getElementById('pricingOnlineSavings');
+    var appSavings = document.getElementById('pricingAppSavings');
+    if (onlinePrice) onlinePrice.innerHTML = p.online;
+    if (appPrice) appPrice.innerHTML = p.app;
+    if (onlineSavings) onlineSavings.style.display = p.save ? 'block' : 'none';
+    if (appSavings) appSavings.style.display = p.save ? 'block' : 'none';
+  };
+  window.pricingSelectTier = async function(tier) {
+    var fullTier = tier === 'lifetime' ? 'lifetime' : tier + '_' + pricingBilling;
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      var resp = await fetch('/api/checkout/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: fullTier }),
+      });
+      var data = await resp.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        btn.disabled = false;
+        btn.textContent = tier === 'lifetime' ? 'Get Lifetime →' :
+                         tier === 'app' ? 'Get App →' : 'Get Online';
+        alert(data.error || 'Could not start checkout.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = tier === 'lifetime' ? 'Get Lifetime →' :
+                       tier === 'app' ? 'Get App →' : 'Get Online';
+      alert('Could not start checkout. Try again.');
+    }
+  };
+</script>

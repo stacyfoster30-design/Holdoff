@@ -1,0 +1,35 @@
+#!/bin/bash
+# Gradle wrapper bootstrap script
+# Downloads the wrapper jar if not present, then runs gradle
+
+WRAPPER_JAR="$HOME/.gradle/wrapper/dists/gradle-8.5-bin/*/gradle-8.5/lib/gradle-wrapper.jar"
+
+set -e
+
+GRADLE_WRAPPER_URL="https://services.gradle.org/distributions/gradle-8.5-bin.zip"
+GRADLE_USER_HOME="${GRADLE_USER_HOME:-$HOME/.gradle}"
+WRAPPER_JAR_PATH="$GRADLE_USER_HOME/wrapper/dists/gradle-8.5-bin"
+WRAPPER_JAR="$WRAPPER_JAR_PATH/gradle-wrapper.jar"
+
+# If wrapper jar doesn't exist, download gradle distribution to extract it
+if [ ! -f "$WRAPPER_JAR" ]; then
+  mkdir -p "$WRAPPER_JAR_PATH"
+  WRAPPER_ZIP="$WRAPPER_JAR_PATH/gradle-8.5-bin.zip"
+  if [ ! -f "$WRAPPER_ZIP" ]; then
+    curl -sL "$GRADLE_WRAPPER_URL" -o "$WRAPPER_ZIP"
+  fi
+  # Extract just the wrapper jar
+  unzip -q "$WRAPPER_ZIP" "gradle-8.5/lib/gradle-wrapper.jar" -d "$WRAPPER_JAR_PATH" 2>/dev/null || unzip -o "$WRAPPER_ZIP" "gradle-8.5/lib/gradle-wrapper.jar" -d "$WRAPPER_JAR_PATH"
+fi
+
+JAR_FILE="$WRAPPER_JAR_PATH/gradle-8.5/lib/gradle-wrapper.jar"
+JAVA_CMD="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+
+if [ ! -f "$JAR_FILE" ]; then
+  # Fallback: download wrapper jar directly
+  JAR_URL="https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar"
+  mkdir -p "$WRAPPER_JAR_PATH"
+  curl -sL "$JAR_URL" -o "$JAR_FILE" 2>/dev/null || true
+fi
+
+exec java -jar "$JAR_FILE" "$@"

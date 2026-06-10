@@ -1,0 +1,274 @@
+/**
+ * Checkout route — HoldOff Stripe Checkout + Billing Portal + magic link restore.
+ * Owns: Stripe Checkout session creation, Billing Portal session, tier info,
+ *   post-payment activation. Does NOT own: subscription DB writes from webhooks
+ *   (routes/stripe-webhook.js), filter verdict enforcement (routes/filter.js).
+ *
+ * Auth-gated endpoints: POST /api/checkout/create-checkout, POST /api/checkout/portal.
+ * Public endpoints: POST /session, POST /restore, GET /verify, POST /activate, GET /tiers.
+ */
+const express = require('express');
+const router = express.Router();
+const { requireAuth } = require('../lib/auth');
+const {
+  createMagicToken,
+  consumeMagicToken,
+  upsertSubscription,
+  getMembershipType,
+  getSubscriptionByEmail,
+} = require('../db/subscriptions');
+const { updateMembershipType } = require('../db/users');
+const { logExitIntentEvent } = require('../db/exit-intent');
+const { PLANS, TIER_URLS } = require('../config/plans');
+
+const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
+const EMAIL_PROXY_URL = process.env.POLSIA_EMAIL_PROXY_URL;
+
+// ─── POST /api/checkout/create-checkout ──────────────────────────────────────
+// Creates a Stripe Checkout Session and returns the URL.
+// Auth-gated — 401 + redirectTo '/login' if not authenticated.
+
+router.post('/create-checkout', requireAuth, async (req, res) => {
+  const { tier } = req.body || {};
+
+  if (!tier || !TIER_URLS[tier]) {
+    return res.status(400).json({
+      error: 'Invalid tier. Must be one of: ' + Object.keys(TIER_URLS).join(', '),
+      code: 'INVALID_TIER',
+    });
+  }
+
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const isLifetime = tier === 'lifetime';
+  const mode = isLifetime ? 'payment' : 'subscription';
+
+  const session = await stripe.checkout.sessions.create({
+    mode,
+    line_items: [
+      {
+        price: TIER_URLS[tier],
+        quantity: 1,
+      },
+    ],
+    success_url: `${BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${BASE_URL}/filter`,
+    allow_promotion_codes: true,
+    metadata: {
+      user_id: req.user.id.toString(),
+      tier,
+    },
+    // Include user email so webhook has it even if client closes immediately
+    customer_email: req.user.email,
+  });
+
+  console.log(`[checkout] create-checkout tier=${tier} user=${req.user.email} session=${session.id}`);
+  res.json({ url: session.url });
+});
+
+// ─── POST /api/checkout/portal ────────────────────────────────────────────────
+// Creates a Stripe Billing Portal session for the current user.
+// Auth-gated — 400 if no active subscription found.
+
+router.post('/portal', requireAuth, async (req, res) => {
+  const sub = await getSubscriptionByEmail(req.user.email).catch(() => null);
+  if (!sub?.stripe_customer_id) {
+    return res.status(400).json({ error: 'No active subscription found.', code: 'NO_SUBSCRIPTION' });
+  }
+
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const session = await stripe.billingPortal.sessions.create({
+    customer: sub.stripe_customer_id,
+    return_url: `${BASE_URL}/filter`,
+  });
+
+  res.json({ url: session.url });
+});
+
+// ─── GET /api/checkout/tiers ──────────────────────────────────────────────────
+// Returns all tier definitions for client-side paywall rendering.
+
+router.get('/tiers', (_req, res) => {
+  res.json({ tiers: PLANS });
+});
+
+// ─── POST /api/checkout/session ───────────────────────────────────────────────
+// Legacy: returns the Polsia-managed Stripe payment link URL for a tier.
+// Still used by client-side code that expects { url, tier }.
+
+router.post('/session', async (req, res) => {
+  if (!req.body?.tier) {
+    return res.status(400).json({ error: 'tier is required' });
+  }
+  const tier = req.body.tier;
+  const selectedTier = TIER_URLS[tier] ? tier : 'online_monthly';
+  const url = TIER_URLS[selectedTier];
+  if (!url) {
+    return res.status(500).json({ error: 'No checkout URL configured for tier: ' + selectedTier });
+  }
+  console.log(`[checkout] session for tier=${selectedTier} url=${url}`);
+  if (selectedTier.startsWith('app_')) {
+    await logExitIntentEvent({ event_type: 'cashapp_checkout_started', email: null, device_id: null })
+      .catch(err => { console.error('[checkout] cashapp_checkout_started log error:', err.message); });
+  }
+  res.json({ url, tier: selectedTier });
+});
+
+// ─── POST /api/checkout/restore ────────────────────────────────────────────────
+// Sends a passwordless magic link to restore account access.
+
+router.post('/restore', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email required.' });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Always return success — don't leak whether email is in the system
+  const hasAccess = await getMembershipType(normalizedEmail).catch(() => null);
+
+  if (hasAccess) {
+    try {
+      const token = await createMagicToken(normalizedEmail);
+      const magicUrl = `${BASE_URL}/api/checkout/verify?token=${token}`;
+      if (EMAIL_PROXY_URL) {
+        await sendMagicLinkEmail(normalizedEmail, magicUrl);
+      } else {
+        console.log(`[checkout] Magic link for ${normalizedEmail}: ${magicUrl}`);
+      }
+    } catch (err) {
+      console.error('[checkout] magic token error:', err.message);
+    }
+  }
+
+  res.json({ ok: true, message: 'If that email has a subscription, a magic link is on its way.' });
+});
+
+// ─── GET /api/checkout/verify?token=<token> ────────────────────────────────────
+// Validates magic link token, sets pro_token cookie, redirects to /filter.
+
+router.get('/verify', async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.redirect('/filter?paywall=1&restore_error=1');
+
+  try {
+    const email = await consumeMagicToken(token);
+    if (!email) return res.redirect('/filter?paywall=1&restore_error=1');
+
+    const membershipType = await getMembershipType(email).catch(() => 'online');
+    const tokenPayload = Buffer.from(JSON.stringify({ email, membership: membershipType || 'online', iat: Date.now() })).toString('base64url');
+
+    res.cookie('pro_token', tokenPayload, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 90 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect('/filter?pro_restored=1');
+  } catch (err) {
+    console.error('[checkout] verify error:', err.message);
+    res.redirect('/filter?paywall=1&restore_error=1');
+  }
+});
+
+// ─── POST /api/checkout/activate ────────────────────────────────────────────────
+// Called client-side after successful Stripe payment to activate membership.
+
+router.post('/activate', async (req, res) => {
+  const { email, tier, sessionId } = req.body || {};
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email required.' });
+  }
+  if (!tier) {
+    return res.status(400).json({ error: 'tier is required.' });
+  }
+
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const membershipType = tier.startsWith('app_') ? 'app' : tier === 'lifetime' ? 'lifetime' : 'online';
+
+    // Map tier to period days for the pending subscription record
+    const periodDays = tier === 'lifetime'
+      ? 365 * 50 // effectively forever
+      : tier.includes('annual')
+        ? 365
+        : tier.includes('weekly')
+          ? 7
+          : 31;
+
+    await upsertSubscription({
+      email: normalizedEmail,
+      stripeCustomerId: sessionId || 'pending',
+      stripeSubscriptionId: 'pending',
+      status: 'active',
+      currentPeriodEnd: new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000),
+      membershipType,
+    });
+
+    // Also update users table membership_type
+    const { findUserByEmail } = require('../db/users');
+    const user = await findUserByEmail(normalizedEmail).catch(() => null);
+    if (user?.id) {
+      await updateMembershipType(user.id, membershipType).catch(() => {});
+    }
+
+    const tokenPayload = Buffer.from(JSON.stringify({ email: normalizedEmail, membership: membershipType, iat: Date.now() })).toString('base64url');
+    res.cookie('pro_token', tokenPayload, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 90 * 24 * 60 * 60 * 1000,
+    });
+
+    console.log(`[checkout] Membership activated: ${normalizedEmail} → ${membershipType}`);
+    res.json({ ok: true, email: normalizedEmail, membership: membershipType });
+  } catch (err) {
+    console.error('[checkout] activate error:', err.message);
+    res.status(500).json({ error: 'Could not activate membership. Try again.' });
+  }
+});
+
+// ─── GET /api/checkout/verify-session?session_id= ────────────────────────────────
+// Server-side session verification for /success page.
+// Returns { verified: boolean, tier: string|null, amount: number|null, currency: string }
+
+router.get('/verify-session', async (req, res) => {
+  const { session_id } = req.query;
+  if (!session_id) {
+    return res.status(400).json({ error: 'session_id is required.', code: 'VALIDATION_ERROR' });
+  }
+
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  try {
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const verified = session.payment_status === 'paid' || session.status === 'complete';
+    const tier = session.metadata?.tier || null;
+    const amount = session.amount_total ? session.amount_total / 100 : null;
+    const currency = session.currency ? session.currency.toUpperCase() : null;
+    res.json({ verified, tier, amount, currency });
+  } catch (err) {
+    console.error('[checkout] verify-session error:', err.message);
+    res.status(500).json({ error: 'Could not verify session.' });
+  }
+});
+
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+async function sendMagicLinkEmail(email, magicUrl) {
+  const resp = await fetch(EMAIL_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: email,
+      subject: 'Your HoldOff access link',
+      html: `<p>Here's your link to restore HoldOff access. It expires in 1 hour.</p>
+             <p><a href="${magicUrl}">Restore my access →</a></p>
+             <p style="color:#999;font-size:12px;">If you didn't request this, ignore it.</p>`,
+      text: `Restore HoldOff access:\n${magicUrl}\n\nExpires in 1 hour. If you didn't request this, ignore it.`,
+    }),
+  });
+  if (!resp.ok) throw new Error(`Email proxy returned ${resp.status}`);
+}
+
+module.exports = router;

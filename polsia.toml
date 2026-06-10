@@ -1,0 +1,39 @@
+[[crons]]
+name = "verdict-api-monitor"
+schedule = "*/5 * * * *"
+command = "node jobs/verdict-monitor.js"
+
+[[crons]]
+name = "auto-intercept-nurture"
+schedule = "*/15 * * * *"
+command = "node jobs/nurture-email.js"
+
+[[crons]]
+name = "detox-drip-sender"
+schedule = "0 * * * *"
+command = "node jobs/detox-email.js"
+
+[[crons]]
+name = "daily-site-health-check"
+schedule = "0 9 * * 1-5"
+command = "node jobs/daily-site-health-check.js"
+
+[[crons]]
+name = "abandoned-checkout-recovery"
+schedule = "*/15 * * * *"
+command = "node jobs/abandoned-checkout.js"
+
+[[crons]]
+name = "dunning-email-sender"
+schedule = "*/30 * * * *"
+command = "node jobs/dunning-email.js"
+
+[[crons]]
+name = "winback-email-d7"
+schedule = "0 */6 * * *"
+command = "node jobs/winback-email.js"
+
+[[crons]]
+name = "email-domain-health"
+schedule = "0 8 * * *"
+command = "node -e \"require('./services/email').getDomainStatus().then(r=>console.log(JSON.stringify(r)))\""

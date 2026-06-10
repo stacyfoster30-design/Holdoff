@@ -1,0 +1,14 @@
+{
+  "name": "holdoff-android",
+  "version": "1.0.0",
+  "description": "HoldOff Android APK builder",
+  "scripts": {
+    "build:web": "node ../scripts/build-web.js",
+    "cap:sync": "npx cap sync android",
+    "build:apk": "cd app && ../gradle/gradlew assembleRelease -q",
+    "build:apk:debug": "cd app && ../gradle/gradlew assembleDebug -q"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.0"
+  }
+}

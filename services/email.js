@@ -1,0 +1,113 @@
+/**
+ * Email service — Postmark API wrapper for HoldOff transactional and outreach email.
+ * Owns: email composition, sending, domain verification status.
+ * Does NOT own: list management, unsubscribe handling, template design.
+ *
+ * Falls back to Polsia email proxy when POSTMARK_API_KEY is not set.
+ * Falls back to console logging when neither Postmark nor Polsia proxy is configured.
+ */
+const postmark = require('postmark');
+
+const FROM_NAME = 'HoldOff';
+const FROM_EMAIL = 'hello@shouldiholdoff.live';
+
+function createClient() {
+  const apiKey = process.env.POSTMARK_API_KEY;
+  if (!apiKey) return null;
+  return new postmark.ServerClient(apiKey);
+}
+
+/**
+ * Send a single email via Postmark.
+ * @param {Object} opts
+ * @param {string} opts.to          — recipient email
+ * @param {string} opts.subject     — email subject
+ * @param {string} opts.text        — plain text body
+ * @param {string} [opts.html]      — HTML body (optional)
+ * @param {string} [opts.replyTo]   — reply-to address override
+ */
+async function sendEmail({ to, subject, text, html, replyTo }) {
+  const client = createClient();
+
+  if (client) {
+    const result = await client.sendEmail({
+      From: `${FROM_NAME} <${FROM_EMAIL}>`,
+      To: to,
+      Subject: subject,
+      TextBody: text,
+      HtmlBody: html || undefined,
+      ReplyTo: replyTo || undefined,
+    });
+
+    if (!result || result.ErrorCode !== 0) {
+      throw new Error(`Postmark error: ${result?.Message || 'unknown'}`);
+    }
+
+    return { id: result.MessageID };
+  }
+
+  // Polsia email proxy fallback when POSTMARK_API_KEY is not provisioned
+  const proxyUrl =
+    process.env.POLSIA_EMAIL_PROXY_URL ||
+    (process.env.POLSIA_API_BASE_URL
+      ? `${process.env.POLSIA_API_BASE_URL}/api/proxy/email/send`
+      : null);
+  const proxyToken = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+
+  if (!proxyUrl || !proxyToken) {
+    // Last-resort: log to console so devs can see emails in dev
+    console.log(`[email] ${subject} → ${to}`);
+    console.log(`[email] text: ${text.slice(0, 200)}`);
+    return { id: null };
+  }
+
+  const resp = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${proxyToken}`,
+    },
+    body: JSON.stringify({
+      to,
+      subject,
+      text,
+      html: html || undefined,
+      from_name: FROM_NAME,
+      from: FROM_EMAIL,
+      reply_to: replyTo || undefined,
+    }),
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`Polsia proxy error ${resp.status}: ${body}`);
+  }
+
+  const data = await resp.json().catch(() => ({}));
+  return { id: data?.id || null };
+}
+
+/**
+ * Check whether a sending domain is verified in Postmark.
+ * Returns { verified: boolean, domain: string, records: array }
+ */
+async function getDomainStatus() {
+  const client = createClient();
+  if (!client) {
+    return { verified: false, domain: FROM_EMAIL.split('@')[1], error: 'POSTMARK_API_KEY not set' };
+  }
+
+  const domain = FROM_EMAIL.split('@')[1];
+  try {
+    const data = await client.getDomain(domain);
+    return {
+      verified: data?.DNSSettings?.DKIM?.Verified ?? false,
+      domain,
+      records: data?.DNSSettings || [],
+    };
+  } catch (err) {
+    return { verified: false, domain, error: err.message };
+  }
+}
+
+module.exports = { sendEmail, getDomainStatus, FROM_EMAIL, FROM_NAME };

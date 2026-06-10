@@ -1,0 +1,65 @@
+<section class="hero">
+  <div class="hero__glow"></div>
+  <img class="hero__img" src="https://pub-629428d185ca4960a0a73c850d32294b.r2.dev/generated-images/company_180424/8cf974dd-39c8-4bcc-a93e-463e450ce1cf.jpg" alt="HoldOff — anxious overthinker at midnight">
+  <div class="hero__inner">
+    <p class="hero__eyebrow">AI message filter</p>
+    <h1 class="hero__headline">
+      Don't send it<br>yet.
+    </h1>
+    <p class="hero__sub">
+      The three seconds between the impulse and the text.<br>
+      That's where HoldOff lives.
+    </p>
+    <a href="/filter" class="hero__cta">Try it free →</a>
+    <a href="/examples" class="hero__examples-link">See example verdicts →</a>
+  </div>
+</section>
+
+<!-- Sandbox trial — interactive intercept demo for unauthenticated visitors -->
+<section class="sandbox" id="sandbox-container" aria-label="Try HoldOff free">
+  <div class="sandbox__inner">
+    <p class="sandbox__eyebrow">Live demo</p>
+    <h2 class="sandbox__heading">Test it right now — paste a message you're about to send</h2>
+    <div class="sandbox__input-row">
+      <textarea
+        id="sandbox-textarea"
+        class="sandbox__textarea"
+        placeholder="Try it now — paste a message you're about to send"
+        rows="4"
+        aria-label="Your message"
+      ></textarea>
+    </div>
+    <div class="sandbox__actions">
+      <button id="sandbox-test-btn" class="sandbox__btn" type="button">
+        Test Intercept
+      </button>
+    </div>
+    <div id="sandbox-verdict" class="sandbox__verdict-zone" style="display:none" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- Sandbox intercept modal -->
+<div id="sandbox-modal" class="sandbox-modal" role="dialog" aria-modal="true" aria-labelledby="sandbox-modal-title">
+  <div class="sandbox-modal__card">
+    <div id="sandbox-modal-body" class="sandbox-modal__body" data-countdown="">
+      <div class="sandbox-modal__spiral-icon" aria-hidden="true">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 4C24 4 14 8 12 20C10 32 22 38 28 28C34 18 24 14 24 24" stroke="#C97B5D" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <path d="M24 24C24 24 30 26 30 34" stroke="#C97B5D" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+      <p class="sandbox-modal__headline" id="sandbox-modal-title">It looks like you're in the spiral.</p>
+      <p class="sandbox-modal__sub">This is the HoldOff moment.</p>
+    </div>
+    <div class="sandbox-modal__footer">
+      <button id="sandbox-modal-cta" class="sandbox-modal__cta" type="button" style="display:none">Wait until morning</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sandbox paywall CTA — shown after countdown -->
+<div id="sandbox-paywall" class="sandbox-paywall" style="display:none" aria-label="Get HoldOff Pro">
+  <p class="sandbox-paywall__text">This is what HoldOff does — before every text.</p>
+  <a href="/filter#signup" class="sandbox-paywall__cta">Unlock permanent protection →</a>
+  <p class="sandbox-paywall__note">Starting at $4.99/mo — cancel anytime</p>
+</div>

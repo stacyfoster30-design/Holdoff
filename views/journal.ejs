@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pattern Journal — HoldOff</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0E0C0B">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/journal.css">
+  <style>
+    :root {
+      --filter-bg: #0E0C0B;
+      --filter-surface: #1A1714;
+      --filter-border: #2E2924;
+      --filter-fg: #F2EDE5;
+      --filter-muted: #9E948E;
+      --filter-accent: #C97B5D;
+      --filter-accent-warm: #E8A87C;
+      --verdict-hold-bg: rgba(244, 67, 54, 0.12);
+      --verdict-send: #F44336;
+      --verdict-rewrite-bg: rgba(255, 152, 0, 0.12);
+      --verdict-send-bg: rgba(76, 175, 80, 0.12);
+    }
+  </style>
+</head>
+<body class="journal-body">
+
+  <nav class="journal-nav">
+    <a href="/filter" class="journal-nav__back">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L5 7l3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back
+    </a>
+    <a href="/" class="journal-nav__wordmark">HoldOff</a>
+  </nav>
+
+  <main class="journal-main">
+    <header class="journal-header">
+      <h1>Pattern Journal</h1>
+      <p>Track what triggers you — build self-awareness, stop the cycle.</p>
+    </header>
+
+    <!-- Success flash -->
+    <div class="flash" id="flash"></div>
+
+    <!-- Streak pill -->
+    <div class="streak-pill" id="streakPill" style="display:none">
+      <span class="streak-pill__dot"></span>
+      <span id="streakText"></span>
+    </div>
+
+    <!-- Insights -->
+    <section class="insights-section" id="insightsSection" style="display:none">
+      <h2>Your Patterns</h2>
+
+      <!-- Top 3 patterns -->
+      <div id="topPatterns" class="top-patterns"></div>
+
+      <!-- Time heatmap -->
+      <div style="margin-top:1.5rem">
+        <p style="font-size:0.8rem;color:var(--filter-muted);margin:0 0 0.5rem">When your worst texts happen</p>
+        <div class="heatmap-grid" id="heatmap"></div>
+        <p style="font-size:0.7rem;color:var(--filter-muted);margin:0.5rem 0 0;text-align:center">
+          <span id="peakHourLabel"></span>
+        </p>
+      </div>
+
+      <!-- Recency alerts -->
+      <div id="recencyAlerts" style="margin-top:1rem"></div>
+    </section>
+
+    <!-- Tab bar -->
+    <div class="tab-bar" id="tabBar" style="display:none">
+      <button class="tab-btn tab-btn--active" data-tab="journalTab">Journal</button>
+      <button class="tab-btn" data-tab="verdictsTab">Verdicts</button>
+      <button class="tab-btn" data-tab="contactsTab">Contacts</button>
+    </div>
+
+    <!-- ── Journal Tab ── -->
+    <div class="tab-content tab-content--active" id="journalTab">
+
+    <!-- Quick-add banner (if pre-filled from filter verdict) -->
+    <div class="quick-add-banner" id="quickAddBanner" style="display:none">
+      <div class="quick-add-banner__text">
+        Log this pattern: <span class="quick-add-banner__pattern" id="quickAddPattern"></span>
+      </div>
+      <button class="quick-add-banner__btn" id="quickAddBtn">Log it →</button>
+    </div>
+
+    <!-- New entry form -->
+    <section class="new-entry-section">
+      <div id="newEntryToggleWrap">
+        <button class="new-entry-toggle" id="toggleForm">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          New journal entry
+        </button>
+      </div>
+
+      <form class="new-entry-form" id="entryForm" style="display:none">
+        <h3>What triggered you?</h3>
+
+        <div class="form-field">
+          <label>Trigger situation <span>*</span></label>
+          <textarea id="triggerText" rows="2" placeholder="e.g. He left me on read for 4 hours and I couldn't stop checking my phone"></textarea>
+          <p class="form-hint">What happened right before you wanted to text?</p>
+        </div>
+
+        <div class="form-field">
+          <label>What was the text you almost sent? <span style="color:var(--filter-muted)">(optional)</span></label>
+          <textarea id="messageText" rows="2" placeholder="e.g. 'why are you ignoring me?'"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label>What happened? <span style="color:var(--filter-muted)">(optional — update later)</span></label>
+          <textarea id="outcomeText" rows="2" placeholder="e.g. I sent it. He got defensive. Wish I hadn't."></textarea>
+        </div>
+
+        <!-- Pre-fill from verdict if present in URL -->
+        <input type="hidden" id="patternName" value="">
+        <input type="hidden" id="verdict" value="">
+        <input type="hidden" id="reframe" value="">
+        <input type="hidden" id="source" value="manual">
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="submitBtn">Save entry</button>
+          <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Entry list -->
+    <section>
+      <h2 style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--filter-muted);margin:0 0 1rem">Your entries</h2>
+      <div class="entries-list" id="entriesList">
+        <div class="loading-skeleton" style="display:none" id="loadingSkeleton1"></div>
+        <div class="loading-skeleton" style="display:none" id="loadingSkeleton2"></div>
+      </div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="empty-state__icon">📝</div>
+        <h3>No entries yet</h3>
+        <p>Start tracking your patterns. After each HoldOff verdict, tap "Log this pattern" to build your history.</p>
+      </div>
+    </section>
+    </div><!-- /journalTab -->
+
+    <!-- ── Verdicts Tab ── -->
+    <div class="tab-content" id="verdictsTab">
+      <div class="filter-pills">
+        <button class="filter-pill filter-pill--active" data-filter="all">All</button>
+        <button class="filter-pill" data-filter="SEND">Send</button>
+        <button class="filter-pill" data-filter="HOLD">Hold</button>
+        <button class="filter-pill" data-filter="REWRITE">Rewrite</button>
+      </div>
+      <input type="search" class="search-bar" id="verdictSearch" placeholder="Search verdicts…" />
+      <div class="verdict-list" id="verdictList"></div>
+      <div class="tab-empty-state" id="verdictEmpty" style="display:none">
+        <div class="tab-empty-state__icon">😐</div>
+        <h3>No verdicts yet</h3>
+        <p>Use the filter to analyze messages and build your history.</p>
+      </div>
+      <div class="verdict-loading-skeleton" id="verdictSkeleton" style="display:none"></div>
+      <div id="verdictLoadMore"></div>
+    </div><!-- /verdictsTab -->
+
+    <!-- ── Contacts Tab ── -->
+    <div class="tab-content" id="contactsTab">
+      <div class="contact-list" id="contactList"></div>
+      <div class="tab-empty-state" id="contactEmpty" style="display:none">
+        <div class="tab-empty-state__icon">👤</div>
+        <h3>No contacts yet</h3>
+        <p>Verdicts with pattern names will appear here as contacts.</p>
+      </div>
+      <div class="verdict-loading-skeleton" id="contactSkeleton" style="display:none"></div>
+    </div><!-- /contactsTab -->
+  </main>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let entries = [];
+let insights = null;
+let formOpen = false;
+
+// Verdict history state
+let verdictEntries = [];
+let verdictCursor = null;
+let verdictHasMore = true;
+let activeVerdictFilter = 'all';
+let verdictSearchQuery = '';
+let verdictLoading = false;
+let verdictSearchTimeout = null;
+
+// Contact state
+let contactEntries = [];
+let contactsLoaded = false;
+
+// ── Quick-add from URL params (passed from filter via ?pattern=&reframe=) ──
+(function initQuickAdd() {
+  const params = new URLSearchParams(window.location.search);
+  const pattern = params.get('pattern');
+  const reframe = params.get('reframe');
+  const verdict = params.get('verdict');
+  const message = params.get('message');
+  const source = params.get('source');
+
+  if (pattern) {
+    document.getElementById('quickAddPattern').textContent = pattern;
+    document.getElementById('patternName').value = pattern;
+    document.getElementById('reframe').value = reframe || '';
+    document.getElementById('verdict').value = verdict || '';
+    document.getElementById('messageText').value = message || '';
+    document.getElementById('source').value = source || 'verdict';
+    document.getElementById('triggerText').value = '';
+    document.getElementById('quickAddBanner').style.display = 'flex';
+
+    document.getElementById('quickAddBtn').addEventListener('click', () => {
+      document.getElementById('triggerText').focus();
+      // Pre-fill with pattern name if empty
+      if (!document.getElementById('triggerText').value.trim()) {
+        document.getElementById('triggerText').value = `Pattern: ${pattern} — `;
+      }
+      toggleForm(true);
+    });
+  }
+})();
+
+// ── API helpers ──────────────────────────────────────────────────────────────
+const api = (() => {
+  async function post(path, body) {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+  async function get(path) {
+    const res = await fetch(path, { credentials: 'include' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+  async function del(path) {
+    const res = await fetch(path, { method: 'DELETE', credentials: 'include' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+  return { post, get, del };
+})();
+
+// ── Flash ────────────────────────────────────────────────────────────────────
+function showFlash(msg) {
+  const el = document.getElementById('flash');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── Entry rendering ──────────────────────────────────────────────────────────
+function formatDate(isoStr) {
+  const d = new Date(isoStr);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffH = diffMs / (1000 * 60 * 60);
+  const diffD = diffH / 24;
+  if (diffH < 1) return 'just now';
+  if (diffH < 24) return `${Math.floor(diffH)}h ago`;
+  if (diffD < 7) return `${Math.floor(diffD)}d ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function verdictLabel(v) {
+  if (!v) return null;
+  const map = { SEND: 'Send ✓', HOLD: 'Hold ✗', REWRITE: 'Rewrite →' };
+  return map[v] || v;
+}
+
+function verdictClass(v) {
+  if (!v) return 'verdict-manual';
+  if (v === 'SEND') return 'verdict-send';
+  if (v === 'HOLD') return 'verdict-hold';
+  if (v === 'REWRITE') return 'verdict-rewrite';
+  return 'verdict-manual';
+}
+
+function renderEntry(entry) {
+  return `
+    <div class="entry-card" data-id="${entry.id}">
+      <div class="entry-card__header">
+        ${entry.verdict ? `<span class="entry-card__verdict ${verdictClass(entry.verdict)}">${verdictLabel(entry.verdict)}</span>` : ''}
+        <span class="entry-card__date">${formatDate(entry.created_at)}</span>
+      </div>
+      <p class="entry-card__trigger">${escHtml(entry.trigger_text)}</p>
+      ${entry.message_text ? `<p class="entry-card__message">"${escHtml(entry.message_text)}"</p>` : ''}
+      ${entry.reframe ? `<p class="entry-card__reframe">💡 ${escHtml(entry.reframe)}</p>` : ''}
+      ${entry.outcome ? `<p class="entry-card__outcome"><strong>What happened:</strong> ${escHtml(entry.outcome)}</p>` : ''}
+      <div class="entry-card__actions">
+        <button class="entry-card__action-btn" onclick="openEditForm(${entry.id})">Edit</button>
+        <button class="entry-card__action-btn delete" onclick="deleteEntry(${entry.id})">Delete</button>
+      </div>
+    </div>`;
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Insights rendering ──────────────────────────────────────────────────────
+async function renderInsights(data) {
+  insights = data;
+
+  // Show tab bar once data is loaded
+  document.getElementById('tabBar').style.display = 'flex';
+
+  // Streak pill — also fetch streakAtRisk
+  let streakAtRisk = false;
+  try {
+    const streakData = await api.get('/api/verdict/streak');
+    streakAtRisk = streakData.streakAtRisk || false;
+  } catch (_) {}
+
+  const streakEl = document.getElementById('streakPill');
+  const streakTextEl = document.getElementById('streakText');
+  if (data.streak?.current_streak > 0) {
+    streakEl.style.display = 'inline-flex';
+    if (streakAtRisk) {
+      streakEl.classList.add('streak-pill--at-risk');
+      streakTextEl.innerHTML = `${data.streak.current_streak} day streak · ${data.streak.total_entries} total entries<span class="streak-pill__warning">Log one more today to keep it alive</span>`;
+    } else {
+      streakEl.classList.remove('streak-pill--at-risk');
+      streakTextEl.textContent = `${data.streak.current_streak} day streak · ${data.streak.total_entries} total entries`;
+    }
+  }
+
+  // Top patterns
+  const patternsEl = document.getElementById('topPatterns');
+  if (data.top_patterns?.length) {
+    patternsEl.innerHTML = data.top_patterns.map(p => `
+      <div class="pattern-card">
+        <p class="pattern-card__name">${escHtml(p.pattern_name)}</p>
+        <div class="pattern-card__count">${p.count}</div>
+        <p class="pattern-card__recency">
+          ${p.days_since === 0 ? 'today' : p.days_since === 1 ? 'yesterday' : `${p.days_since}d ago`}
+        </p>
+      </div>`).join('');
+  } else {
+    patternsEl.innerHTML = '<p style="color:var(--filter-muted);font-size:0.85rem">No pattern data yet — log entries to see your top triggers.</p>';
+  }
+
+  // Heatmap
+  const heatmapEl = document.getElementById('heatmap');
+  const max = Math.max(...data.time_heatmap.map(h => h.count), 1);
+  heatmapEl.innerHTML = data.time_heatmap.map(h => {
+    const intensity = h.count / max;
+    const tier = h.count === 0 ? '' : intensity < 0.25 ? ' tier-1' : intensity < 0.5 ? ' tier-2' : intensity < 0.75 ? ' tier-3' : ' tier-4';
+    return `<div class="heatmap-cell${tier}" title="Hour ${h.hour}: ${h.count} entries"></div>`;
+  }).join('');
+
+  // Peak hour label
+  const peakEl = document.getElementById('peakHourLabel');
+  if (data.peak_hour !== null && data.peak_hour !== undefined) {
+    const h = data.peak_hour;
+    const label = h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`;
+    peakEl.textContent = `Peak hour: ${label}`;
+  }
+
+  // Recency alerts
+  const alertsEl = document.getElementById('recencyAlerts');
+  const recencyMessages = [];
+  data.top_patterns.forEach(p => {
+    if (p.days_since !== null && p.days_since >= 3) {
+      recencyMessages.push(`<span style="color:var(--filter-accent-warm)">✓</span> No "${escHtml(p.pattern_name)}" in ${p.days_since} days — that's progress.`);
+    }
+  });
+  alertsEl.innerHTML = recencyMessages.map(m => `<p style="font-size:0.85rem;margin:0.25rem 0;color:var(--filter-muted)">${m}</p>`).join('');
+
+  document.getElementById('insightsSection').style.display = 'block';
+}
+
+// ── Load data ────────────────────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('loadingSkeleton1').style.display = 'block';
+  document.getElementById('loadingSkeleton2').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('entriesList').innerHTML = `
+    <div class="loading-skeleton" id="loadingSkeleton1"></div>
+    <div class="loading-skeleton" id="loadingSkeleton2"></div>`;
+
+  try {
+    const [entriesData, insightsData] = await Promise.all([
+      api.get('/api/journal/entries'),
+      api.get('/api/journal/insights'),
+    ]);
+    entries = entriesData.entries;
+    await renderInsights(insightsData);
+    renderEntries();
+  } catch (err) {
+    console.error('Failed to load journal:', err);
+    if (err.message.includes('401')) {
+      window.location.href = '/filter';
+    }
+  }
+}
+
+function renderEntries() {
+  const list = document.getElementById('entriesList');
+  const empty = document.getElementById('emptyState');
+  document.getElementById('loadingSkeleton1')?.remove();
+  document.getElementById('loadingSkeleton2')?.remove();
+
+  if (!entries.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = entries.map(renderEntry).join('');
+  }
+}
+
+// ── Form ─────────────────────────────────────────────────────────────────────
+const form = document.getElementById('entryForm');
+const toggleBtn = document.getElementById('toggleForm');
+const cancelBtn = document.getElementById('cancelBtn');
+const submitBtn = document.getElementById('submitBtn');
+
+function toggleForm(open) {
+  formOpen = open ?? !formOpen;
+  form.style.display = formOpen ? 'block' : 'none';
+  document.getElementById('newEntryToggleWrap').style.display = formOpen ? 'none' : 'block';
+}
+
+toggleBtn.addEventListener('click', () => toggleForm());
+cancelBtn.addEventListener('click', () => toggleForm(false));
+
+// Auto-focus trigger field when form opens
+const observer = new MutationObserver(() => {
+  if (formOpen && form.style.display !== 'none') {
+    document.getElementById('triggerText').focus();
+    observer.disconnect();
+  }
+});
+observer.observe(form, { attributes: true, attributeFilter: ['style'] });
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Saving…';
+
+  const trigger_text = document.getElementById('triggerText').value.trim();
+  if (trigger_text.length < 10) {
+    showFlash('Trigger must be at least 10 characters');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save entry';
+    return;
+  }
+
+  const payload = {
+    trigger_text,
+    message_text: document.getElementById('messageText').value.trim() || null,
+    outcome: document.getElementById('outcomeText').value.trim() || null,
+    pattern_name: document.getElementById('patternName').value.trim() || null,
+    reframe: document.getElementById('reframe').value.trim() || null,
+    verdict: document.getElementById('verdict').value.trim() || null,
+    source: document.getElementById('source').value || 'manual',
+  };
+
+  try {
+    const entry = await api.post('/api/journal/entries', payload);
+    entries.unshift(entry);
+    renderEntries();
+    // Re-load insights to update patterns
+    const insightsData = await api.get('/api/journal/insights');
+    renderInsights(insightsData);
+    // Clear form
+    form.reset();
+    toggleForm(false);
+    showFlash('Entry saved ✓');
+    // Dismiss quick-add banner
+    document.getElementById('quickAddBanner').style.display = 'none';
+  } catch (err) {
+    showFlash('Failed to save — ' + err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save entry';
+  }
+});
+
+// ── Edit ────────────────────────────────────────────────────────────────────
+let editingId = null;
+
+window.openEditForm = async function(id) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  editingId = id;
+  document.getElementById('triggerText').value = entry.trigger_text || '';
+  document.getElementById('messageText').value = entry.message_text || '';
+  document.getElementById('outcomeText').value = entry.outcome || '';
+  document.getElementById('patternName').value = entry.pattern_name || '';
+  document.getElementById('reframe').value = entry.reframe || '';
+  document.getElementById('verdict').value = entry.verdict || '';
+  document.getElementById('source').value = entry.source || 'manual';
+  toggleForm(true);
+};
+
+// Override submit to detect edit vs create
+form.addEventListener('submit', async (e) => {
+  if (editingId) {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+    try {
+      const payload = {
+        trigger_text: document.getElementById('triggerText').value.trim(),
+        outcome: document.getElementById('outcomeText').value.trim() || null,
+      };
+      const updated = await api.post(`/api/journal/entries/${editingId}`, payload);
+      const idx = entries.findIndex(e => e.id === editingId);
+      if (idx >= 0) entries[idx] = { ...entries[idx], ...updated };
+      renderEntries();
+      editingId = null;
+      form.reset();
+      toggleForm(false);
+      showFlash('Entry updated ✓');
+    } catch (err) {
+      showFlash('Failed to update — ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save entry';
+    }
+  }
+});
+
+// ── Delete ───────────────────────────────────────────────────────────────────
+window.deleteEntry = async function(id) {
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await api.del(`/api/journal/entries/${id}`);
+    entries = entries.filter(e => e.id !== id);
+    renderEntries();
+    const insightsData = await api.get('/api/journal/insights');
+    renderInsights(insightsData);
+    showFlash('Entry deleted');
+  } catch (err) {
+    showFlash('Failed to delete — ' + err.message);
+  }
+};
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(p => p.classList.remove('tab-content--active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
+  document.getElementById(tabId)?.classList.add('tab-content--active');
+  document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('tab-btn--active');
+
+  if (tabId === 'verdictsTab' && verdictEntries.length === 0) {
+    loadVerdictHistory();
+  } else if (tabId === 'contactsTab' && !contactsLoaded) {
+    loadContacts();
+  }
+}
+
+document.getElementById('tabBar').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) switchTab(btn.dataset.tab);
+});
+
+// ── Verdict history ──────────────────────────────────────────────────────────
+function verdictBadgeClass(v) {
+  if (v === 'SEND') return 'verdict-card__badge verdict-send';
+  if (v === 'HOLD') return 'verdict-card__badge verdict-hold';
+  if (v === 'REWRITE') return 'verdict-card__badge verdict-rewrite';
+  return 'verdict-card__badge verdict-manual';
+}
+
+function renderVerdictEntries() {
+  const list = document.getElementById('verdictList');
+  const empty = document.getElementById('verdictEmpty');
+  document.getElementById('verdictSkeleton')?.remove();
+
+  const filtered = verdictEntries.filter(entry => {
+    if (activeVerdictFilter !== 'all' && entry.verdict !== activeVerdictFilter) return false;
+    if (verdictSearchQuery) {
+      const q = verdictSearchQuery.toLowerCase();
+      if (!(entry.pattern_name || '').toLowerCase().includes(q) &&
+          !(entry.feedback_snippet || '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = filtered.map(entry => `
+      <div class="verdict-card">
+        <div class="verdict-card__header">
+          <span class="${verdictBadgeClass(entry.verdict)}">${verdictLabel(entry.verdict) || entry.verdict}</span>
+          <span class="verdict-card__date">${formatDate(entry.created_at)}</span>
+        </div>
+        ${entry.pattern_name ? `<div class="verdict-card__pattern">${escHtml(entry.pattern_name)}</div>` : ''}
+        ${entry.feedback_snippet ? `<div class="verdict-card__feedback">"${escHtml(entry.feedback_snippet)}"</div>` : ''}
+      </div>`).join('');
+  }
+
+  verdictHasMore = verdictCursor !== null;
+}
+
+async function loadVerdictHistory() {
+  if (verdictLoading) return;
+  verdictLoading = true;
+  document.getElementById('verdictSkeleton').style.display = 'block';
+
+  try {
+    const params = new URLSearchParams();
+    if (activeVerdictFilter !== 'all') params.set('verdict_type', activeVerdictFilter);
+    const result = await api.get(`/api/verdict/history?${params}`);
+    verdictEntries = result.entries || [];
+    verdictCursor = result.nextCursor;
+    verdictHasMore = result.hasMore;
+    renderVerdictEntries();
+    setupInfiniteScroll();
+  } catch (err) {
+    console.error('Failed to load verdict history:', err);
+  } finally {
+    verdictLoading = false;
+  }
+}
+
+async function loadMoreVerdicts() {
+  if (!verdictHasMore || verdictLoading) return;
+  verdictLoading = true;
+
+  try {
+    const params = new URLSearchParams();
+    if (activeVerdictFilter !== 'all') params.set('verdict_type', activeVerdictFilter);
+    if (verdictCursor) params.set('cursor', verdictCursor);
+    const result = await api.get(`/api/verdict/history?${params}`);
+    verdictEntries.push(...(result.entries || []));
+    verdictCursor = result.nextCursor;
+    verdictHasMore = result.hasMore;
+    renderVerdictEntries();
+  } catch (err) {
+    console.error('Failed to load more verdicts:', err);
+  } finally {
+    verdictLoading = false;
+  }
+}
+
+function setupInfiniteScroll() {
+  const sentinel = document.getElementById('verdictLoadMore');
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) loadMoreVerdicts();
+  }, { rootMargin: '200px' });
+  observer.observe(sentinel);
+}
+
+// Search debounce
+document.getElementById('verdictSearch').addEventListener('input', e => {
+  verdictSearchQuery = e.target.value.trim();
+  clearTimeout(verdictSearchTimeout);
+  verdictSearchTimeout = setTimeout(() => {
+    renderVerdictEntries();
+  }, 300);
+});
+
+// Filter pills
+document.querySelectorAll('.filter-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('filter-pill--active'));
+    pill.classList.add('filter-pill--active');
+    activeVerdictFilter = pill.dataset.filter;
+    renderVerdictEntries();
+  });
+});
+
+// ── Contacts ────────────────────────────────────────────────────────────────
+async function loadContacts() {
+  contactsLoaded = true;
+  document.getElementById('contactSkeleton').style.display = 'block';
+  try {
+    const history = await api.get('/api/journal/match-history');
+    contactEntries = history;
+    renderContacts();
+  } catch (err) {
+    console.error('Failed to load contacts:', err);
+  } finally {
+    document.getElementById('contactSkeleton').style.display = 'none';
+  }
+}
+
+function renderContacts() {
+  const list = document.getElementById('contactList');
+  const empty = document.getElementById('contactEmpty');
+  document.getElementById('contactSkeleton')?.remove();
+
+  if (!contactEntries.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = contactEntries.map(c => `
+      <div class="contact-card">
+        <div class="contact-card__avatar">👤</div>
+        <div class="contact-card__info">
+          <div class="contact-card__name">${escHtml(c.pattern_name)}</div>
+          <div class="contact-card__meta">
+            <span>Last: ${formatDate(c.last_at)}</span>
+          </div>
+        </div>
+        <span class="contact-card__count">${c.count} analyses</span>
+      </div>`).join('');
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

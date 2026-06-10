@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HoldOff</string>
+    <string name="accessibility_service_description">HoldOff intercepts the moment you hit send in any messaging app — giving you one last chance to pause before a message goes through.</string>
+    <string name="widget_description">One tap to check a text before sending. Powered by HoldOff.</string>
+    <string name="holdoff_relief_title">Take a breath.</string>
+    <string name="holdoff_relief_message_prefix">You were about to send:</string>
+    <string name="holdoff_btn_hold">Hold</string>
+    <string name="holdoff_btn_send_anyway">Send Anyway</string>
+    <string name="holdoff_message_cleared">Message cleared.</string>
+    <string name="holdoff_rewrite_copied">Rewrite suggestion copied.</string>
+    <string name="holdoff_sms_role_title">Want full SMS interception?</string>
+    <string name="holdoff_sms_role_description">Setting HoldOff as your default SMS app lets it intercept all text messages before they send. You can change this back anytime.</string>
+    <string name="holdoff_sms_role_enable">Set as default</string>
+    <string name="holdoff_sms_role_skip">Skip for now</string>
+    <string name="widget_config_title">Add HoldOff Widget</string>
+    <string name="widget_size_2x2">Quick Check (2×2)</string>
+    <string name="widget_size_4x2">With Summary (4×2)</string>
+</resources>
