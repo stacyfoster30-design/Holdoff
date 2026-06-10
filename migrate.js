@@ -16,8 +16,16 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
+if (!process.env.DATABASE_URL) {
+  console.warn('DATABASE_URL is not set; skipping database migrations for this build.');
+  process.exit(0);
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL.includes('localhost')
+    ? false
+    : { rejectUnauthorized: false },
 });
 
 async function migrate() {
