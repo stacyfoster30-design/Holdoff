@@ -92,7 +92,6 @@ router.get('/tiers', (_req, res) => {
 });
 
 // ─── POST /api/checkout/session ───────────────────────────────────────────────
-// Legacy: returns the Polsia-managed Stripe payment link URL for a tier.
 // Still used by client-side code that expects { url, tier }.
 
 router.post('/session', async (req, res) => {
