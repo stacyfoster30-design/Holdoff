@@ -6,6 +6,9 @@ const url = require('url');
 const PORT = process.env.PORT || 3000;
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+if (STRIPE_WEBHOOK_SECRET && !STRIPE_WEBHOOK_SECRET.startsWith('whsec_')) {
+  throw new Error('[startup] Invalid STRIPE_WEBHOOK_SECRET. Expected a Stripe webhook signing secret beginning with whsec_.');
+}
 const PRICE_ID = 'price_1Tggwx3OofPcGPa3yT6kamMQ';
 const BASE_URL = process.env.BASE_URL || 'https://shouldiholdoff.live';
 
@@ -85,6 +88,15 @@ const server = http.createServer(async (req, res) => {
 
   // Health
   if (path === '/health') return send(res, 200, 'OK', 'text/plain');
+  if (path === '/api/spiral-lock/status') {
+    return sendJSON(res, 200, {
+      enabled: true,
+      mode: 'recovery_static',
+      trigger: '5 rapid send/draft attempts within 10 minutes',
+      release: 'pause, breathe, then journal before sending',
+      updated_at: new Date().toISOString()
+    });
+  }
 
   // Pages
   if (path === '/' || path === '') return send(res, 200, home);

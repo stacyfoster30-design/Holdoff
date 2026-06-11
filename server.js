@@ -320,8 +320,11 @@ mountSharePages(app);
 if (!process.env.POSTMARK_API_KEY && !process.env.POLSIA_EMAIL_PROXY_URL) {
   console.warn('[startup] WARNING: No email provider configured — transactional emails will be logged only');
 }
-if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  console.warn('[startup] WARNING: STRIPE_WEBHOOK_SECRET not set — webhook signature verification disabled');
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+if (!stripeWebhookSecret) {
+  console.warn('[startup] WARNING: STRIPE_WEBHOOK_SECRET not set — Stripe webhook route will fail closed until configured');
+} else if (!stripeWebhookSecret.startsWith('whsec_')) {
+  throw new Error('[startup] Invalid STRIPE_WEBHOOK_SECRET. Expected a Stripe webhook signing secret beginning with whsec_, not an API key or publishable key.');
 }
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
