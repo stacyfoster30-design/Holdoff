@@ -1,89 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Spiral Lock — HoldOff</title>
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="apple-mobile-web-app-title" content="HoldOff">
-  <meta name="theme-color" content="#0E0C0B">
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-  <meta name="description" content="Spiral Lock — HoldOff pauses messaging when you are spiraling.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css">
-  <style>
-    body { background: #0c0b10; color: #fff8f1; min-height: 100vh; margin: 0; font-family: var(--font-sans, sans-serif); }
-    .spiral-page { max-width: 520px; margin: 5rem auto 4rem; padding: 0 1.5rem; text-align: center; }
-    .spiral-page h1 { font-family: var(--font-serif, serif); font-size: 2rem; color: #a78bfa; margin-bottom: 1rem; }
-    .spiral-page p { color: #9ca3af; margin-bottom: 1.5rem; line-height: 1.6; }
-    .spiral-timer { font-size: 4rem; font-weight: 700; color: #a78bfa; margin: 1.5rem 0; letter-spacing: .05em; }
-    .spiral-quiz { background: #1a1a2e; border: 1px solid #374151; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; text-align: left; }
-    .spiral-quiz p { color: #d1d5db; margin-bottom: .5rem; }
-    .spiral-quiz input { width: 100%; padding: .6rem .9rem; background: #0c0b10; border: 1px solid #374151; border-radius: 6px; color: #fff; font-size: .95rem; box-sizing: border-box; margin-bottom: 1rem; }
-    .spiral-quiz input:focus { outline: none; border-color: #a78bfa; }
-    .btn-unlock { width: 100%; padding: .9rem; background: #a78bfa; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: .5rem; }
-    .btn-unlock:hover { opacity: .9; }
-    .btn-back { color: #6b7280; font-size: .875rem; margin-top: 1.5rem; display: block; }
-    .btn-back:hover { color: #a78bfa; }
-  </style>
-</head>
-<body>
-  <nav class="nav">
-    <a href="/" class="nav__logo">HoldOff</a>
-  </nav>
-
-  <div class="spiral-page">
-    <h1>Spiral Lock Active</h1>
-    <p>You have sent multiple messages without a reply. To protect your peace, HoldOff has paused your messaging for a moment.</p>
-
-    <div class="spiral-timer" id="spiralTimer">05:00</div>
-    <p id="timerNote" style="font-size:.875rem;color:#6b7280;">Breathe. You can skip the timer by completing the reflection below.</p>
-
-    <div class="spiral-quiz" id="spiralQuiz">
-      <p>1. Is it possible they are simply busy right now?</p>
-      <input type="text" id="q1" placeholder="Your honest answer...">
-      <p>2. How will sending another message make you feel in 10 minutes?</p>
-      <input type="text" id="q2" placeholder="Your honest answer...">
-      <p>3. What is one healthy thing you can do for yourself right now?</p>
-      <input type="text" id="q3" placeholder="Your honest answer...">
-      <button class="btn-unlock" id="submitQuizBtn" onclick="submitQuiz()" disabled>Submit reflection to unlock</button>
-    </div>
-
-    <a href="/filter" class="btn-back">Back to filter</a>
+<style>
+  .spiral-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+  .spiral-overlay h2 { color: var(--accent); }
+  .spiral-timer { font-size: 3rem; font-weight: bold; margin: 1rem 0; }
+  .spiral-quiz { display: none; margin-top: 2rem; }
+</style>
+<div class="spiral-overlay" id="spiralOverlay" style="display:none;">
+  <h2>Spiral Lock Active</h2>
+  <p>You've sent 3+ messages without a reply. To protect your peace, we've paused messaging.</p>
+  <div class="spiral-timer" id="spiralTimer">05:00</div>
+  <button id="unlockQuizBtn" class="btn">Take Reappraisal Quiz to Unlock</button>
+  
+  <div class="spiral-quiz" id="spiralQuiz">
+    <p>1. Is it possible they are simply busy right now?</p>
+    <input type="text" id="q1">
+    <p>2. How will double-texting make you feel 5 minutes from now?</p>
+    <input type="text" id="q2">
+    <p>3. What is a healthier way to self-soothe right now?</p>
+    <input type="text" id="q3">
+    <button id="submitQuizBtn" class="btn">Submit & Unlock</button>
   </div>
+</div>
+<script>
+(function () {
+  const overlay = document.getElementById('spiralOverlay');
+  const timer = document.getElementById('spiralTimer');
+  const quizBtn = document.getElementById('unlockQuizBtn');
+  const quiz = document.getElementById('spiralQuiz');
+  const submit = document.getElementById('submitQuizBtn');
+  const threadId = new URLSearchParams(window.location.search).get('thread_id') || 'default';
 
-  <script>
-    // Enable submit when all fields filled
-    ["q1","q2","q3"].forEach(id => {
-      document.getElementById(id).addEventListener("input", () => {
-        const allFilled = ["q1","q2","q3"].every(i => document.getElementById(i).value.trim().length > 5);
-        document.getElementById("submitQuizBtn").disabled = !allFilled;
-      });
-    });
+  async function unlock(method, answers) {
+    await fetch('/api/spiral-lock/unlock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method, answers, thread_id: threadId }),
+    }).catch(function () {});
+    overlay.style.display = 'none';
+  }
 
-    function submitQuiz() {
-      document.getElementById("spiralQuiz").innerHTML = "<p style=\"color:#a78bfa;font-size:1.1rem;font-weight:600;\">You did it. Lock released. Take a breath before you send anything.</p><a href=\"/filter\" class=\"btn-unlock\" style=\"margin-top:1rem;display:block;text-decoration:none;text-align:center;\">Back to filter</a>";
-      clearInterval(timerInterval);
-    }
+  function showTimerComplete() {
+    timer.textContent = '00:00';
+    quizBtn.textContent = 'Five minutes passed — choose your next step';
+    quizBtn.disabled = true;
+    const actions = document.createElement('div');
+    actions.className = 'spiral-actions';
+    actions.innerHTML = '<button class="btn" id="timerUnlockBtn">Unlock now</button> <a class="btn" href="/filter">Rewrite instead</a>';
+    quizBtn.insertAdjacentElement('afterend', actions);
+    document.getElementById('timerUnlockBtn').addEventListener('click', function () { unlock('timer_wait'); });
+  }
 
-    // Countdown timer
-    let seconds = 300;
-    const timerEl = document.getElementById("spiralTimer");
-    const timerInterval = setInterval(() => {
-      seconds--;
-      if (seconds <= 0) {
-        clearInterval(timerInterval);
-        timerEl.textContent = "00:00";
-        document.getElementById("timerNote").textContent = "Timer complete. You are free to continue.";
-        return;
+  function startCountdown(remainingMs) {
+    let remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+    const tick = setInterval(function () {
+      const minutes = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const seconds = String(remaining % 60).padStart(2, '0');
+      timer.textContent = minutes + ':' + seconds;
+      if (remaining <= 0) {
+        clearInterval(tick);
+        showTimerComplete();
       }
-      const m = Math.floor(seconds / 60).toString().padStart(2,"0");
-      const s = (seconds % 60).toString().padStart(2,"0");
-      timerEl.textContent = m + ":" + s;
+      remaining -= 1;
     }, 1000);
-  </script>
-</body>
-</html>
+  }
+
+  quizBtn.addEventListener('click', function () { quiz.style.display = 'block'; });
+  submit.addEventListener('click', function () {
+    unlock('journal_entry', [q1.value, q2.value, q3.value]);
+  });
+
+  fetch('/api/spiral-lock/status?thread_id=' + encodeURIComponent(threadId))
+    .then(function (r) { return r.json(); })
+    .then(function (status) {
+      if (!status.locked) return;
+      overlay.style.display = 'flex';
+      startCountdown(status.remainingMs || 0);
+    })
+    .catch(function () {});
+})();
+</script>

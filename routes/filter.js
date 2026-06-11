@@ -17,6 +17,8 @@ const {
   extractProInfo,
   getVerdictCount,
   STATIC_HOLD,
+  normalizeRegulatedBoundaryVerdict,
+  regulatedPauseBoundaryResponse,
 } = require('../lib/verdict-ai');
 const { isProEmail } = require('../db/subscriptions');
 const { verifyToken, getCookieTokens } = require('../lib/auth');
@@ -249,6 +251,15 @@ router.post('/analyze', async (req, res) => {
     // Look up user's attachment style for personalized AI verdict
     const attachmentProfile = jwtPayload?.id ? await getAttachmentProfile(jwtPayload.id).catch(() => null) : null;
 
+    // Deterministic quality guard: healthy pause/boundary language should be SEND even if AI keys are down.
+    const regulatedBoundary = regulatedPauseBoundaryResponse(message);
+    if (regulatedBoundary) {
+      const latencyMs = Date.now() - t0;
+      logVerdictCall({ verdictSource: 'rules', verdict: 'SEND', latencyMs }).catch(() => {});
+      log('regulated_boundary_send');
+      return res.json(regulatedBoundary);
+    }
+
     const combinedPrompt = context && context.trim()
       ? `Context: ${context}\n\nMessage to analyze:\n${message}`
       : `Message to analyze:\n${message}`;
@@ -256,15 +267,16 @@ router.post('/analyze', async (req, res) => {
     log('model_call_started');
     let raw, source;
     try {
-      raw = await Promise.race([
+      const result = await Promise.race([
         callWithFallback(require('../lib/verdict-ai').SYSTEM_PROMPT, combinedPrompt, log, attachmentProfile),
         new Promise((_, reject) => setTimeout(() => {
           const err = new Error('Handler hard timeout');
           err._hardTimeout = true;
           reject(err);
         }, HANDLER_HARD_TIMEOUT_MS)),
-      ]).then(r => r.raw);
-      source = raw ? 'proxy' : 'fallback';
+      ]);
+      raw = result.raw;
+      source = result.source || (raw ? 'ai' : 'fallback');
     } catch (err) {
       log('hard_timeout_or_error', `msg=${err.message}`);
       raw = null;
@@ -276,7 +288,7 @@ router.post('/analyze', async (req, res) => {
     if (source === 'fallback') {
       log('fallback_response', `latency=${latencyMs}ms`);
       logVerdictCall({ verdictSource: 'fallback', verdict: 'HOLD', latencyMs, errorMessage: 'All AI paths failed' }).catch(() => {});
-      return res.json({ ...STATIC_HOLD(message) });
+      return res.json({ ...STATIC_HOLD });
     }
 
     let parsed;
@@ -302,6 +314,8 @@ router.post('/analyze', async (req, res) => {
     if (!['SEND', 'HOLD', 'REWRITE'].includes(parsed.verdict)) {
       parsed.verdict = 'HOLD';
     }
+
+    parsed = normalizeRegulatedBoundaryVerdict(parsed, message);
 
     logVerdictCall({ verdictSource: source, verdict: parsed.verdict, latencyMs }).catch(() => {});
 
@@ -330,7 +344,7 @@ router.post('/analyze', async (req, res) => {
     console.error(`[filter:analyze] reqId=${reqId} FATAL: ${fatalErr.message}`);
     logVerdictCall({ verdictSource: 'fallback', verdict: 'HOLD', latencyMs, errorMessage: `Fatal: ${fatalErr.message}` }).catch(() => {});
     if (!res.headersSent) {
-      return res.json({ ...STATIC_HOLD(message) });
+      return res.json({ ...STATIC_HOLD });
     }
   }
 });

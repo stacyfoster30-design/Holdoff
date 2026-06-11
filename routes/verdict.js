@@ -18,6 +18,8 @@ const {
   parseCookies,
   extractProInfo,
   getVerdictCount,
+  normalizeRegulatedBoundaryVerdict,
+  regulatedPauseBoundaryResponse,
 } = require('../lib/verdict-ai');
 const { getVerdictHistory, getStreak, recordVerdict } = require('../db/verdict-history');
 const { getAttachmentProfile } = require('../db/quiz');
@@ -49,6 +51,7 @@ router.post('/', validateVerdictRequest, async (req, res) => {
     let membership = null;
 
     let jwtPayload = null;
+    let attachmentProfile = null;
     if (authHeader?.startsWith('Bearer ')) {
       jwtPayload = verifyToken(authHeader.slice(7));
     }
@@ -89,10 +92,9 @@ router.post('/', validateVerdictRequest, async (req, res) => {
     }
 
     // --- Quiz gate: logged-in users must complete the quiz before getting verdicts ---
-    let profile = null;
     if (isLoggedIn && jwtPayload?.id) {
-      profile = await getAttachmentProfile(jwtPayload.id).catch(() => null);
-      if (!profile || profile.quiz_completed_at === null) {
+      attachmentProfile = await getAttachmentProfile(jwtPayload.id).catch(() => null);
+      if (!attachmentProfile || attachmentProfile.quiz_completed_at === null) {
         log('quiz_required', `userId=${jwtPayload.id}`);
         return res.status(403).json({
           error: 'quiz_required',
@@ -103,9 +105,18 @@ router.post('/', validateVerdictRequest, async (req, res) => {
 
     // --- Attachment profile lookup for style-aware verdicts ---
     // Already fetched above during the quiz gate check — reuse it
-    const attachmentProfile = profile || (jwtPayload?.id
-      ? await getAttachmentProfile(jwtPayload.id).catch(() => null)
-      : null);
+    if (!attachmentProfile && jwtPayload?.id) {
+      attachmentProfile = await getAttachmentProfile(jwtPayload.id).catch(() => null);
+    }
+
+    // Deterministic quality guard: healthy pause/boundary language should be SEND even if AI keys are down.
+    const regulatedBoundary = regulatedPauseBoundaryResponse(message_text);
+    if (regulatedBoundary) {
+      const latencyMs = Date.now() - t0;
+      logVerdictCall({ verdictSource: 'rules', verdict: 'SEND', latencyMs }).catch(() => {});
+      log('regulated_boundary_send');
+      return res.status(200).json(regulatedBoundary);
+    }
 
     const userContent = `Message I'm about to send:\n${message_text}`;
     log('model_call_started');
@@ -168,6 +179,8 @@ router.post('/', validateVerdictRequest, async (req, res) => {
     if (!['SEND', 'HOLD', 'REWRITE'].includes(parsed.verdict)) {
       parsed.verdict = 'HOLD';
     }
+
+    parsed = normalizeRegulatedBoundaryVerdict(parsed, message_text);
 
     // Fire-and-forget verdict log
     logVerdictCall({ verdictSource: source, verdict: parsed.verdict, latencyMs }).catch(() => {});
