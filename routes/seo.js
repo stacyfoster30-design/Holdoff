@@ -1,6 +1,6 @@
 /**
  * SEO landing pages — long-tail anxious-attachment queries.
- * Owns: /spirals + 10 SEO article pages (/should-i-double-text, etc.)
+ * Owns: /spirals + SEO article pages (/should-i-double-text, etc.)
  * Does NOT own: main app routes, auth, filter, checkout.
  *
  * Pages are static HTML files in public/seo/ — no EJS rendering needed.
@@ -24,6 +24,8 @@ const seoFiles = {
   '/he-stopped-texting-back-am-i-being-ignored': 'he-stopped-texting-back-am-i-being-ignored.html',
   '/should-i-text-him-good-morning': 'should-i-text-him-good-morning.html',
   '/why-am-i-obsessing-over-his-last-text': 'why-am-i-obsessing-over-his-last-text.html',
+  '/left-on-read-anxiety': 'left-on-read-anxiety.html',
+  '/avoidant-shutdown': 'avoidant-shutdown.html',
   '/patterns/avoidant-deactivation': 'avoidant-deactivation.html',
 };
 
