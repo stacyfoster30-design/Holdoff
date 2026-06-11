@@ -2,9 +2,11 @@ services:
   - type: web
     name: Holdoff-1
     runtime: node
-    buildCommand: "echo 'HoldOff emergency static — no build required'"
+    buildCommand: "echo 'No build required'"
     startCommand: "node emergency-static-server.js"
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "20.11.1"

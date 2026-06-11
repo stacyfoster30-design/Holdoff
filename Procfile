@@ -1,1 +1,1 @@
-web: npm start
+web: node emergency-static-server.js
