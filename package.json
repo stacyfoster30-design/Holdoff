@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node emergency-static-server.js",
     "dev": "node server.js",
-    "build": "echo \"No build step required for HoldOff web service\"",
+    "build": "echo \"Emergency static build - no build required\"",
     "migrate": "node migrate.js"
   },
   "dependencies": {
