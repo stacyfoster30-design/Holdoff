@@ -6,7 +6,6 @@
 
 /**
  * Stripe checkout payment links per tier.
- * Created via Polsia Stripe MCP (buy.stripe.com/payment-links).
  * CashApp Pay is enabled on the Stripe account — Stripe Checkout surfaces it automatically.
  */
 const TIER_URLS = {
