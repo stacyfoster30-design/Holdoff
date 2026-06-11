@@ -1,9 +1,9 @@
 services:
   - type: web
-    runtime: node
     name: Holdoff-1
-    buildCommand: npm ci --omit=dev
-    startCommand: npm start
+    runtime: node
+    buildCommand: "echo 'HoldOff emergency static — no build required'"
+    startCommand: "node emergency-static-server.js"
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

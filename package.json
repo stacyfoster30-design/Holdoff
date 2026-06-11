@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node emergency-static-server.js",
     "dev": "node server.js",
-    "build": "echo \"Emergency static build - no build required\"",
+    "build": "echo No build required for HoldOff emergency static server",
     "migrate": "node migrate.js"
   },
   "dependencies": {
@@ -25,9 +25,5 @@
     "resend": "^4.8.0",
     "stripe": "^14.21.0",
     "web-push": "^3.6.7"
-  },
-  "engines": {
-    "node": "20.x",
-    "npm": "10.x"
   }
 }
