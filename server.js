@@ -250,6 +250,39 @@ app.get('/filter', async (req, res) => {
   res.render('filter', buildLandingContext({ user }));
 });
 
+
+// Pricing page
+app.get('/pricing', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('pricing', buildLandingContext({ user }));
+});
+
+// Login page
+app.get('/login', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/filter');
+  res.render('login', buildLandingContext({ user }));
+});
+
+// Signup page
+app.get('/signup', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/filter');
+  res.render('signup', buildLandingContext({ user }));
+});
+
+// Checkout/plan selection page
+app.get('/checkout', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('checkout', buildLandingContext({ user }));
+});
+
+// Spiral Lock page
+app.get('/spiral-lock', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('spiral-lock', buildLandingContext({ user }));
+});
+
 // Redirect old /holdoff.apk URL → static APK handler (CDN blocks raw .apk)
 app.get('/holdoff.apk', (_req, res) => res.redirect(301, '/android-app.apk'));
 
