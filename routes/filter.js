@@ -276,7 +276,7 @@ router.post('/analyze', async (req, res) => {
     if (source === 'fallback') {
       log('fallback_response', `latency=${latencyMs}ms`);
       logVerdictCall({ verdictSource: 'fallback', verdict: 'HOLD', latencyMs, errorMessage: 'All AI paths failed' }).catch(() => {});
-      return res.json({ ...STATIC_HOLD });
+      return res.json({ ...STATIC_HOLD(message) });
     }
 
     let parsed;
@@ -330,7 +330,7 @@ router.post('/analyze', async (req, res) => {
     console.error(`[filter:analyze] reqId=${reqId} FATAL: ${fatalErr.message}`);
     logVerdictCall({ verdictSource: 'fallback', verdict: 'HOLD', latencyMs, errorMessage: `Fatal: ${fatalErr.message}` }).catch(() => {});
     if (!res.headersSent) {
-      return res.json({ ...STATIC_HOLD });
+      return res.json({ ...STATIC_HOLD(message) });
     }
   }
 });
