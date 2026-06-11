@@ -59,7 +59,7 @@ const filterPage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><
 const rules=[
   {p:/\b(i know you said|i just wanted to check|i get that you're busy|not trying to bother|i'll leave you alone|sorry for texting|sorry to bother)\b/i,v:'HOLD',e:'This reads as an apology for existing. Hold for 30 min — your feelings are valid but this version comes from anxiety.'},
   {p:/\b(why (haven\'t|haven't|didn't|did you|are you)|did i do something|are you mad|do you hate|you always|you never)\b/i,v:'HOLD',e:'Accusatory or fear-based framing. This will start a fight, not a conversation. Rewrite from curiosity.'},
-  {p:/(.)\1{3,}|!{2,}|\?\?+/,v:'HOLD',e:'The punctuation shows intensity. Let the message breathe — you can say the same thing with less urgency.'},
+  {p:/(.)\\1{3,}|!{2,}|[?]{2,}/,v:'HOLD',e:'The punctuation shows intensity. Let the message breathe — you can say the same thing with less urgency.'},
   {p:/^.{1,12}$/,v:'SEND',e:'Short, low-stakes. Looks fine to send.'},
 ];
 async function check(){
