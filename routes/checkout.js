@@ -257,12 +257,17 @@ router.get('/verify-session', async (req, res) => {
 
   const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
   try {
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['customer']
+    });
     const verified = session.payment_status === 'paid' || session.status === 'complete';
     const tier = session.metadata?.tier || null;
     const amount = session.amount_total ? session.amount_total / 100 : null;
     const currency = session.currency ? session.currency.toUpperCase() : null;
-    res.json({ verified, tier, amount, currency });
+    const customer_name = session.customer_details?.name || session.customer?.name || null;
+    const customer_email = session.customer_details?.email || session.customer_email || null;
+    const promo_code = session.metadata?.promo_code || null;
+    res.json({ verified, tier, amount, currency, customer_name, customer_email, promo_code });
   } catch (err) {
     console.error('[checkout] verify-session error:', err.message);
     res.status(500).json({ error: 'Could not verify session.' });
