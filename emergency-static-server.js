@@ -22,6 +22,23 @@ function sendJSON(res, status, obj) {
   res.end(JSON.stringify(obj));
 }
 
+function readRequestBody(req) {
+  return new Promise(resolve => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        if ((req.headers['content-type'] || '').includes('application/json')) {
+          return resolve(JSON.parse(body || '{}'));
+        }
+      } catch (_) {}
+      const params = new URLSearchParams(body || '');
+      resolve(Object.fromEntries(params.entries()));
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
 // ── Stripe helper ──────────────────────────────────────────────────────────
 function stripePost(path, params) {
   return new Promise((resolve, reject) => {
@@ -54,7 +71,7 @@ function stripePost(path, params) {
 // ── Pages ──────────────────────────────────────────────────────────────────
 const home = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HoldOff — Don't send it yet</title><meta name="description" content="HoldOff helps you pause before sending emotionally charged texts."><style>:root{--bg:#0c0b10;--ink:#fff8f1;--muted:#b9adc9;--purple:#a78bfa;--line:#2a2435;--yellow:#fde68a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 10%,#2b164c 0,#0c0b10 38%,#09080c 100%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5}.wrap{max-width:1100px;margin:0 auto;padding:28px}nav{display:flex;justify-content:space-between}.brand{font-weight:900;letter-spacing:-.05em;font-size:26px}.nav a{color:var(--muted);margin-left:16px;text-decoration:none;font-weight:800}.hero{padding:86px 0 54px;display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center}.badge{display:inline-block;border:1px solid #453663;background:#171120;color:#d8c7ff;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:800;margin-bottom:22px}h1{font-size:clamp(46px,8vw,92px);letter-spacing:-.075em;line-height:.9;margin:0 0 22px}h1 span{color:var(--purple)}.sub{font-size:clamp(19px,3vw,28px);color:#eadfff;margin:0 0 18px;max-width:760px}.copy{color:var(--muted);font-size:17px;max-width:690px}.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.btn{display:inline-block;border-radius:14px;padding:15px 19px;text-decoration:none;font-weight:900}.primary{background:var(--purple);color:#13091f}.secondary{border:1px solid #4a405e;color:#fff;background:#14111b}.panel,.card{background:rgba(21,19,28,.84);border:1px solid var(--line);border-radius:24px;padding:22px}.bubble{background:#26202f;border-radius:18px 18px 4px 18px;padding:13px;margin:10px 0}.verdict{margin-top:18px;background:#21163a;border:1px solid #5b3faf;border-radius:20px;padding:18px}.verdict b{color:var(--yellow);display:block;margin-bottom:7px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:24px 0}.card p{color:var(--muted)}@media(max-width:820px){.hero,.grid{grid-template-columns:1fr}nav{display:block}.nav a{display:inline-block;margin:12px 12px 0 0}}</style></head><body><div class="wrap"><nav><div class="brand">HoldOff</div><div class="nav"><a href="/filter">Filter</a><a href="/pricing">Pricing</a></div></nav><main class="hero"><section><div class="badge">AI-powered pause before regret texting</div><h1>Don't send it <span>yet.</span></h1><p class="sub">HoldOff helps you catch the fear-text, double-text, apology spiral, and 2am message before it turns into regret.</p><p class="copy">Paste a message and get a simple gut-check: SEND, HOLD, or REWRITE. Built for anxious attachment, post-breakup spirals, and moments when your nervous system grabs the keyboard.</p><div class="cta"><a class="btn primary" href="/filter">Try the message filter</a><a class="btn secondary" href="/pricing">See pricing</a></div></section><section class="panel"><div class="bubble">I know you're busy but I feel stupid waiting for you to text back.</div><div class="verdict"><b>HOLD</b><p>This is an anxiety-text. Wait 20 minutes, then rewrite from clarity instead of panic.</p></div></section></main><section class="grid"><div class="card"><h3>Verdicts</h3><p>SEND, HOLD, or REWRITE — clear enough to use mid-spiral.</p></div><div class="card"><h3>Attachment-aware</h3><p>Built for anxious texting patterns without shaming you.</p></div><div class="card"><h3>Spiral Lock</h3><p>A stronger pause for high-risk moments in the full app.</p></div></section></div></body></html>`;
 
-const checkoutPage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HoldOff — Start your plan</title><style>body{margin:0;background:#0c0b10;color:#fff8f1;font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}.box{background:#15131c;border:1px solid #2a2435;border-radius:24px;padding:40px;max-width:440px;text-align:center}.brand{font-weight:900;font-size:22px;letter-spacing:-.05em;margin-bottom:8px}h2{margin:0 0 8px;font-size:28px}p{color:#b9adc9;margin:0 0 28px}.price{font-size:38px;font-weight:900;color:#a78bfa;margin:0 0 6px}.period{color:#b9adc9;font-size:14px;margin:0 0 28px}.btn{display:block;width:100%;padding:16px;background:#a78bfa;color:#13091f;font-weight:900;font-size:17px;border:none;border-radius:14px;cursor:pointer;text-decoration:none}.loading{opacity:.6;pointer-events:none}</style></head><body><div class="box"><div class="brand">HoldOff</div><h2>Start your plan</h2><p>Pause before regret. Cancel anytime.</p><div class="price">$9</div><div class="period">per month</div><button class="btn" id="pay" onclick="startCheckout()">Subscribe — $9/mo</button></div><script>async function startCheckout(){const btn=document.getElementById('pay');btn.textContent='Loading…';btn.classList.add('loading');try{const r=await fetch('/api/checkout/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:'pro'})});const d=await r.json();if(d.url){window.location.href=d.url;}else{btn.textContent='Something went wrong — try again';btn.classList.remove('loading');}}catch(e){btn.textContent='Error — please refresh';btn.classList.remove('loading');}}</script></body></html>`;
+const checkoutPage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HoldOff — Start your plan</title><style>body{margin:0;background:#0c0b10;color:#fff8f1;font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}.box{background:#15131c;border:1px solid #2a2435;border-radius:24px;padding:40px;max-width:440px;text-align:center}.brand{font-weight:900;font-size:22px;letter-spacing:-.05em;margin-bottom:8px}h2{margin:0 0 8px;font-size:28px}p{color:#b9adc9;margin:0 0 28px}.price{font-size:38px;font-weight:900;color:#a78bfa;margin:0 0 6px}.period{color:#b9adc9;font-size:14px;margin:0 0 28px}.btn{display:block;width:100%;padding:16px;background:#a78bfa;color:#13091f;font-weight:900;font-size:17px;border:none;border-radius:14px;cursor:pointer;text-decoration:none}.loading{opacity:.6;pointer-events:none}</style></head><body><div class="box"><div class="brand">HoldOff</div><h2>Start your plan</h2><p>Pause before regret. Cancel anytime.</p><div class="price">$9</div><div class="period">per month</div><button class="btn" id="pay" onclick="startCheckout()">Subscribe — $9/mo</button></div><script>async function startCheckout(){const btn=document.getElementById('pay');const email=(localStorage.getItem('holdoff_checkout_email')||prompt('What email should HoldOff use to activate your subscription?')||'').trim().toLowerCase();if(!email){alert('Enter your email to continue to checkout.');return;}localStorage.setItem('holdoff_checkout_email',email);btn.textContent='Loading…';btn.classList.add('loading');try{const r=await fetch('/api/checkout/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:'pro',email})});const d=await r.json();if(d.url){window.location.href=d.url;}else{btn.textContent=d.error||'Something went wrong — try again';btn.classList.remove('loading');}}catch(e){btn.textContent='Error — please refresh';btn.classList.remove('loading');}}</script></body></html>`;
 
 const pricingPage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HoldOff Pricing</title><style>body{margin:0;background:#0c0b10;color:#fff8f1;font-family:Inter,system-ui,sans-serif}.wrap{max-width:860px;margin:0 auto;padding:34px}nav{margin-bottom:40px}a{color:#c4b5fd;text-decoration:none}.card{background:#15131c;border:2px solid #a78bfa;border-radius:24px;padding:32px;max-width:400px;margin:0 auto;text-align:center}.price{font-size:52px;font-weight:900;color:#a78bfa;margin:16px 0 4px}.period{color:#b9adc9;margin-bottom:24px}.features{list-style:none;padding:0;margin:0 0 28px;text-align:left}.features li{padding:8px 0;border-bottom:1px solid #2a2435;color:#e2d9f3}.features li:before{content:"✓ ";color:#a78bfa;font-weight:900}.btn{display:block;padding:16px;background:#a78bfa;color:#13091f;font-weight:900;font-size:17px;border-radius:14px;text-decoration:none}</style></head><body><div class="wrap"><nav><a href="/">← HoldOff</a></nav><h1>Simple pricing</h1><div class="card"><h2>Pro</h2><div class="price">$9</div><div class="period">per month · cancel anytime</div><ul class="features"><li>Unlimited message verdicts</li><li>Spiral Lock protection</li><li>Attachment style insights</li><li>Detox mode</li><li>Journal history</li></ul><a href="/checkout" class="btn">Get started — $9/mo</a></div></div></body></html>`;
 
@@ -102,6 +119,12 @@ const server = http.createServer(async (req, res) => {
   // /checkout POST is kept as a no-JS fallback so paid traffic can always reach Stripe.
   if ((path === '/api/checkout/start' || path === '/checkout') && req.method === 'POST') {
     try {
+      const body = await readRequestBody(req);
+      const customerEmail = String(body.email || body.customer_email || '').trim().toLowerCase();
+      const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail);
+      if (!emailLooksValid) {
+        return sendJSON(res, 400, { error: 'Enter your email before checkout so we can activate HoldOff after payment.', code: 'EMAIL_REQUIRED' });
+      }
       const session = await stripePost('/v1/checkout/sessions', {
         'payment_method_types[]': 'card',
         'mode': 'subscription',
@@ -109,7 +132,9 @@ const server = http.createServer(async (req, res) => {
         'line_items[0][quantity]': '1',
         'success_url': `${BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         'cancel_url': `${BASE_URL}/pricing`,
-        'allow_promotion_codes': 'true'
+        'allow_promotion_codes': 'true',
+        'customer_email': customerEmail,
+        'client_reference_id': customerEmail
       });
       if (session.url) {
         if (path === '/checkout') {

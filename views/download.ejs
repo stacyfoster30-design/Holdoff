@@ -690,10 +690,21 @@
       var btn = event.target;
       btn.disabled = true;
       btn.textContent = 'Loading...';
+      var checkoutEmail = (localStorage.getItem('holdoff_checkout_email') || '').trim();
+      if (!checkoutEmail) checkoutEmail = (prompt('What email should HoldOff use to activate your subscription?') || '').trim();
+      if (!checkoutEmail) {
+        btn.disabled = false;
+        btn.textContent = tier === 'app_weekly' ? 'Get Weekly →' :
+                         tier === 'app_monthly' ? 'Get Monthly →' :
+                         tier === 'app_annual' ? 'Get Annual →' : 'Get Lifetime →';
+        alert('Enter your email to continue to checkout.');
+        return;
+      }
+      localStorage.setItem('holdoff_checkout_email', checkoutEmail.toLowerCase());
       fetch('/api/checkout/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: tier }),
+        body: JSON.stringify({ tier: tier, email: checkoutEmail }),
       }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.url) {
           window.location.href = data.url;

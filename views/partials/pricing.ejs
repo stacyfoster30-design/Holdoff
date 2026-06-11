@@ -358,10 +358,14 @@
     btn.disabled = true;
     btn.textContent = 'Loading...';
     try {
+      var checkoutEmail = (localStorage.getItem('holdoff_checkout_email') || '').trim();
+      if (!checkoutEmail) checkoutEmail = (prompt('What email should HoldOff use to activate your subscription?') || '').trim();
+      if (!checkoutEmail) throw new Error('Enter your email to continue to checkout.');
+      localStorage.setItem('holdoff_checkout_email', checkoutEmail.toLowerCase());
       var resp = await fetch('/api/checkout/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: fullTier }),
+        body: JSON.stringify({ tier: fullTier, email: checkoutEmail }),
       });
       var data = await resp.json();
       if (data.url) {

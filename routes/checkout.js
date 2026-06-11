@@ -98,18 +98,35 @@ router.post('/session', async (req, res) => {
   if (!req.body?.tier) {
     return res.status(400).json({ error: 'tier is required' });
   }
+
+  const rawEmail = (req.body.email || req.body.customer_email || '').toString().trim().toLowerCase();
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail);
+  if (!emailLooksValid) {
+    return res.status(400).json({
+      error: 'Enter your email before checkout so we can activate HoldOff after payment.',
+      code: 'EMAIL_REQUIRED',
+    });
+  }
+
   const tier = req.body.tier;
   const selectedTier = TIER_URLS[tier] ? tier : 'online_monthly';
-  const url = TIER_URLS[selectedTier];
-  if (!url) {
+  const baseCheckoutUrl = TIER_URLS[selectedTier];
+  if (!baseCheckoutUrl) {
     return res.status(500).json({ error: 'No checkout URL configured for tier: ' + selectedTier });
   }
-  console.log(`[checkout] session for tier=${selectedTier} url=${url}`);
+
+  const checkoutUrl = new URL(baseCheckoutUrl);
+  checkoutUrl.searchParams.set('prefilled_email', rawEmail);
+  checkoutUrl.searchParams.set('client_reference_id', rawEmail);
+
+  console.log(`[checkout] session for tier=${selectedTier} email=${rawEmail} url=${checkoutUrl.toString()}`);
+  await logExitIntentEvent({ event_type: 'checkout_started', email: rawEmail, device_id: null })
+    .catch(err => { console.error('[checkout] checkout_started log error:', err.message); });
   if (selectedTier.startsWith('app_')) {
-    await logExitIntentEvent({ event_type: 'cashapp_checkout_started', email: null, device_id: null })
+    await logExitIntentEvent({ event_type: 'cashapp_checkout_started', email: rawEmail, device_id: null })
       .catch(err => { console.error('[checkout] cashapp_checkout_started log error:', err.message); });
   }
-  res.json({ url, tier: selectedTier });
+  res.json({ url: checkoutUrl.toString(), tier: selectedTier });
 });
 
 // ─── POST /api/checkout/restore ────────────────────────────────────────────────
