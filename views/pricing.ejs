@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>HoldOff Pricing — Pick your plan</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="HoldOff">
+  <meta name="theme-color" content="#0E0C0B">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <meta name="description" content="HoldOff plans — online or app, monthly or annual. Cancel anytime.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav__logo">HoldOff</a>
+    <div class="nav__links">
+      <a href="/filter">Try it free</a>
+      <% if (user) { %>
+        <a href="/filter" class="btn btn--small">Open app</a>
+      <% } else { %>
+        <a href="/signup" class="btn btn--small">Get started</a>
+      <% } %>
+    </div>
+  </nav>
+
+  <%- include('partials/pricing') %>
+
+  <footer style="text-align:center;padding:2rem;color:#9ca3af;font-size:.85rem;">
+    <a href="/privacy" style="color:#9ca3af;">Privacy</a> &nbsp;·&nbsp;
+    <a href="/terms" style="color:#9ca3af;">Terms</a> &nbsp;·&nbsp;
+    <a href="/filter" style="color:#9ca3af;">Try free</a>
+  </footer>
+
+  <script>
+    // Pricing toggle logic
+    const PRICES = {
+      online: { weekly: '$4.99/wk', monthly: '$9.99/mo', annual: '$99/yr' },
+      app:    { weekly: '$7.49/wk', monthly: '$14.99/mo', annual: '$149/yr' }
+    };
+    let currentBilling = 'monthly';
+
+    function setPricingBilling(billing) {
+      currentBilling = billing;
+      document.querySelectorAll('.pricing-toggle__btn').forEach(b => b.classList.remove('pricing-toggle__btn--active'));
+      document.getElementById('pricing' + billing.charAt(0).toUpperCase() + billing.slice(1) + 'Btn')?.classList.add('pricing-toggle__btn--active');
+      document.getElementById('pricingOnlinePrice').innerHTML = PRICES.online[billing] + '';
+      document.getElementById('pricingAppPrice').innerHTML = PRICES.app[billing] + '';
+      document.getElementById('pricingOnlineSavings').style.display = billing === 'annual' ? '' : 'none';
+      document.getElementById('pricingAppSavings').style.display = billing === 'annual' ? '' : 'none';
+    }
+
+    function pricingSelectTier(tier) {
+      const billing = currentBilling;
+      const tierKey = tier + '_' + billing;
+      fetch('/api/checkout/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: tierKey })
+      })
+      .then(r => r.json())
+      .then(d => { if (d.url) window.location = d.url; else alert('Something went wrong — try again'); })
+      .catch(() => alert('Something went wrong — try again'));
+    }
+  </script>
+</body>
+</html>
