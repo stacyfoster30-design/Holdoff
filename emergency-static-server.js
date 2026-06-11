@@ -98,14 +98,9 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // Pages
-  if (path === '/' || path === '') return send(res, 200, home);
-  if (path === '/filter') return send(res, 200, filterPage);
-  if (path === '/pricing') return send(res, 200, pricingPage);
-  if (path === '/checkout') return send(res, 200, checkoutPage);
-
-  // Stripe checkout session creation
-  if (path === '/api/checkout/start' && req.method === 'POST') {
+  // Stripe checkout session creation — must run before /checkout page rendering.
+  // /checkout POST is kept as a no-JS fallback so paid traffic can always reach Stripe.
+  if ((path === '/api/checkout/start' || path === '/checkout') && req.method === 'POST') {
     try {
       const session = await stripePost('/v1/checkout/sessions', {
         'payment_method_types[]': 'card',
@@ -117,6 +112,10 @@ const server = http.createServer(async (req, res) => {
         'allow_promotion_codes': 'true'
       });
       if (session.url) {
+        if (path === '/checkout') {
+          res.writeHead(303, { Location: session.url });
+          return res.end();
+        }
         return sendJSON(res, 200, { url: session.url });
       } else {
         console.error('[checkout] No session URL:', session);
@@ -127,6 +126,12 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 500, { error: err.message });
     }
   }
+
+  // Pages
+  if (path === '/' || path === '') return send(res, 200, home);
+  if (path === '/filter') return send(res, 200, filterPage);
+  if (path === '/pricing') return send(res, 200, pricingPage);
+  if (path === '/checkout') return send(res, 200, checkoutPage);
 
   // Checkout success
   if (path === '/checkout/success') {
