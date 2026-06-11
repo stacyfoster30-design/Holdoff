@@ -6,6 +6,7 @@
  * GET  /api/verdict/streak  — requireAuth, streak + risk flag
  */
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const { requireAuth } = require('../lib/auth');
 const { verifyToken, getCookieTokens } = require('../lib/auth');
@@ -88,8 +89,9 @@ router.post('/', validateVerdictRequest, async (req, res) => {
     }
 
     // --- Quiz gate: logged-in users must complete the quiz before getting verdicts ---
+    let profile = null;
     if (isLoggedIn && jwtPayload?.id) {
-      const profile = await getAttachmentProfile(jwtPayload.id).catch(() => null);
+      profile = await getAttachmentProfile(jwtPayload.id).catch(() => null);
       if (!profile || profile.quiz_completed_at === null) {
         log('quiz_required', `userId=${jwtPayload.id}`);
         return res.status(403).json({

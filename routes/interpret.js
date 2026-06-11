@@ -18,6 +18,15 @@ const { verifyToken, getCookieTokens } = require('../lib/auth');
 
 const FREE_VERDICT_LIMIT = 3;
 
+const NEUTRAL_INTERPRET_FALLBACK = {
+  detected_style: 'Unclear',
+  confidence: 'low',
+  red_flags: [],
+  what_it_means: "I can't confidently read their attachment style from this message alone. The grounded read is: there isn't enough evidence yet, and uncertainty does not automatically mean rejection.",
+  how_you_misread_it: "When you're anxious, your brain can treat missing context like proof. This is a moment to slow down, not assign a label or build a story around the gap.",
+  what_they_need: "A calm, simple response if one is needed — or a pause while you let your nervous system settle before deciding.",
+};
+
 function interpretHandler(req, res, next) {
   const reqId = crypto.randomBytes(4).toString('hex');
   const t0 = Date.now();
@@ -118,10 +127,7 @@ function interpretHandler(req, res, next) {
         log('all_paths_failed', `latency=${latencyMs}ms`);
         logVerdictCall({ verdictSource: 'fallback', verdict: 'INTERPRET_FALLBACK', latencyMs, errorMessage: 'All AI paths failed' }).catch(() => {});
         return res.status(200).json({
-          detected_style: 'Avoidant',
-          what_it_means: "The message is ambiguous — without more context, the safest read is that they're giving you space.",
-          how_you_misread_it: "Anxious minds fill silence with threat. The gaps between texts usually mean someone is busy, not plotting.",
-          what_they_need: "A pause before you send anything. Let the message sit.",
+          ...NEUTRAL_INTERPRET_FALLBACK,
           source: 'fallback',
         });
       }
@@ -163,10 +169,7 @@ function interpretHandler(req, res, next) {
       logVerdictCall({ verdictSource: 'fallback', verdict: 'INTERPRET_FALLBACK', latencyMs, errorMessage: `Fatal: ${fatalErr.message}` }).catch(() => {});
       if (!res.headersSent) {
         return res.status(200).json({
-          detected_style: 'Avoidant',
-          what_it_means: "The message is ambiguous — without more context, the safest read is that they're giving you space.",
-          how_you_misread_it: "Anxious minds fill silence with threat.",
-          what_they_need: "A pause before you send anything.",
+          ...NEUTRAL_INTERPRET_FALLBACK,
           source: 'fallback',
         });
       }
