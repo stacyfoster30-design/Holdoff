@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'app.holdoff.polsia'
+    namespace 'app.holdoff.main'
     compileSdk 34
 
     defaultConfig {
-        applicationId "app.holdoff.polsia"
+        applicationId "app.holdoff.main"
         minSdk 22
         targetSdk 34
         versionCode 2
