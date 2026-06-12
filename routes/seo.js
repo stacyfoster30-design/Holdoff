@@ -24,6 +24,7 @@ const seoFiles = {
   '/he-stopped-texting-back-am-i-being-ignored': 'he-stopped-texting-back-am-i-being-ignored.html',
   '/should-i-text-him-good-morning': 'should-i-text-him-good-morning.html',
   '/why-am-i-obsessing-over-his-last-text': 'why-am-i-obsessing-over-his-last-text.html',
+  '/why-does-he-take-hours-to-text-back': 'why-does-he-take-hours-to-text-back.html',
   '/left-on-read-anxiety': 'left-on-read-anxiety.html',
   '/avoidant-shutdown': 'avoidant-shutdown.html',
   '/patterns/avoidant-deactivation': 'avoidant-deactivation.html',
