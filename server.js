@@ -336,6 +336,32 @@ app.get('/examples', async (req, res) => {
   res.render('examples', { ...buildLandingContext({ user }), examples });
 });
 
+
+// Auth pages — login, signup, dashboard, settings
+app.get('/login', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/dashboard');
+  res.render('login', buildLandingContext({ user: null }));
+});
+
+app.get('/signup', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/dashboard');
+  res.render('signup', buildLandingContext({ user: null }));
+});
+
+app.get('/dashboard', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/dashboard');
+  res.render('history', buildLandingContext({ user }));
+});
+
+app.get('/settings', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/settings');
+  res.render('history', buildLandingContext({ user }));
+});
+
 // Share page + OG image — routes extracted to routes/share.js
 mountSharePages(app);
 
@@ -351,3 +377,4 @@ app.listen(port, () => console.log(`HoldOff running on port ${port}`));
 
 // In-process cron jobs (Render compatibility) — extracted to jobs/in-process-crons.js
 require('./jobs/in-process-crons');
+
