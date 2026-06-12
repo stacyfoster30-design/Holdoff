@@ -25,17 +25,97 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup Android SDK
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y wget unzip
+          
+          # Download command-line tools
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" -O /tmp/cmdtools.zip
+          unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools_extract
+          mkdir -p $HOME/android-sdk/cmdline-tools/latest
+          mv /tmp/cmdtools_extract/cmdline-tools/* $HOME/android-sdk/cmdline-tools/latest/
+          
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
+          
+          # Accept all licenses
+          yes | sdkmanager --sdk_root=$HOME/android-sdk --licenses 2>/dev/null || true
+          
+          # Install required packages
+          sdkmanager --sdk_root=$HOME/android-sdk \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" 2>&1 | grep -E "(Installing|Installed|Warning|Error)" || true
+          
+          echo "Android SDK setup complete"
+          ls $HOME/android-sdk/
+
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
-      - name: Install Android SDK Build Tools
+      - name: Create bubblewrap config
         run: |
-          sdkmanager --install "build-tools;34.0.0" "platforms;android-34"
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json << BWCONFIG
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$HOME/android-sdk"
+          }
+          BWCONFIG
+          echo "Bubblewrap config:"
+          cat ~/.bubblewrap/config.json
+
+      - name: Create twa-manifest.json
+        run: |
+          cat > twa-manifest.json << 'MANIFEST'
+          {
+            "packageId": "live.holdoff",
+            "host": "shouldiholdoff.live",
+            "name": "HoldOff",
+            "launcherName": "HoldOff",
+            "display": "standalone",
+            "orientation": "portrait",
+            "themeColor": "#5B3CF5",
+            "themeColorDark": "#5B3CF5",
+            "navigationColor": "#5B3CF5",
+            "navigationColorDark": "#5B3CF5",
+            "navigationDividerColor": "#5B3CF5",
+            "navigationDividerColorDark": "#5B3CF5",
+            "backgroundColor": "#FAF6F0",
+            "enableNotifications": false,
+            "startUrl": "/filter",
+            "iconUrl": "https://shouldiholdoff.live/icons/icon-512.png",
+            "maskableIconUrl": "https://shouldiholdoff.live/icons/icon-512-maskable.png",
+            "monochromeIconUrl": null,
+            "appVersion": "1.0",
+            "appVersionCode": 1,
+            "signingKey": {
+              "path": "./holdoff.keystore",
+              "alias": "holdoff"
+            },
+            "minSdkVersion": 21,
+            "targetSdkVersion": 34,
+            "fallbackType": "customtabs",
+            "splashScreenFadeOutDuration": 300,
+            "webManifestUrl": "https://shouldiholdoff.live/manifest.webmanifest",
+            "isChromeOSOnly": false,
+            "isMetaQuest": false,
+            "fullScopeUrl": "https://shouldiholdoff.live/",
+            "locationDelegationEnabled": false,
+            "features": {
+              "locationDelegation": {"enabled": false},
+              "playBilling": {"enabled": false}
+            },
+            "shortcuts": []
+          }
+          MANIFEST
 
       - name: Generate keystore
         run: |
@@ -48,75 +128,32 @@ jobs:
             -storepass HoldOff2026! \
             -keypass HoldOff2026! \
             -dname "CN=HoldOff, OU=Engineering, O=HoldOff, L=Denver, S=CO, C=US"
-          echo "Keystore created:"
-          ls -lh holdoff.keystore
-
-      - name: Create TWA manifest JSON
-        run: |
-          cat > twa-manifest.json << 'MANIFEST'
-          {
-            "packageId": "live.holdoff",
-            "host": "shouldiholdoff.live",
-            "name": "HoldOff",
-            "launcherName": "HoldOff",
-            "display": "standalone",
-            "themeColor": "#5B3CF5",
-            "themeColorDark": "#5B3CF5",
-            "navigationColor": "#5B3CF5",
-            "navigationColorDark": "#5B3CF5",
-            "navigationDividerColor": "#5B3CF5",
-            "navigationDividerColorDark": "#5B3CF5",
-            "backgroundColor": "#FAF6F0",
-            "startUrl": "/filter",
-            "iconUrl": "https://shouldiholdoff.live/icons/icon-512.png",
-            "maskableIconUrl": "https://shouldiholdoff.live/icons/icon-512-maskable.png",
-            "appVersion": "1.0",
-            "appVersionCode": 1,
-            "enableNotifications": false,
-            "signingKey": {
-              "path": "../holdoff.keystore",
-              "alias": "holdoff"
-            },
-            "minSdkVersion": 21,
-            "targetSdkVersion": 34,
-            "orientation": "portrait",
-            "fallbackType": "customtabs",
-            "splashScreenFadeOutDuration": 300,
-            "webManifestUrl": "https://shouldiholdoff.live/manifest.webmanifest",
-            "isChromeOSOnly": false,
-            "isMetaQuest": false,
-            "fullScopeUrl": "https://shouldiholdoff.live/",
-            "locationDelegationEnabled": false
-          }
-          MANIFEST
+          echo "✅ Keystore created: $(ls -lh holdoff.keystore)"
 
       - name: Init bubblewrap project
         run: |
-          mkdir holdoff-twa
-          cp twa-manifest.json holdoff-twa/twa-manifest.json
-          cd holdoff-twa
-          # Use --skipPwaValidation and --yes to skip all prompts
-          echo "n" | bubblewrap init \
-            --manifest "https://shouldiholdoff.live/manifest.webmanifest" \
-            --directory . || true
-          # Override with our manifest
-          cp ../twa-manifest.json twa-manifest.json
+          bubblewrap init --manifest https://shouldiholdoff.live/manifest.webmanifest \
+            < /dev/null 2>&1 | head -30 || true
           ls -la
 
-      - name: Build APK with Gradle directly
-        working-directory: holdoff-twa
+      - name: Build signed APK
         run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=$(pwd)/../holdoff.keystore \
-            -Pandroid.injected.signing.store.password=HoldOff2026! \
-            -Pandroid.injected.signing.key.alias=holdoff \
-            -Pandroid.injected.signing.key.password=HoldOff2026!
+          bubblewrap build \
+            --skipPwaValidation \
+            --signingKeyPassword HoldOff2026! \
+            --signingKeyStorePassword HoldOff2026! \
+            < /dev/null 2>&1
+          
+          echo "Build output:"
+          find . -name "*.apk" -type f 2>/dev/null
+          find . -name "*.aab" -type f 2>/dev/null
 
-      - name: Locate and copy APK
+      - name: Package APK
         run: |
-          find . -name "*.apk" -type f
-          APK=$(find . -name "*.apk" -type f | head -1)
+          APK=$(find . -name "*.apk" -not -path "*/unsigned/*" | head -1)
+          if [ -z "$APK" ]; then
+            APK=$(find . -name "*.apk" | head -1)
+          fi
           echo "Found APK: $APK"
           cp "$APK" HoldOff-release.apk
           ls -lh HoldOff-release.apk
@@ -128,7 +165,7 @@ jobs:
           path: HoldOff-release.apk
           retention-days: 90
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
@@ -136,13 +173,13 @@ jobs:
           body: |
             ## 📱 HoldOff Android App
             
-            AI-powered pause layer for anxious texters. Built as a TWA from https://shouldiholdoff.live
+            AI-powered pause before you send. Built from https://shouldiholdoff.live
             
             **Install:**
-            1. Download `HoldOff-release.apk` below
-            2. Open the file on your Android phone
-            3. Tap **Settings → Allow from this source** if prompted
-            4. Tap **Install** — done in 30 seconds
+            1. Download `HoldOff-release.apk`
+            2. Open it on your Android phone
+            3. Allow "Install from unknown sources" if prompted
+            4. Tap Install — done in 30 seconds ✅
             
             Requires Android 5.0+
           files: HoldOff-release.apk
