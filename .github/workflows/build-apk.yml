@@ -3,9 +3,10 @@ name: Build HoldOff APK
 on:
   push:
     branches: [main]
-    paths:
-      - 'trigger-apk-build'
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-apk:
@@ -29,30 +30,14 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
 
       - name: Install Android SDK Build Tools
         run: |
-          sdkmanager "build-tools;34.0.0" "platforms;android-34"
+          sdkmanager --install "build-tools;34.0.0" "platforms;android-34"
 
-      - name: Generate TWA project with Bubblewrap
-        run: |
-          mkdir holdoff-twa && cd holdoff-twa
-          bubblewrap init \
-            --manifest "https://shouldiholdoff.live/manifest.webmanifest" \
-            --directory . \
-            --packageId "live.holdoff" \
-            --name "HoldOff" \
-            --launcherName "HoldOff" \
-            --themeColor "#5B3CF5" \
-            --backgroundColor "#FAF6F0" \
-            --startUrl "/filter" \
-            --iconUrl "https://shouldiholdoff.live/icons/icon-512.png" \
-            --maskableIconUrl "https://shouldiholdoff.live/icons/icon-512-maskable.png" \
-            --signingKeyPath "../holdoff.keystore" \
-            --signingKeyAlias "holdoff" \
-            --min-sdk-version 21
-
-      - name: Generate signing keystore
+      - name: Generate keystore
         run: |
           keytool -genkey -v \
             -keystore holdoff.keystore \
@@ -63,47 +48,103 @@ jobs:
             -storepass HoldOff2026! \
             -keypass HoldOff2026! \
             -dname "CN=HoldOff, OU=Engineering, O=HoldOff, L=Denver, S=CO, C=US"
+          echo "Keystore created:"
+          ls -lh holdoff.keystore
 
-      - name: Build APK
+      - name: Create TWA manifest JSON
+        run: |
+          cat > twa-manifest.json << 'MANIFEST'
+          {
+            "packageId": "live.holdoff",
+            "host": "shouldiholdoff.live",
+            "name": "HoldOff",
+            "launcherName": "HoldOff",
+            "display": "standalone",
+            "themeColor": "#5B3CF5",
+            "themeColorDark": "#5B3CF5",
+            "navigationColor": "#5B3CF5",
+            "navigationColorDark": "#5B3CF5",
+            "navigationDividerColor": "#5B3CF5",
+            "navigationDividerColorDark": "#5B3CF5",
+            "backgroundColor": "#FAF6F0",
+            "startUrl": "/filter",
+            "iconUrl": "https://shouldiholdoff.live/icons/icon-512.png",
+            "maskableIconUrl": "https://shouldiholdoff.live/icons/icon-512-maskable.png",
+            "appVersion": "1.0",
+            "appVersionCode": 1,
+            "enableNotifications": false,
+            "signingKey": {
+              "path": "../holdoff.keystore",
+              "alias": "holdoff"
+            },
+            "minSdkVersion": 21,
+            "targetSdkVersion": 34,
+            "orientation": "portrait",
+            "fallbackType": "customtabs",
+            "splashScreenFadeOutDuration": 300,
+            "webManifestUrl": "https://shouldiholdoff.live/manifest.webmanifest",
+            "isChromeOSOnly": false,
+            "isMetaQuest": false,
+            "fullScopeUrl": "https://shouldiholdoff.live/",
+            "locationDelegationEnabled": false
+          }
+          MANIFEST
+
+      - name: Init bubblewrap project
+        run: |
+          mkdir holdoff-twa
+          cp twa-manifest.json holdoff-twa/twa-manifest.json
+          cd holdoff-twa
+          # Use --skipPwaValidation and --yes to skip all prompts
+          echo "n" | bubblewrap init \
+            --manifest "https://shouldiholdoff.live/manifest.webmanifest" \
+            --directory . || true
+          # Override with our manifest
+          cp ../twa-manifest.json twa-manifest.json
+          ls -la
+
+      - name: Build APK with Gradle directly
         working-directory: holdoff-twa
         run: |
-          bubblewrap build \
-            --skipPwaValidation \
-            --ks ../holdoff.keystore \
-            --ksAlias holdoff \
-            --ksKeyPassword HoldOff2026! \
-            --ksPassword HoldOff2026!
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/../holdoff.keystore \
+            -Pandroid.injected.signing.store.password=HoldOff2026! \
+            -Pandroid.injected.signing.key.alias=holdoff \
+            -Pandroid.injected.signing.key.password=HoldOff2026!
 
-      - name: Find and rename APK
+      - name: Locate and copy APK
         run: |
-          find . -name "*.apk" | head -5
-          cp $(find . -name "*.apk" | head -1) HoldOff-release.apk
+          find . -name "*.apk" -type f
+          APK=$(find . -name "*.apk" -type f | head -1)
+          echo "Found APK: $APK"
+          cp "$APK" HoldOff-release.apk
           ls -lh HoldOff-release.apk
 
-      - name: Upload APK as artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HoldOff-APK
+          name: HoldOff-Android-APK
           path: HoldOff-release.apk
           retention-days: 90
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: HoldOff Android App v1.0.${{ github.run_number }}
+          name: "HoldOff for Android v1.0.${{ github.run_number }}"
           body: |
-            ## HoldOff for Android
+            ## 📱 HoldOff Android App
             
-            TWA (Trusted Web Activity) build from https://shouldiholdoff.live
+            AI-powered pause layer for anxious texters. Built as a TWA from https://shouldiholdoff.live
             
-            ### Install Instructions
-            1. Download `HoldOff-release.apk`
-            2. On your Android phone, open the file
-            3. If prompted, tap **Settings → Allow from this source**
-            4. Tap **Install**
+            **Install:**
+            1. Download `HoldOff-release.apk` below
+            2. Open the file on your Android phone
+            3. Tap **Settings → Allow from this source** if prompted
+            4. Tap **Install** — done in 30 seconds
+            
+            Requires Android 5.0+
           files: HoldOff-release.apk
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
