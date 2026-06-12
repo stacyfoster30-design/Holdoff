@@ -545,14 +545,24 @@
       No Play Store, no waiting.
     </p>
 
-    <!-- APK served via /api/download/android streaming route (Render CDN blocks raw .apk) -->
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" style="display:none; background: #f0fff4; border: 1.5px solid #22c55e; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <span style="font-size: 1.75rem;">📲</span>
+      <div style="flex:1;">
+        <div style="font-weight: 600; font-size: 0.95rem; color: #166534;">Install HoldOff on your phone — no APK needed</div>
+        <div style="font-size: 0.8rem; color: #4ade80; margin-top: 0.2rem;">Works on Android &amp; iPhone. Tap once, installs like an app.</div>
+      </div>
+      <button id="pwa-install-btn" style="background: #22c55e; color: #fff; border: none; border-radius: 6px; padding: 0.6rem 1.25rem; font-weight: 600; cursor: pointer; font-size: 0.9rem;">Add to Home Screen</button>
+    </div>
+
+    <!-- APK Download Card -->
     <div class="apk-card">
       <div class="apk-card__icon">🤳</div>
-      <div class="apk-card__name">HoldOff</div>
-      <div class="apk-card__meta">HoldOff-release.apk · Android 5.1+</div>
-      <a href="/api/download/android" class="apk-card__btn">Download APK</a>
+      <div class="apk-card__name">HoldOff for Android</div>
+      <div class="apk-card__meta">HoldOff-release.apk · Android 5.0+ · v1.0</div>
+      <a href="/api/download/android" class="apk-card__btn" id="apk-download-btn">⬇ Download APK</a>
       <div class="apk-card__note">
-        Sideload required — outside the Play Store. Takes about 30 seconds.
+        Free sideload — no Play Store needed. Tap install, done in 30 seconds.
       </div>
     </div>
 
@@ -759,5 +769,35 @@
     fbq('track', 'PageView');
   </script>
 
+
+  <script>
+    // PWA Install prompt
+    let deferredPrompt;
+    const banner = document.getElementById('pwa-install-banner');
+    const installBtn = document.getElementById('pwa-install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (banner) banner.style.display = 'flex';
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          banner.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    // Check if already installed (standalone mode)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      if (banner) banner.style.display = 'none';
+    }
+  </script>
 </body>
 </html>
