@@ -5,14 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  ANDROID_HOME: /usr/local/lib/android/sdk
-  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,100 +23,90 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Accept Android SDK licenses and install tools
-        run: |
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-          
-          echo "Android SDK at: $ANDROID_HOME"
-          ls $ANDROID_HOME/ || echo "SDK dir listing failed"
-          
-          # Accept all licenses
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          
-          # Install build tools and platform
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            "platforms;android-34" \
-            "build-tools;34.0.0" 2>&1 | tail -5
-
-          echo "Build tools:"
-          ls $ANDROID_HOME/build-tools/ | head -5
-
-      - name: Install Bubblewrap
+      - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
       - name: Configure Bubblewrap
         run: |
           mkdir -p ~/.bubblewrap
-          # Use the exact path format bubblewrap expects
-          ANDROID_SDK="/usr/local/lib/android/sdk"
-          JDK_PATH="$JAVA_HOME"
-          
-          cat > ~/.bubblewrap/config.json << CONFIG
-          {
-            "jdkPath": "${JDK_PATH}",
-            "androidSdkPath": "${ANDROID_SDK}"
-          }
-          CONFIG
-          
-          echo "Config written:"
+          printf '{"jdkPath":"%s","androidSdkPath":"/usr/local/lib/android/sdk"}' "$JAVA_HOME" > ~/.bubblewrap/config.json
           cat ~/.bubblewrap/config.json
-          echo ""
-          echo "Verifying SDK structure:"
-          ls $ANDROID_SDK/build-tools/ | tail -3
-          ls $ANDROID_SDK/platforms/ | tail -3
+
+      - name: Accept Android SDK licenses
+        run: |
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>&1 | tail -3
 
       - name: Generate keystore
         run: |
           keytool -genkey -v \
             -keystore holdoff.keystore \
             -alias holdoff \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
+            -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "HoldOff2026!" \
             -keypass "HoldOff2026!" \
-            -dname "CN=HoldOff, OU=Engineering, O=HoldOff, L=Denver, S=CO, C=US"
-          ls -lh holdoff.keystore
+            -dname "CN=HoldOff, OU=App, O=HoldOff, L=Denver, S=CO, C=US" \
+            -noprompt
 
-      - name: Init Bubblewrap TWA project
+      - name: Create TWA manifest (skip interactive bubblewrap init)
         run: |
-          bubblewrap init --manifest https://shouldiholdoff.live/manifest.webmanifest \
-            --directory holdoff-twa \
-            < /dev/null 2>&1
-          
-          echo "Project files:"
-          ls -la holdoff-twa/ || echo "No directory created"
+          mkdir -p holdoff-twa
+          cat > holdoff-twa/twa-manifest.json << 'MANIFEST'
+          {
+            "name": "HoldOff",
+            "launcherName": "HoldOff",
+            "display": "standalone",
+            "orientation": "portrait",
+            "themeColor": "#FAF6F0",
+            "navigationColor": "#FAF6F0",
+            "navigationColorDark": "#FAF6F0",
+            "navigationDividerColor": "#FAF6F0",
+            "navigationDividerColorDark": "#FAF6F0",
+            "backgroundColor": "#FAF6F0",
+            "enableNotifications": false,
+            "startUrl": "/filter",
+            "iconUrl": "https://shouldiholdoff.live/icons/icon-512.png",
+            "maskableIconUrl": "https://shouldiholdoff.live/icons/icon-512-maskable.png",
+            "monochromeIconUrl": "https://shouldiholdoff.live/icons/icon-512.png",
+            "splashScreenFadeOutDuration": 300,
+            "signingKey": {
+              "path": "../holdoff.keystore",
+              "alias": "holdoff"
+            },
+            "appVersionCode": 1,
+            "appVersionName": "1.0.0",
+            "shortcuts": [],
+            "generatorApp": "bubblewrap-cli",
+            "webManifestUrl": "https://shouldiholdoff.live/manifest.webmanifest",
+            "fallbackType": "customtabs",
+            "features": {},
+            "alphaDependencies": { "enabled": false },
+            "enableSiteSettingsShortcut": true,
+            "isChromeOSOnly": false,
+            "isMetaQuest": false,
+            "fullScopeUrl": "https://shouldiholdoff.live/",
+            "host": "shouldiholdoff.live",
+            "packageId": "live.shouldiholdoff.app",
+            "sdkVersion": 34,
+            "minSdkVersion": 21
+          }
+          MANIFEST
 
-      - name: Update twa-manifest with correct signing key path
-        run: |
-          cd holdoff-twa
-          # Update signing key path to point to keystore
-          node -e "
-            const fs = require('fs');
-            const m = JSON.parse(fs.readFileSync('twa-manifest.json', 'utf8'));
-            m.signingKey = { path: '../holdoff.keystore', alias: 'holdoff' };
-            m.packageId = 'live.holdoff';
-            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
-            console.log('Manifest updated:', JSON.stringify(m.signingKey));
-          "
-
-      - name: Build signed APK
+      - name: Build APK
         run: |
           cd holdoff-twa
           bubblewrap build \
             --skipPwaValidation \
             --signingKeyPassword "HoldOff2026!" \
             --signingKeyStorePassword "HoldOff2026!" 2>&1
-          
-          echo "Build complete. APK files:"
           find . -name "*.apk" | head -10
 
-      - name: Copy release APK
+      - name: Stage release APK
         run: |
-          APK=$(find holdoff-twa -name "*.apk" | grep -v unsigned | head -1)
+          APK=$(find holdoff-twa -name "*release*.apk" | head -1)
+          [ -z "$APK" ] && APK=$(find holdoff-twa -name "*.apk" | grep -v unsigned | head -1)
           [ -z "$APK" ] && APK=$(find holdoff-twa -name "*.apk" | head -1)
-          echo "Using APK: $APK"
           cp "$APK" HoldOff-release.apk
           ls -lh HoldOff-release.apk
 
@@ -138,15 +124,14 @@ jobs:
           name: "HoldOff for Android v1.0.${{ github.run_number }}"
           body: |
             ## 📱 HoldOff for Android
-            
-            AI-powered pause before you send. Built from https://shouldiholdoff.live
-            
-            **How to install:**
-            1. Download `HoldOff-release.apk` below
-            2. Open it on your Android phone
-            3. Tap **Install** (allow unknown sources if prompted)
-            4. Done in 30 seconds ✅
-            
+
+            AI-powered pause before you send that text.
+
+            **Install:**
+            1. Download HoldOff-release.apk
+            2. Open on Android phone
+            3. Tap Install
+
             Requires Android 5.0+
           files: HoldOff-release.apk
         env:
