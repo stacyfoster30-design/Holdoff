@@ -1,12 +1,5 @@
 /**
  * Canonical HoldOff pricing plan definitions.
- * Used by routes/checkout.js, routes/stripe-webhook.js, views/upgrade.ejs,
- * and any other code that needs tier metadata.
- */
-
-/**
- * Stripe checkout payment links per tier.
- * CashApp Pay is enabled on the Stripe account — Stripe Checkout surfaces it automatically.
  */
 const TIER_URLS = {
   founding_member: 'https://buy.stripe.com/7sYfZa3Aeaau80a8bx0Jq02',
@@ -19,9 +12,6 @@ const TIER_URLS = {
   lifetime:        'https://buy.stripe.com/4gMfZi6sx4PLc2s9if2sM0b',
 };
 
-/**
- * All HoldOff pricing tiers.
- */
 const PLANS = [
   {
     id: 'founding_member',
@@ -31,17 +21,8 @@ const PLANS = [
     priceDisplay: '$3/mo',
     membershipType: 'online',
     highlight: true,
-    badge: '🔥 Limited — 50 spots',
+    badge: 'LIMITED — 50 spots',
     description: 'Lock in founding member pricing forever. First 50 only.',
-  },
-  {
-    id: 'online_weekly',
-    label: 'HoldOff Online',
-    interval: 'weekly',
-    price: 4.99,
-    priceDisplay: '$4.99/wk',
-    membershipType: 'online',
-    highlight: false,
   },
   {
     id: 'online_monthly',
@@ -49,15 +30,6 @@ const PLANS = [
     interval: 'monthly',
     price: 9.99,
     priceDisplay: '$9.99/mo',
-    membershipType: 'online',
-    highlight: false,
-  },
-  {
-    id: 'online_annual',
-    label: 'HoldOff Online',
-    interval: 'yearly',
-    price: 99,
-    priceDisplay: '$99/yr',
     membershipType: 'online',
     highlight: false,
   },
