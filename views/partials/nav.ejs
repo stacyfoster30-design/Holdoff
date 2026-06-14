@@ -7,11 +7,10 @@
   </div>
   <div class="nav__auth">
     <% if (user) { %>
-      <span class="nav__user-email"><%= user.email %></span>
       <button data-logout class="nav__logout">Log out</button>
     <% } else { %>
-      <a href="/filter" class="nav__link">Log in</a>
-      <a href="/filter?signup=1" class="nav__cta">Sign up free</a>
+      <a href="/filter" class="nav__link nav__link--login">Log in</a>
+      <a href="/filter?signup=1" class="nav__cta">Start free →</a>
     <% } %>
   </div>
 </nav>

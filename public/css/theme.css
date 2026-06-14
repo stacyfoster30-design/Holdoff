@@ -648,7 +648,17 @@ em {
    ========================================= */
 @media (max-width: 768px) {
   .nav {
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.25rem;
+  }
+  .nav__links {
+    display: none;
+  }
+  .nav__auth {
+    flex: 0 0 auto;
+    gap: 0.5rem;
+  }
+  .nav__user-email {
+    display: none;
   }
 
   .hero {
@@ -1485,5 +1495,10 @@ em {
   }
   .testimonial-card {
     padding: 20px;
+  }
+}
+@media (max-width: 480px) {
+  .nav__link--login {
+    display: none;
   }
 }
