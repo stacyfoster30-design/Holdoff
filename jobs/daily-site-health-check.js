@@ -3,7 +3,7 @@
  * Does NOT own: subscription logic, user data, route handling.
  *
  * Run by [[crons]] scheduler weekdays at 9am via render cron.
- * Also available as in-process scheduler in server.js (POLSIA_IN_PROCESS_CRONS_ENABLED).
+ * Also available as in-process scheduler in server.js (HOLDOFF_IN_PROCESS_CRONS_ENABLED).
  *
  * Checks:
  *   - GET /  (homepage renders)
@@ -21,8 +21,8 @@ const { logSiteCheck, getPrevSiteCheck } = require('../db/healthchecks');
 
 const BASE_URL = process.env.APP_BASE_URL || 'https://shouldiholdoff.live';
 const ALERT_TO = process.env.ALERT_EMAIL || 'holdoff@shouldiholdoff.live';
-const EMAIL_PROXY_URL = process.env.POLSIA_EMAIL_PROXY_URL;
-const API_TOKEN = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL;
+const API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 
 // 4-hour debounce window between failure alerts.
 const ALERT_DEBOUNCE_MS = 4 * 60 * 60 * 1000;

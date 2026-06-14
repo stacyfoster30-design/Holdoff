@@ -9,8 +9,8 @@ const { enqueueNurtureEmail } = require('../db/nurture-queue');
 const { sendEmail } = require('../services/email');
 const { email1 } = require('../services/nurture-emails');
 
-const EMAIL_PROXY_URL = process.env.POLSIA_EMAIL_PROXY_URL;
-const API_TOKEN = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL;
+const API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 
 /**
  * Send the general (non-auto_intercept) waitlist confirmation email via the email proxy.

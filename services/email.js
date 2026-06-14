@@ -3,8 +3,8 @@
  * Owns: email composition, sending, domain verification status.
  * Does NOT own: list management, unsubscribe handling, template design.
  *
- * Falls back to Polsia email proxy when POSTMARK_API_KEY is not set.
- * Falls back to console logging when neither Postmark nor Polsia proxy is configured.
+ * Falls back to HoldOff email service when POSTMARK_API_KEY is not set.
+ * Falls back to console logging when neither Postmark nor HoldOff proxy is configured.
  */
 const postmark = require('postmark');
 
@@ -46,13 +46,13 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
     return { id: result.MessageID };
   }
 
-  // Polsia email proxy fallback when POSTMARK_API_KEY is not provisioned
+  // HoldOff email service fallback when POSTMARK_API_KEY is not provisioned
   const proxyUrl =
-    process.env.POLSIA_EMAIL_PROXY_URL ||
-    (process.env.POLSIA_API_BASE_URL
-      ? `${process.env.POLSIA_API_BASE_URL}/api/proxy/email/send`
+    process.env.HOLDOFF_EMAIL_PROXY_URL ||
+    (process.env.HOLDOFF_API_BASE_URL
+      ? `${process.env.HOLDOFF_API_BASE_URL}/api/proxy/email/send`
       : null);
-  const proxyToken = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+  const proxyToken = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 
   if (!proxyUrl || !proxyToken) {
     // Last-resort: log to console so devs can see emails in dev
@@ -80,7 +80,7 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
 
   if (!resp.ok) {
     const body = await resp.text();
-    throw new Error(`Polsia proxy error ${resp.status}: ${body}`);
+    throw new Error(`HoldOff proxy error ${resp.status}: ${body}`);
   }
 
   const data = await resp.json().catch(() => ({}));

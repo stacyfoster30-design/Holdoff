@@ -2,14 +2,14 @@
  * Send Android launch email to all waitlist subscribers.
  *
  * Usage: node scripts/send-waitlist-blast.js
- * Env vars (read from Render env): HOLDOFF_EMAIL_PROXY_URL, POLSIA_API_KEY, DATABASE_URL
+ * Env vars (read from Render env): HOLDOFF_EMAIL_PROXY_URL, HOLDOFF_API_KEY, DATABASE_URL
  */
 
 // Use the shared DB pool (same pattern as all other files)
 const { pool } = require('../db/index');
 
 const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL || 'https://shouldiholdoff.live/api/proxy/email/send';
-const API_TOKEN = process.env.POLSIA_API_KEY || process.env.POLSIA_API_TOKEN;
+const API_TOKEN = process.env.HOLDOFF_API_KEY || process.env.HOLDOFF_API_TOKEN;
 
 const SUBJECT = 'HoldOff is live on Android. iOS is next.';
 const FROM_NAME = 'HoldOff';
@@ -80,7 +80,7 @@ async function sleep(ms) {
 
 async function main() {
   if (!API_TOKEN) {
-    console.error('[blast] POLSIA_API_KEY not set — aborting');
+    console.error('[blast] HOLDOFF_API_KEY not set — aborting');
     process.exit(1);
   }
 

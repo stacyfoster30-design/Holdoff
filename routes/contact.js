@@ -1,12 +1,12 @@
 /**
  * Contact route — support message submission.
- * POST /api/contact — publicly accessible, forwards to Stacy via Polsia email proxy.
+ * POST /api/contact — publicly accessible, forwards to Stacy via HoldOff email service.
  */
 const express = require('express');
 const router = express.Router();
 
-const POLSIA_API_BASE_URL = process.env.POLSIA_API_BASE_URL;
-const POLSIA_API_TOKEN = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+const HOLDOFF_API_BASE_URL = process.env.HOLDOFF_API_BASE_URL;
+const HOLDOFF_API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 const SUPPORT_EMAIL = 'company@shouldiholdoff.live';
 
 /**
@@ -27,17 +27,17 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Message is required.' });
   }
 
-  if (!POLSIA_API_BASE_URL || !POLSIA_API_TOKEN) {
+  if (!HOLDOFF_API_BASE_URL || !HOLDOFF_API_TOKEN) {
     return res.status(503).json({ error: 'Email service not configured.' });
   }
 
   try {
-    const proxyUrl = `${POLSIA_API_BASE_URL}/api/proxy/email/send`;
+    const proxyUrl = `${HOLDOFF_API_BASE_URL}/api/proxy/email/send`;
     const resp = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${POLSIA_API_TOKEN}`,
+        Authorization: `Bearer ${HOLDOFF_API_TOKEN}`,
       },
       body: JSON.stringify({
         to: SUPPORT_EMAIL,

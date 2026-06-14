@@ -22,7 +22,7 @@ const { logExitIntentEvent } = require('../db/exit-intent');
 const { PLANS, TIER_URLS } = require('../config/plans');
 
 const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
-const EMAIL_PROXY_URL = process.env.POLSIA_EMAIL_PROXY_URL;
+const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL;
 
 // ─── POST /api/checkout/create-checkout ──────────────────────────────────────
 // Creates a Stripe Checkout Session and returns the URL.

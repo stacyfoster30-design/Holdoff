@@ -1,9 +1,9 @@
 /**
  * In-process cron job startup for Render compatibility.
  * render.yaml crons — Blaxel migration complete. During shadow migration, this keeps Render functional.
- * Guarded by POLSIA_IN_PROCESS_CRONS_ENABLED so Blaxel shadow (which sets it to false) doesn't start it.
+ * Guarded by HOLDOFF_IN_PROCESS_CRONS_ENABLED so Blaxel shadow (which sets it to false) doesn't start it.
  */
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.HOLDOFF_IN_PROCESS_CRONS_ENABLED === 'true') {
   const VERDICT_MONITOR_INTERVAL_MS = 60_000;
   const { run } = require('./verdict-monitor');
   setInterval(() => {

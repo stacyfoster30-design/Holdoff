@@ -18,8 +18,8 @@ const BASE_URL = process.env.APP_BASE_URL || 'https://shouldiholdoff.live';
 // Full analyze check is done by watching verdict_source in user-facing calls.
 const PROBE_URL = `${BASE_URL}/api/filter/ping`;
 const ALERT_TO = process.env.ALERT_EMAIL || 'holdoff@shouldiholdoff.live';
-const EMAIL_PROXY_URL = process.env.POLSIA_EMAIL_PROXY_URL;
-const API_TOKEN = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL;
+const API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 
 // Warn threshold: if response time exceeds this, still OK but log it.
 const WARN_MS = 10_000;

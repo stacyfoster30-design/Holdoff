@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.holdoff.polsia',
+  appId: 'live.shouldiholdoff.app',
   appName: 'HoldOff',
   webDir: '../public',
   server: {

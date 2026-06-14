@@ -3,14 +3,14 @@
  * Owns: POST /api/outreach/send (internal trigger for creator emails).
  * Does NOT own: waitlist, nurture sequences, auth.
  *
- * Protected by OUTREACH_TOKEN env var. Used by Polsia agents to send
- * cold outreach emails via the Polsia email proxy.
+ * Protected by OUTREACH_TOKEN env var. Used by HoldOff agents to send
+ * cold outreach emails via the HoldOff email service.
  */
 const express = require('express');
 const router = express.Router();
 
-const EMAIL_PROXY_URL = process.env.POLSIA_EMAIL_PROXY_URL;
-const API_TOKEN = process.env.POLSIA_API_TOKEN || process.env.POLSIA_API_KEY;
+const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL;
+const API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 const OUTREACH_TOKEN = process.env.OUTREACH_TOKEN;
 
 function requireOutreachToken(req, res, next) {
@@ -27,7 +27,7 @@ function requireOutreachToken(req, res, next) {
 /**
  * POST /api/outreach/send
  * Body: { to, subject, text, html?, fromName? }
- * Sends a single cold outreach email via the Polsia email proxy.
+ * Sends a single cold outreach email via the HoldOff email service.
  */
 router.post('/send', requireOutreachToken, async (req, res) => {
   const { to, subject, text, html, fromName } = req.body || {};
