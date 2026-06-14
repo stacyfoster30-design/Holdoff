@@ -149,7 +149,7 @@ router.post('/interpret', async (req, res) => {
 
   const required = ['detected_style', 'what_it_means', 'how_you_misread_it', 'what_they_need'];
   for (const field of required) {
-    if (!parsed[field]) {
+    if (!(field in parsed) || parsed[field] === undefined) {
       console.error(`[filter] reqId=${reqId} Missing field: ${field}`);
       logVerdictCall({ verdictSource: source, verdict: null, latencyMs, errorMessage: `Missing field: ${field}` }).catch(() => {});
       return res.status(500).json({ error: 'Interpretation incomplete. Try again.' });
@@ -305,7 +305,7 @@ router.post('/analyze', async (req, res) => {
 
     const required = ['verdict', 'pattern', 'whats_happening', 'grounded_voice', 'rewrite'];
     for (const field of required) {
-      if (!parsed[field]) {
+      if (!(field in parsed) || parsed[field] === undefined) {
         logVerdictCall({ verdictSource: source, verdict: null, latencyMs, errorMessage: `Missing field: ${field}` }).catch(() => {});
         return res.status(500).json({ error: 'Analysis incomplete. Try again.' });
       }

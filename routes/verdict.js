@@ -169,7 +169,7 @@ router.post('/', validateVerdictRequest, async (req, res) => {
     // Validate required fields
     const required = ['verdict', 'pattern', 'whats_happening', 'grounded_voice', 'rewrite'];
     for (const field of required) {
-      if (!parsed[field]) {
+      if (!(field in parsed) || parsed[field] === undefined) {
         console.error(`[verdict] reqId=${reqId} Missing field: ${field}`);
         logVerdictCall({ verdictSource: source, verdict: null, latencyMs, errorMessage: `Missing field: ${field}` }).catch(() => {});
         return res.status(500).json({ error: 'Analysis incomplete. Try again.' });
