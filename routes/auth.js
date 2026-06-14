@@ -608,4 +608,30 @@ router.post('/resend-verification', requireAuth, async (req, res) => {
   res.json({ ok: true, message: 'Verification email sent.' });
 });
 
+
+// ─── DELETE /api/auth/delete-account ─────────────────────────────────────────
+router.delete('/delete-account', requireAuth, async (req, res) => {
+  try {
+    const { pool } = require('../db/index');
+    const userId = req.user.id;
+    // Anonymize rather than hard-delete — preserves referential integrity
+    await pool.query(
+      `UPDATE users SET
+         email = 'deleted_' || id || '@deleted.holdoff',
+         name = 'Deleted User',
+         password_hash = '',
+         deleted_at = NOW(),
+         updated_at = NOW()
+       WHERE id = $1`,
+      [userId]
+    );
+    res.clearCookie('holdoff_access');
+    res.clearCookie('holdoff_refresh');
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[auth] delete-account error:', e.message);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 module.exports = router;

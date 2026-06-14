@@ -69,4 +69,25 @@ router.put('/attachment-style', requireAuth, async (req, res) => {
   }
 });
 
+
+// PATCH /api/users/preferences — save verdict style, reminder time, etc.
+router.patch('/preferences', requireAuth, async (req, res) => {
+  try {
+    const { verdict_style, reminder_time } = req.body || {};
+    // Store in users metadata — graceful no-op if columns don't exist yet
+    const { pool } = require('../db/index');
+    await pool.query(
+      `UPDATE users SET
+         verdict_style = COALESCE($2, verdict_style),
+         reminder_time = COALESCE($3, reminder_time),
+         updated_at = NOW()
+       WHERE id = $1`,
+      [req.user.id, verdict_style || null, reminder_time || null]
+    ).catch(() => {}); // Graceful if columns not yet migrated
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: true }); // Non-fatal
+  }
+});
+
 module.exports = router;

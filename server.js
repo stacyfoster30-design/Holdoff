@@ -117,6 +117,7 @@ app.use('/', require('./routes/seo'));
 // Main API router — catches all /api/* not already matched above
 app.use('/api/spiral-lock', require('./routes/spiral-lock'));
 app.use('/api/community', require('./routes/community'));
+app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api', routes);
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.

@@ -87,7 +87,7 @@
         const displayName=me?.email?me.email.split('@')[0]:'there';
         const holds=verdicts.filter(v=>['HOLD','DO_NOT_SEND','WAIT'].includes(v.verdict)).length;
         const hour=new Date().getHours();
-        const greet=hour<12?'Good morning':'hour<17?'Good afternoon':'Good evening';
+        const greet=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
 
         const onboardSteps=[
           {label:'Get a verdict',done:verdicts.length>0,href:'/filter'},
