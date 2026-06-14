@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Community — HoldOff</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0E0C0B">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/filter.css">
+  <style>
+    body{background:#0E0C0B;color:#F2EDE5;font-family:'DM Sans',sans-serif;min-height:100vh;}
+    .cnav{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #2E2924;position:sticky;top:0;background:#0E0C0B;z-index:10;}
+    .cnav a{color:#9E948E;text-decoration:none;font-size:.88rem;}
+    .cnav__title{font-family:'Fraunces',serif;font-size:1.05rem;color:#F2EDE5;}
+    .cmain{max-width:480px;margin:0 auto;padding:1.25rem 1.25rem 5.5rem;}
+    .tab-row{display:flex;gap:0;background:#1A1714;border:1px solid #2E2924;border-radius:10px;padding:3px;margin-bottom:1.25rem;}
+    .tab-btn{flex:1;padding:.55rem;border:none;background:none;color:#9E948E;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;border-radius:8px;cursor:pointer;transition:.15s;}
+    .tab-btn.on{background:#2E2924;color:#F2EDE5;}
+    .mood-bar{display:flex;gap:.4rem;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:.25rem;}
+    .mood-btn{flex-shrink:0;padding:.35rem .85rem;border-radius:999px;border:1px solid #2E2924;background:none;color:#9E948E;font-size:.8rem;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.15s;white-space:nowrap;}
+    .mood-btn.on{border-color:#C97B5D;color:#F2EDE5;background:rgba(201,123,93,.1);}
+    .compose-card{background:#1A1714;border:1px solid #2E2924;border-radius:14px;padding:1.1rem;margin-bottom:1.25rem;}
+    .compose-card textarea{width:100%;background:none;border:none;color:#F2EDE5;font-family:'DM Sans',sans-serif;font-size:.9rem;resize:none;outline:none;min-height:72px;line-height:1.5;}
+    .compose-card textarea::placeholder{color:#9E948E;}
+    .compose-footer{display:flex;justify-content:space-between;align-items:center;margin-top:.75rem;padding-top:.75rem;border-top:1px solid #2E2924;}
+    .mood-select{background:none;border:1px solid #2E2924;color:#9E948E;font-family:'DM Sans',sans-serif;font-size:.8rem;padding:.3rem .6rem;border-radius:6px;cursor:pointer;}
+    .post-btn{padding:.45rem 1.1rem;background:#C97B5D;color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s;}
+    .post-btn:hover{background:#9B4F32;}
+    .post-btn:disabled{opacity:.5;cursor:default;}
+    .feed{display:flex;flex-direction:column;gap:.75rem;}
+    .post-card{background:#1A1714;border:1px solid #2E2924;border-radius:14px;padding:1.1rem;}
+    .post-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.65rem;}
+    .post-avatar{width:32px;height:32px;border-radius:50%;background:rgba(201,123,93,.2);color:#C97B5D;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;font-family:'Fraunces',serif;flex-shrink:0;}
+    .post-meta{flex:1;}
+    .post-name{font-size:.85rem;font-weight:600;}
+    .post-time{font-size:.72rem;color:#9E948E;margin-top:.05rem;}
+    .mood-pill{font-size:.7rem;padding:.18rem .55rem;border-radius:999px;background:rgba(201,123,93,.1);color:#C97B5D;border:1px solid rgba(201,123,93,.2);}
+    .post-content{font-size:.9rem;line-height:1.55;color:#F2EDE5;margin-bottom:.75rem;}
+    .post-actions{display:flex;gap:1rem;}
+    .react-btn{background:none;border:none;color:#9E948E;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:.3rem;padding:0;transition:.15s;}
+    .react-btn:hover,.react-btn.on{color:#C97B5D;}
+    .poem-card{background:linear-gradient(135deg,rgba(201,123,93,.08),rgba(155,79,50,.04));border:1px solid rgba(201,123,93,.2);border-radius:14px;padding:1.25rem;position:relative;}
+    .poem-badge{position:absolute;top:.85rem;right:.85rem;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#C97B5D;background:rgba(201,123,93,.1);border:1px solid rgba(201,123,93,.2);padding:.18rem .55rem;border-radius:999px;}
+    .poem-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;margin-bottom:.6rem;color:#F2EDE5;}
+    .poem-content{font-family:'Fraunces',serif;font-style:italic;font-size:.9rem;line-height:1.7;color:#C97B5D;white-space:pre-line;margin-bottom:.75rem;}
+    .poem-author{font-size:.78rem;color:#9E948E;}
+    .empty-state{text-align:center;padding:3rem 1.5rem;color:#9E948E;}
+    .empty-state__icon{font-size:2.5rem;margin-bottom:.75rem;}
+    .spinner{width:22px;height:22px;border:2px solid #2E2924;border-top-color:#C97B5D;border-radius:50%;animation:spin .7s linear infinite;margin:3rem auto;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .bnav{position:fixed;bottom:0;left:0;right:0;background:#0E0C0B;border-top:1px solid #2E2924;display:flex;padding:.45rem 0 max(.45rem,env(safe-area-inset-bottom));}
+    .bnav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;text-decoration:none;color:#9E948E;font-size:.62rem;padding:.35rem 0;transition:.15s;}
+    .bnav a.on{color:#C97B5D;}
+    .bnav a span:first-child{font-size:1.15rem;line-height:1;}
+  </style>
+</head>
+<body>
+  <nav class="cnav">
+    <a href="/filter">← Back</a>
+    <span class="cnav__title">Community</span>
+    <a href="/profile">Profile</a>
+  </nav>
+  <main class="cmain">
+    <div class="tab-row">
+      <button class="tab-btn on" data-tab="feed">Feed</button>
+      <button class="tab-btn" data-tab="poems">Weekly Poem</button>
+    </div>
+
+    <!-- FEED TAB -->
+    <div id="feedTab">
+      <div class="compose-card">
+        <textarea id="composeText" placeholder="Share what you're holding off on… (anonymous)" maxlength="280"></textarea>
+        <div class="compose-footer">
+          <select class="mood-select" id="moodSelect">
+            <option value="">Mood…</option>
+            <option value="1">😰 Anxious</option>
+            <option value="2">😤 Frustrated</option>
+            <option value="3">😔 Sad</option>
+            <option value="4">😌 Calm</option>
+            <option value="5">💪 Strong</option>
+          </select>
+          <button class="post-btn" id="postBtn">Post</button>
+        </div>
+      </div>
+      <div class="feed" id="feedList"><div class="spinner"></div></div>
+    </div>
+
+    <!-- POEMS TAB -->
+    <div id="poemsTab" style="display:none">
+      <div class="compose-card">
+        <input type="text" id="poemTitle" placeholder="Poem title…" style="background:none;border:none;color:#F2EDE5;font-family:'Fraunces',serif;font-size:1rem;width:100%;outline:none;margin-bottom:.5rem;">
+        <textarea id="poemText" placeholder="Write a short poem about holding off…" maxlength="400" style="width:100%;background:none;border:none;color:#F2EDE5;font-family:'Fraunces',serif;font-style:italic;font-size:.9rem;resize:none;outline:none;min-height:80px;line-height:1.6;"></textarea>
+        <div class="compose-footer">
+          <span style="font-size:.75rem;color:#9E948E;">Anonymous · This week's vote</span>
+          <button class="post-btn" id="poemPostBtn">Submit</button>
+        </div>
+      </div>
+      <div class="feed" id="poemList"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <nav class="bnav">
+    <a href="/filter"><span>🛡️</span><span>Filter</span></a>
+    <a href="/journal"><span>📓</span><span>Journal</span></a>
+    <a href="/community" class="on"><span>💬</span><span>Community</span></a>
+    <a href="/profile"><span>👤</span><span>Profile</span></a>
+  </nav>
+
+  <script>
+    const MOODS={1:'😰 Anxious',2:'😤 Frustrated',3:'😔 Sad',4:'😌 Calm',5:'💪 Strong'};
+    let activeTab='feed';
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+        btn.classList.add('on');
+        activeTab=btn.dataset.tab;
+        document.getElementById('feedTab').style.display=activeTab==='feed'?'block':'none';
+        document.getElementById('poemsTab').style.display=activeTab==='poems'?'block':'none';
+        if(activeTab==='poems') loadPoems();
+      });
+    });
+
+    function timeAgo(d){
+      const s=Math.floor((Date.now()-new Date(d))/1000);
+      if(s<60)return'just now';
+      if(s<3600)return Math.floor(s/60)+'m ago';
+      if(s<86400)return Math.floor(s/3600)+'h ago';
+      return Math.floor(s/86400)+'d ago';
+    }
+    function initial(name){return(name||'A')[0].toUpperCase();}
+
+    async function loadFeed(){
+      const list=document.getElementById('feedList');
+      try{
+        const r=await fetch('/api/community/feed').then(res=>res.ok?res.json():{posts:[]});
+        const posts=r.posts||r||[];
+        if(!posts.length){
+          list.innerHTML=`<div class="empty-state"><div class="empty-state__icon">💬</div><p>No posts yet. Be the first to share.</p></div>`;
+          return;
+        }
+        list.innerHTML=posts.map(p=>`<div class="post-card">
+          <div class="post-header">
+            <div class="post-avatar">${initial(p.display_name)}</div>
+            <div class="post-meta">
+              <div class="post-name">${p.display_name||'Anonymous'}</div>
+              <div class="post-time">${timeAgo(p.created_at||p.created_date)}</div>
+            </div>
+            ${p.mood_label?`<div class="mood-pill">${p.mood_label}</div>`:''}
+          </div>
+          <div class="post-content">${p.content||''}</div>
+          <div class="post-actions">
+            <button class="react-btn ${p.liked?'on':''}" data-id="${p.id}" data-type="like">❤️ ${p.reactions||0}</button>
+            <button class="react-btn" data-id="${p.id}" data-type="hold">🛡️ Same</button>
+          </div>
+        </div>`).join('');
+        list.querySelectorAll('.react-btn').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            fetch('/api/community/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:btn.dataset.id,type:btn.dataset.type})}).catch(()=>{});
+            btn.classList.toggle('on');
+          });
+        });
+      }catch{
+        list.innerHTML=`<div class="empty-state"><div class="empty-state__icon">💬</div><p>Couldn't load feed. <a href="#" onclick="loadFeed()" style="color:#C97B5D">Retry</a></p></div>`;
+      }
+    }
+
+    async function loadPoems(){
+      const list=document.getElementById('poemList');
+      list.innerHTML='<div class="spinner"></div>';
+      try{
+        const r=await fetch('/api/community/poems').then(res=>res.ok?res.json():{poems:[]});
+        const poems=r.poems||r||[];
+        if(!poems.length){
+          list.innerHTML=`<div class="empty-state"><div class="empty-state__icon">✍️</div><p>No poems yet this week. Submit yours above.</p></div>`;
+          return;
+        }
+        list.innerHTML=poems.map(p=>`<div class="poem-card">
+          ${p.won_week?'<div class="poem-badge">🏆 Winner</div>':''}
+          <div class="poem-title">${p.title||'Untitled'}</div>
+          <div class="poem-content">${p.content||''}</div>
+          <div class="poem-author">by ${p.display_name||'Anonymous'} · ${p.likes||0} likes</div>
+          <div class="post-actions" style="margin-top:.65rem">
+            <button class="react-btn" data-id="${p.id}" data-type="poem_like">❤️ Like</button>
+          </div>
+        </div>`).join('');
+        list.querySelectorAll('.react-btn').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            fetch('/api/community/poems/like',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({poem_id:btn.dataset.id})}).catch(()=>{});
+            btn.classList.add('on');
+          });
+        });
+      }catch{
+        list.innerHTML=`<div class="empty-state"><div class="empty-state__icon">✍️</div><p>Couldn't load poems.</p></div>`;
+      }
+    }
+
+    // Post to feed
+    document.getElementById('postBtn').addEventListener('click',async()=>{
+      const text=document.getElementById('composeText').value.trim();
+      const mood=document.getElementById('moodSelect').value;
+      if(!text||text.length<5)return;
+      const btn=document.getElementById('postBtn');
+      btn.disabled=true;btn.textContent='Posting…';
+      try{
+        await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:text,mood_level:mood?parseInt(mood):null,mood_label:mood?MOODS[mood]:null})});
+        document.getElementById('composeText').value='';
+        document.getElementById('moodSelect').value='';
+        await loadFeed();
+      }catch{}
+      btn.disabled=false;btn.textContent='Post';
+    });
+
+    // Submit poem
+    document.getElementById('poemPostBtn').addEventListener('click',async()=>{
+      const title=document.getElementById('poemTitle').value.trim();
+      const content=document.getElementById('poemText').value.trim();
+      if(!content||content.length<10)return;
+      const btn=document.getElementById('poemPostBtn');
+      btn.disabled=true;btn.textContent='Submitting…';
+      try{
+        await fetch('/api/community/poems',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content})});
+        document.getElementById('poemTitle').value='';
+        document.getElementById('poemText').value='';
+        await loadPoems();
+      }catch{}
+      btn.disabled=false;btn.textContent='Submit';
+    });
+
+    loadFeed();
+  </script>
+</body>
+</html>

@@ -22,6 +22,7 @@ Sentry.init({
 const { verifyToken, getCookieTokens } = require('./lib/auth');
 const routes = require('./routes');
 const { mountSharePages } = require('./routes/share');
+const { ensureCommunityTables } = require('./db/community');
 
 // Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
 if (process.env.BLAST_TRIGGER === '1') {
@@ -115,6 +116,7 @@ app.use('/', require('./routes/seo'));
 
 // Main API router — catches all /api/* not already matched above
 app.use('/api/spiral-lock', require('./routes/spiral-lock'));
+app.use('/api/community', require('./routes/community'));
 app.use('/api', routes);
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
@@ -353,25 +355,39 @@ app.get('/signup', async (req, res) => {
 app.get('/dashboard', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/dashboard');
-  res.render('history', buildLandingContext({ user }));
+  res.render('dashboard', buildLandingContext({ user }));
 });
 
 app.get('/settings', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/settings');
-  res.render('history', buildLandingContext({ user }));
+  res.render('settings', buildLandingContext({ user }));
+});
+
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  res.render('profile', buildLandingContext({ user }));
+});
+
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('community', buildLandingContext({ user }));
 });
 
 // Share page + OG image — routes extracted to routes/share.js
 mountSharePages(app);
 
 // Startup validation — surface pre-flight config issues clearly rather than failing silently.
-if (!process.env.POSTMARK_API_KEY && !process.env.POLSIA_EMAIL_PROXY_URL) {
+if (!process.env.POSTMARK_API_KEY && !process.env.holdoff_EMAIL_PROXY_URL) {
   console.warn('[startup] WARNING: No email provider configured — transactional emails will be logged only');
 }
 if (!process.env.STRIPE_WEBHOOK_SECRET) {
   console.warn('[startup] WARNING: STRIPE_WEBHOOK_SECRET not set — webhook signature verification disabled');
 }
+
+// Ensure community tables exist (idempotent)
+ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e.message));
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
 
