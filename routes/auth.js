@@ -634,4 +634,101 @@ router.delete('/delete-account', requireAuth, async (req, res) => {
   }
 });
 
+
+// ─── POST /api/auth/google ──────────────────────────────────────────────────
+// Google Identity Services: verify ID token and create/login user
+
+router.post('/google', async (req, res) => {
+  const { credential } = req.body || {};
+  if (!credential) {
+    return res.status(400).json({ error: 'Missing Google credential.', code: 'VALIDATION_ERROR' });
+  }
+
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  if (!GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ error: 'Google sign-in is not configured.', code: 'CONFIG_ERROR' });
+  }
+
+  // Verify the ID token with Google's tokeninfo endpoint
+  let payload;
+  try {
+    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!verifyRes.ok) {
+      return res.status(401).json({ error: 'Invalid Google token.', code: 'INVALID_TOKEN' });
+    }
+    payload = await verifyRes.json();
+  } catch (err) {
+    console.error('[auth/google] Token verification failed:', err.message);
+    return res.status(500).json({ error: 'Failed to verify Google token.', code: 'INTERNAL_ERROR' });
+  }
+
+  // Validate audience matches our client ID
+  if (payload.aud !== GOOGLE_CLIENT_ID) {
+    return res.status(401).json({ error: 'Token audience mismatch.', code: 'INVALID_TOKEN' });
+  }
+
+  // Validate email is verified
+  if (payload.email_verified !== 'true' && payload.email_verified !== true) {
+    return res.status(401).json({ error: 'Google email not verified.', code: 'EMAIL_NOT_VERIFIED' });
+  }
+
+  const email = payload.email.toLowerCase().trim();
+  const name = payload.name || payload.given_name || null;
+
+  // Find or create user
+  let user = await findUserByEmail(email);
+  if (!user) {
+    // Create new user (no password — Google-only account)
+    user = await createUser({ email, name, passwordHash: null });
+    if (!user) {
+      return res.status(500).json({ error: 'Failed to create account.', code: 'INTERNAL_ERROR' });
+    }
+    // Mark email as verified since Google already verified it
+    const { pool } = require('../db/index');
+    await pool.query(
+      `UPDATE users SET email_verified_at = NOW() WHERE id = $1 AND email_verified_at IS NULL`,
+      [user.id]
+    ).catch(() => {});
+
+    // Track referral if present
+    const refToken = req.cookies && req.cookies.ref;
+    if (refToken) {
+      markConverted(refToken).catch(err => console.error('[auth] referral markConverted error:', err.message));
+      res.clearCookie('ref');
+    }
+
+    // Send welcome email async
+    const capturedUserId = user.id;
+    const capturedName = name;
+    setImmediate(async () => {
+      try {
+        let sendEmail;
+        try { ({ sendEmail } = require('../services/email')); } catch { sendEmail = null; }
+        if (!sendEmail) return;
+        const claimed = await markWelcomeSent(capturedUserId);
+        if (!claimed) return;
+        const { subject, html, text } = buildWelcomeEmail({ email, name: capturedName });
+        await sendEmail({ to: email, subject, html, text, replyTo: 'hello@shouldiholdoff.live' });
+        console.log(`[auth] Welcome email sent to ${email} (Google signup)`);
+      } catch (err) {
+        console.error('[auth] Welcome email failed:', err.message);
+      }
+    });
+  }
+
+  // Issue access + refresh tokens
+  const accessToken = signAccessToken({ id: user.id, email });
+  const rawRefreshToken = await signRefreshToken(user.id, email, req.headers['user-agent']);
+
+  res.cookie('holdoff_token', accessToken, holdoffTokenCookieOpts());
+  res.cookie('refresh_token', rawRefreshToken, refreshCookieOpts());
+
+  res.json({
+    ok: true,
+    user: { id: user.id, email, name: user.name || name },
+    isNewUser: !user.password_hash && !user.created_at,
+  });
+});
+
+
 module.exports = router;
