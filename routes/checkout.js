@@ -38,31 +38,14 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
     });
   }
 
-  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-  const isLifetime = tier === 'lifetime';
-  const mode = isLifetime ? 'payment' : 'subscription';
+  // TIER_URLS holds Stripe Payment Link URLs, not price IDs.
+  // Redirect the user to the payment link with their email pre-filled.
+  const checkoutUrl = new URL(TIER_URLS[tier]);
+  checkoutUrl.searchParams.set('prefilled_email', req.user.email);
+  checkoutUrl.searchParams.set('client_reference_id', req.user.email);
 
-  const session = await stripe.checkout.sessions.create({
-    mode,
-    line_items: [
-      {
-        price: TIER_URLS[tier],
-        quantity: 1,
-      },
-    ],
-    success_url: `${BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${BASE_URL}/filter`,
-    allow_promotion_codes: true,
-    metadata: {
-      user_id: req.user.id.toString(),
-      tier,
-    },
-    // Include user email so webhook has it even if client closes immediately
-    customer_email: req.user.email,
-  });
-
-  console.log(`[checkout] create-checkout tier=${tier} user=${req.user.email} session=${session.id}`);
-  res.json({ url: session.url });
+  console.log(`[checkout] create-checkout tier=${tier} user=${req.user.email} url=${checkoutUrl.toString()}`);
+  res.json({ url: checkoutUrl.toString() });
 });
 
 // ─── POST /api/checkout/portal ────────────────────────────────────────────────
@@ -126,6 +109,32 @@ router.post('/session', async (req, res) => {
     await logExitIntentEvent({ event_type: 'cashapp_checkout_started', email: rawEmail, device_id: null })
       .catch(err => { console.error('[checkout] cashapp_checkout_started log error:', err.message); });
   }
+  res.json({ url: checkoutUrl.toString(), tier: selectedTier });
+});
+
+// ─── POST /api/checkout/start ──────────────────────────────────────────────────
+// Email-optional checkout start — used by /pricing, /checkout pages that
+// don't collect email upfront. Stripe's hosted page handles email collection;
+// the webhook activates the account from the email the buyer enters there.
+
+router.post('/start', async (req, res) => {
+  const { tier } = req.body || {};
+  const selectedTier = (tier && TIER_URLS[tier]) ? tier : 'online_monthly';
+  const baseCheckoutUrl = TIER_URLS[selectedTier];
+  if (!baseCheckoutUrl) {
+    return res.status(500).json({ error: 'No checkout URL configured for tier: ' + selectedTier });
+  }
+
+  const checkoutUrl = new URL(baseCheckoutUrl);
+
+  // Pre-fill email if available (from logged-in user or request body)
+  const email = (req.body?.email || req.user?.email || '').toString().trim().toLowerCase();
+  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    checkoutUrl.searchParams.set('prefilled_email', email);
+    checkoutUrl.searchParams.set('client_reference_id', email);
+  }
+
+  console.log(`[checkout] start tier=${selectedTier} url=${checkoutUrl.toString()}`);
   res.json({ url: checkoutUrl.toString(), tier: selectedTier });
 });
 
