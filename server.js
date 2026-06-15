@@ -313,13 +313,6 @@ app.get('/reset-password', async (req, res) => {
   res.render('reset-password', buildLandingContext({ user }));
 });
 
-// Forgot password page
-app.get('/forgot-password', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (user) return res.redirect('/inbox');
-  res.render('forgot-password', buildLandingContext({ user: null }));
-});
-
 // Success page — verifies Stripe session server-side before confirming
 app.get('/success', async (req, res) => {
   const user = await getUserFromCookies(req);
@@ -367,6 +360,31 @@ app.get('/insights', async (req, res) => {
 
 
 // Account — profile, personality, settings
+// ─── Account Sub-Pages ──────────────────────────────────────
+app.get('/account/trusted-contacts', async (req, res) => {
+  const user = await getUser(req);
+  if (!user) return res.redirect('/login?returnTo=/account/trusted-contacts');
+  res.render('account/trusted-contacts', { user });
+});
+
+app.get('/account/personality', async (req, res) => {
+  const user = await getUser(req);
+  if (!user) return res.redirect('/login?returnTo=/account/personality');
+  res.render('account/personality', { user });
+});
+
+app.get('/account/attachment-research', async (req, res) => {
+  const user = await getUser(req);
+  if (!user) return res.redirect('/login?returnTo=/account/attachment-research');
+  res.render('account/attachment-research', { user });
+});
+
+app.get('/account/portrait', async (req, res) => {
+  const user = await getUser(req);
+  if (!user) return res.redirect('/login?returnTo=/account/portrait');
+  res.render('account/portrait', { user });
+});
+
 app.get('/account', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/account');
