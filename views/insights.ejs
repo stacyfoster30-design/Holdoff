@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>HoldOff — Insights</title>
+  <style>
+    .insight-tabs { display:flex; gap:0; margin-bottom:20px; }
+    .insight-tab {
+      flex:1; padding:12px 8px; text-align:center; font-weight:600; font-size:0.85rem;
+      border:1px solid var(--border); background:var(--bg-card); color:var(--text-muted);
+      cursor:pointer; transition:var(--transition);
+    }
+    .insight-tab:first-child { border-radius:var(--radius-sm) 0 0 var(--radius-sm); }
+    .insight-tab:last-child { border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+    .insight-tab.active { background:var(--primary); color:white; border-color:var(--primary); }
+    .insight-panel { display:none; }
+    .insight-panel.active { display:block; animation:fadeIn 0.3s ease; }
+
+    .ring-chart {
+      width:100px; height:100px; border-radius:50%;
+      background: conic-gradient(var(--primary) 0% var(--ring-pct, 75%), var(--border) var(--ring-pct, 75%) 100%);
+      display:flex; align-items:center; justify-content:center; margin:0 auto 12px;
+    }
+    .ring-inner {
+      width:80px; height:80px; border-radius:50%; background:var(--bg-card);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.4rem; font-weight:700;
+    }
+
+    .contact-detail-card {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:20px; margin-bottom:14px;
+    }
+    .attachment-badge {
+      display:inline-flex; padding:6px 14px; border-radius:var(--radius-full);
+      font-size:0.85rem; font-weight:600; background:var(--rose-glow); color:var(--rose);
+    }
+    .bar-chart-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .bar-label { width:60px; font-size:0.8rem; color:var(--text-muted); text-align:right; }
+    .bar-track { flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:4px; transition:width 0.8s ease; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="screen-header">
+      <h1>📊 Insights</h1>
+    </div>
+
+    <div class="screen-content">
+      <!-- Tabs -->
+      <div class="insight-tabs">
+        <button class="insight-tab active" onclick="showPanel('overview', this)">Overview</button>
+        <button class="insight-tab" onclick="showPanel('contacts', this)">Contacts</button>
+        <button class="insight-tab" onclick="showPanel('forecast', this)">Forecast</button>
+      </div>
+
+      <!-- OVERVIEW PANEL -->
+      <div class="insight-panel active" id="panel-overview">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-held">0</div>
+            <div class="stat-label">Messages Held</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-rewritten">0</div>
+            <div class="stat-label">Rewritten</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-intercepted">0</div>
+            <div class="stat-label">Intercepted</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-holdrate">0%</div>
+            <div class="stat-label">Hold Rate</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:16px;">🌡️ Average Emotional Intensity</h3>
+          <div class="ring-chart" style="--ring-pct:65%;">
+            <div class="ring-inner">6.5</div>
+          </div>
+          <p style="text-align:center;color:var(--text-muted);font-size:0.85rem;">Moderate — You're self-aware</p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:16px;">📈 30-Day Emotional Trend</h3>
+          <div style="display:flex;align-items:flex-end;gap:4px;height:120px;padding:10px 0;">
+            <% for (let i = 0; i < 30; i++) { %>
+              <div style="flex:1;background:linear-gradient(to top, var(--primary), var(--accent));border-radius:3px 3px 0 0;height:<%= Math.floor(Math.random() * 80 + 20) %>%;opacity:0.7;"></div>
+            <% } %>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-top:4px;">
+            <span>30 days ago</span>
+            <span>Today</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACTS PANEL -->
+      <div class="insight-panel" id="panel-contacts">
+        <% if (typeof contacts !== 'undefined' && contacts.length > 0) { %>
+          <% contacts.forEach(function(contact) { %>
+            <div class="contact-detail-card">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                <div class="contact-avatar"><%= contact.name.charAt(0) %></div>
+                <div>
+                  <div class="contact-name" style="font-size:1.1rem;"><%= contact.name %></div>
+                  <span class="attachment-badge"><%= contact.attachment_style || 'Unknown' %></span>
+                </div>
+                <div style="margin-left:auto;">
+                  <div class="ring-chart" style="width:60px;height:60px;--ring-pct:<%= contact.health_score || 50 %>%;">
+                    <div class="ring-inner" style="width:46px;height:46px;font-size:0.9rem;"><%= contact.health_score || 50 %></div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                <a href="/compose?contact=<%= contact.id %>" class="btn btn-accent btn-sm">✍️ Compose</a>
+                <a href="/compose?mode=decode&contact=<%= contact.id %>" class="btn btn-ghost btn-sm">🔍 Interpret Their Texting</a>
+              </div>
+              <div class="bar-chart-row">
+                <div class="bar-label">Held</div>
+                <div class="bar-track"><div class="bar-fill" style="width:<%= contact.held_pct || 40 %>%;background:var(--danger);"></div></div>
+              </div>
+              <div class="bar-chart-row">
+                <div class="bar-label">Sent</div>
+                <div class="bar-track"><div class="bar-fill" style="width:<%= contact.sent_pct || 60 %>%;background:var(--success);"></div></div>
+              </div>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-icon">👤</div>
+            <div class="empty-text">No contacts yet.<br>Start a conversation in Compose to add someone.</div>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- FORECAST PANEL -->
+      <div class="insight-panel" id="panel-forecast">
+        <div class="card" style="text-align:center;">
+          <h3 style="margin-bottom:12px;">🔮 Compatibility Map</h3>
+          <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:20px;">AI-powered relationship forecasts based on your communication patterns</p>
+          
+          <% if (typeof contacts !== 'undefined' && contacts.length > 0) { %>
+            <% contacts.forEach(function(contact) { %>
+              <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);">
+                <div class="contact-avatar" style="width:40px;height:40px;font-size:0.9rem;"><%= contact.name.charAt(0) %></div>
+                <div style="flex:1;text-align:left;">
+                  <div style="font-weight:600;"><%= contact.name %></div>
+                </div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--accent);"><%= contact.compatibility || 50 %>%</div>
+              </div>
+            <% }); %>
+          <% } %>
+
+          <div style="margin-top:20px;">
+            <button class="btn btn-primary btn-block" onclick="generateForecast()" id="forecast-btn">
+              🔮 Generate AI Forecast
+            </button>
+            <p style="font-size:0.75rem;color:var(--text-dim);margin-top:8px;">Unlocks after 3 messages with a contact</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/bottom_nav') %>
+  </div>
+
+  <script>
+    function showPanel(name, btn) {
+      document.querySelectorAll('.insight-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.insight-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // Load stats
+    fetch('/api/insights/stats').then(r => r.json()).then(data => {
+      if (data.held !== undefined) document.getElementById('stat-held').textContent = data.held;
+      if (data.rewritten !== undefined) document.getElementById('stat-rewritten').textContent = data.rewritten;
+      if (data.intercepted !== undefined) document.getElementById('stat-intercepted').textContent = data.intercepted;
+      if (data.holdRate !== undefined) document.getElementById('stat-holdrate').textContent = data.holdRate + '%';
+    }).catch(() => {});
+
+    function generateForecast() {
+      const btn = document.getElementById('forecast-btn');
+      btn.disabled = true;
+      btn.textContent = '🔮 Generating...';
+      setTimeout(() => {
+        btn.textContent = '🔮 Forecast Generated!';
+        // TODO: real AI forecast
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
