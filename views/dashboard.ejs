@@ -34,6 +34,8 @@
     .qa-btn{display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.9rem .5rem;background:#1A1714;border:1px solid #2E2924;border-radius:12px;text-decoration:none;color:#F2EDE5;font-size:.8rem;font-weight:500;transition:.15s;text-align:center;}
     .qa-btn:hover{border-color:#C97B5D;color:#C97B5D;}
     .qa-btn__icon{font-size:1.5rem;line-height:1;}
+    .qa-btn--primary{border-color:#C97B5D;background:rgba(201,123,93,.08);}
+    .qa-btn--primary:hover{background:rgba(201,123,93,.15);}
     .verdict-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 0;border-bottom:1px solid #2E2924;}
     .verdict-item:last-child{border:none;}
     .v-badge{font-size:.65rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.2rem .55rem;border-radius:4px;flex-shrink:0;}
@@ -63,9 +65,10 @@
   </nav>
   <main class="dmain" id="dmain"><div class="spinner"></div></main>
   <nav class="bnav">
+    <a href="/compose"><span>💬</span><span>Compose</span></a>
     <a href="/filter"><span>🛡️</span><span>Filter</span></a>
     <a href="/journal"><span>📓</span><span>Journal</span></a>
-    <a href="/community"><span>💬</span><span>Community</span></a>
+    <a href="/community"><span>👥</span><span>Community</span></a>
     <a href="/profile"><span>👤</span><span>Profile</span></a>
   </nav>
   <script>
@@ -107,11 +110,11 @@
         </div>`;
 
         h+=`<div class="quick-actions">
+          <a href="/compose" class="qa-btn qa-btn--primary"><span class="qa-btn__icon">💬</span>Compose Message</a>
           <a href="/filter" class="qa-btn"><span class="qa-btn__icon">🛡️</span>Get Verdict</a>
           <a href="/journal" class="qa-btn"><span class="qa-btn__icon">📓</span>Journal</a>
           <a href="/quiz" class="qa-btn"><span class="qa-btn__icon">🧠</span>Quiz</a>
           <a href="/detox" class="qa-btn"><span class="qa-btn__icon">🌿</span>Detox</a>
-          <a href="/community" class="qa-btn"><span class="qa-btn__icon">💬</span>Community</a>
           <a href="/history" class="qa-btn"><span class="qa-btn__icon">📋</span>History</a>
         </div>`;
 

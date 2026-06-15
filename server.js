@@ -276,6 +276,13 @@ app.get('/filter', async (req, res) => {
   res.render('filter', buildLandingContext({ user }));
 });
 
+// Compose messenger — AI-protected messaging with spiral lock + incoming decode
+app.get('/compose', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/compose');
+  res.render('compose', buildLandingContext({ user }));
+});
+
 // Redirect old /holdoff.apk URL → static APK handler (CDN blocks raw .apk)
 app.get('/holdoff.apk', (_req, res) => res.redirect(301, '/android-app.apk'));
 
