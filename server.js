@@ -35,6 +35,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cookieParser());
+// Inject Google Client ID into all views
+app.use((_req, res, next) => {
+  res.locals.googleClientId = process.env.GOOGLE_CLIENT_ID || '';
+  next();
+});
 // Sentry request handler — guarded for @sentry/node v8+ which removed Handlers API.
 // WHY guard: newer Sentry SDK drops Handlers.requestHandler(); graceful fallback prevents crash.
 if (Sentry.Handlers && typeof Sentry.Handlers.requestHandler === 'function') {
