@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>HoldOff — Inbox</title>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="screen-header">
+      <h1>💬 Inbox</h1>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button onclick="location.href='/compose'" class="btn btn-primary btn-sm" aria-label="New message">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
+      </div>
+    </div>
+
+    <div class="screen-content">
+      <!-- Daily Affirmation -->
+      <div class="affirmation-card fade-in">
+        <div class="affirmation-text" id="affirmation">"You are allowed to take your time responding."</div>
+        <div class="affirmation-label">✨ Daily Affirmation</div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div style="display:flex;gap:10px;margin-bottom:18px;">
+        <a href="/compose" class="btn btn-primary btn-sm" style="flex:1;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Compose
+        </a>
+        <a href="/compose?mode=decode" class="btn btn-accent btn-sm" style="flex:1;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Decode
+        </a>
+      </div>
+
+      <!-- Contacts List -->
+      <h3 style="margin-bottom:12px;color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;">Recent Conversations</h3>
+      
+      <div id="contacts-list">
+        <% if (typeof contacts !== 'undefined' && contacts.length > 0) { %>
+          <% contacts.forEach(function(contact) { %>
+            <div class="contact-item" onclick="location.href='/compose?contact=<%= contact.id %>'">
+              <div class="contact-avatar"><%= contact.name ? contact.name.charAt(0).toUpperCase() : '?' %></div>
+              <div class="contact-info">
+                <div class="contact-name"><%= contact.name || 'Unknown' %></div>
+                <div class="contact-preview"><%= contact.last_message || 'No messages yet' %></div>
+              </div>
+              <div class="contact-meta">
+                <% if (contact.health_score) { %>
+                  <span class="badge <%= contact.health_score >= 70 ? 'badge-success' : contact.health_score >= 40 ? 'badge-warning' : 'badge-danger' %>">
+                    <%= contact.health_score %>%
+                  </span>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-icon">💜</div>
+            <div class="empty-text">
+              No conversations yet.<br>
+              <strong>Compose a message</strong> to get started — HoldOff will catch you before you spiral.
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Reflection Reminder -->
+      <div class="card" style="margin-top:20px;text-align:center;">
+        <p style="color:var(--text-muted);font-size:0.9rem;">📝 Time for a reflection?</p>
+        <a href="/journal" class="btn btn-ghost btn-sm" style="margin-top:10px;">Open Journal</a>
+      </div>
+    </div>
+
+    <!-- Spiral Lock FAB -->
+    <button class="spiral-lock-btn" onclick="location.href='/spiral-lock'" aria-label="Spiral Lock">
+      🔒
+    </button>
+
+    <%- include('partials/bottom_nav') %>
+  </div>
+
+  <script>
+    // Rotate daily affirmations
+    const affirmations = [
+      "You are allowed to take your time responding.",
+      "Their silence is not your rejection.",
+      "You don't need to prove your worth through availability.",
+      "A pause is not abandonment — it's power.",
+      "You deserve someone who doesn't make you question everything.",
+      "Your feelings are valid, but not every feeling needs action.",
+      "Breathe. They will still be there in 3 minutes.",
+      "You are not too much. You are not too little. You are enough.",
+      "The right person won't punish you for having boundaries.",
+      "Not every thought deserves a text message."
+    ];
+    const today = new Date().getDate();
+    document.getElementById('affirmation').textContent = '"' + affirmations[today % affirmations.length] + '"';
+  </script>
+</body>
+</html>
