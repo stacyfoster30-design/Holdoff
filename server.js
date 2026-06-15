@@ -362,25 +362,25 @@ app.get('/insights', async (req, res) => {
 // Account — profile, personality, settings
 // ─── Account Sub-Pages ──────────────────────────────────────
 app.get('/account/trusted-contacts', async (req, res) => {
-  const user = await getUser(req);
+  const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/account/trusted-contacts');
   res.render('account/trusted-contacts', { user });
 });
 
 app.get('/account/personality', async (req, res) => {
-  const user = await getUser(req);
+  const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/account/personality');
   res.render('account/personality', { user });
 });
 
 app.get('/account/attachment-research', async (req, res) => {
-  const user = await getUser(req);
+  const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/account/attachment-research');
   res.render('account/attachment-research', { user });
 });
 
 app.get('/account/portrait', async (req, res) => {
-  const user = await getUser(req);
+  const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/account/portrait');
   res.render('account/portrait', { user });
 });

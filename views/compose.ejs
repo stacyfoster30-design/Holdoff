@@ -367,9 +367,9 @@
         const data = await res.json();
 
         document.getElementById('interp-said').textContent = message;
-        document.getElementById('interp-meant').textContent = data.meaning || data.interpretation || '';
-        document.getElementById('interp-attachment').textContent = data.attachmentStyle || data.attachment_style || 'Unknown';
-        document.getElementById('interp-anxious').textContent = data.anxiousReading || data.anxious_reading || '';
+        document.getElementById('interp-meant').textContent = data.what_it_means || data.meaning || data.interpretation || '';
+        document.getElementById('interp-attachment').textContent = data.detected_style || data.attachmentStyle || data.attachment_style || 'Unknown';
+        document.getElementById('interp-anxious').textContent = data.how_you_misread_it || data.anxiousReading || data.anxious_reading || '';
 
         if (data.redFlags || data.red_flags) {
           document.getElementById('interp-flags').textContent = data.redFlags || data.red_flags;
