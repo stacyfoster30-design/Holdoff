@@ -1,794 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>HoldOff — Get the App</title>
-
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="apple-mobile-web-app-title" content="HoldOff">
-  <meta name="theme-color" content="#FAF6F0">
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-  <meta name="description" content="HoldOff — the AI texting filter. Paste your message, get a verdict. Available now as a web app.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css">
-
+  <%- include('partials/head') %>
+  <title>HoldOff — Download</title>
   <style>
-    /* ─── Download page overrides ─── */
-    .dl-hero {
-      background: var(--fg);
-      color: #FAF6F0;
-      padding: 6rem 2rem 4rem;
-      text-align: center;
+    .download-page {
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; padding:40px 20px;
+      text-align:center;
     }
-    .dl-hero__inner { max-width: 600px; margin: 0 auto; }
-    .dl-hero__eyebrow {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 0.75rem;
+    .download-icon { font-size:4rem; margin-bottom:20px; }
+    .download-title { font-size:1.8rem; font-weight:700; margin-bottom:8px; }
+    .download-desc { color:var(--text-muted); font-size:1rem; margin-bottom:32px; max-width:400px; }
+    .download-options { display:flex; flex-direction:column; gap:16px; width:100%; max-width:360px; }
+    .download-card {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:20px; text-align:left; cursor:pointer; transition:var(--transition);
+      text-decoration:none; color:inherit;
     }
-    .dl-hero__headline {
-      font-family: var(--font-display);
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: #FAF6F0;
-      margin-bottom: 1rem;
-      line-height: 1.1;
+    .download-card:hover { background:var(--bg-card-hover); border-color:var(--primary); }
+    .download-card-header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .download-card-icon { font-size:1.5rem; }
+    .download-card-title { font-weight:600; font-size:1rem; }
+    .download-card-desc { font-size:0.85rem; color:var(--text-muted); }
+    .download-card-badge {
+      display:inline-block; padding:2px 8px; border-radius:var(--radius-full);
+      font-size:0.7rem; font-weight:600; text-transform:uppercase;
     }
-    .dl-hero__sub {
-      font-size: 1.05rem;
-      color: rgba(250,246,240,0.65);
-      line-height: 1.7;
-      margin-bottom: 0;
+    .badge-recommended { background:var(--primary-glow); color:var(--primary); }
+    .badge-beta { background:rgba(251,191,36,0.15); color:#fbbf24; }
+    
+    .install-instructions {
+      margin-top:32px; padding:20px; background:var(--bg-card);
+      border:1px solid var(--border); border-radius:var(--radius);
+      max-width:360px; text-align:left;
     }
-
-    /* ─── Section scaffold ─── */
-    .dl-section {
-      padding: var(--space-3xl) 2rem;
-      max-width: 680px;
-      margin: 0 auto;
-    }
-    .dl-section--alt {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      max-width: 100%;
-      padding: var(--space-3xl) 2rem;
-    }
-    .dl-section--alt .dl-section__inner {
-      max-width: 680px;
-      margin: 0 auto;
-    }
-    .dl-section__label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1rem;
-    }
-    .dl-section__headline {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 3.5vw, 2.2rem);
-      font-weight: 600;
-      color: var(--fg);
-      letter-spacing: -0.03em;
-      margin-bottom: 1rem;
-      line-height: 1.2;
-    }
-    .dl-section__body {
-      font-size: 1rem;
-      color: var(--muted);
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
-    }
-
-    /* ─── Today vs Coming badge ─── */
-    .dl-status-badge {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      border-radius: 4px;
-      padding: 0.2rem 0.6rem;
-      margin-bottom: 1rem;
-    }
-    .dl-status-badge--now {
-      background: #D4EDDA;
-      color: #155724;
-    }
-    .dl-status-badge--soon {
-      background: #FFF3CD;
-      color: #856404;
-    }
-
-    /* ─── Web app — open instantly card ─── */
-    .apk-card {
-      background: var(--fg);
-      color: var(--bg);
-      border-radius: 8px;
-      padding: 2.5rem 2rem;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .apk-card__icon { font-size: 3rem; margin-bottom: 1rem; }
-    .apk-card__name {
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 0.5rem;
-    }
-    .apk-card__meta {
-      font-size: 0.875rem;
-      color: rgba(250,246,240,0.45);
-      margin-bottom: 1.5rem;
-    }
-    .apk-card__btn {
-      display: inline-block;
-      background: var(--accent);
-      color: #fff;
-      font-family: var(--font-body);
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      border-radius: 6px;
-      padding: 0.85rem 2rem;
-      transition: background 0.15s;
-    }
-    .apk-card__btn:hover { background: var(--accent-deep); }
-    .apk-card__note {
-      font-size: 0.8rem;
-      color: rgba(250,246,240,0.35);
-      margin-top: 1rem;
-      line-height: 1.5;
-    }
-
-    /* ─── Install steps ─── */
-    .install-steps {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 2rem;
-    }
-    .install-steps h3 {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--fg);
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.02em;
-    }
-    .step-list {
-      list-style: none;
-      counter-reset: step;
-      padding: 0;
-      margin: 0;
-    }
-    .step-list li {
-      counter-increment: step;
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .step-list li:last-child { border-bottom: none; }
-    .step-list li::before {
-      content: counter(step);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.75rem;
-      font-weight: 700;
-      margin-top: 0.1rem;
-      flex-shrink: 0;
-    }
-    .step-list li span { font-size: 0.95rem; color: var(--fg); line-height: 1.5; }
-    .step-list li strong { color: var(--accent); }
-    .install-note {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: 4px;
-      padding: 1rem 1.25rem;
-      margin-top: 1.5rem;
-      font-size: 0.875rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* ─── Pricing section ─── */
-    .dl-pricing-section {
-      padding: var(--space-3xl) 2rem;
-      max-width: 680px;
-      margin: 0 auto;
-      text-align: center;
-    }
-    .dl-pricing-section__label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1rem;
-    }
-    .dl-pricing-section__headline {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 3.5vw, 2.2rem);
-      font-weight: 600;
-      color: var(--fg);
-      letter-spacing: -0.03em;
-      margin-bottom: 2rem;
-      line-height: 1.2;
-    }
-    .dl-pricing-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 0.75rem;
-      max-width: 640px;
-      margin: 0 auto 1.5rem;
-    }
-    .dl-pricing-card {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem;
-      text-align: left;
-    }
-    .dl-pricing-card--featured {
-      border-color: var(--accent);
-      background: rgba(201,123,93,0.04);
-    }
-    .dl-pricing-card__badge {
-      display: inline-block;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 0.2rem 0.6rem;
-      border-radius: 100px;
-      margin-bottom: 0.6rem;
-    }
-    .dl-pricing-card__name {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.4rem;
-    }
-    .dl-pricing-card__price {
-      font-family: var(--font-display);
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--fg);
-      letter-spacing: -0.03em;
-      margin-bottom: 0.15rem;
-    }
-    .dl-pricing-card__price span {
-      font-size: 0.85rem;
-      font-weight: 400;
-      color: var(--muted);
-      font-family: var(--font-body);
-    }
-    .dl-pricing-card__savings {
-      font-size: 0.75rem;
-      color: #4CAF50;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-    }
-    .dl-pricing-card__btn {
-      display: block;
-      width: 100%;
-      padding: 0.6rem;
-      background: transparent;
-      border: 1.5px solid var(--border);
-      border-radius: 6px;
-      color: var(--fg);
-      font-family: var(--font-body);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: none;
-      transition: background 0.15s, border-color 0.15s;
-      box-sizing: border-box;
-    }
-    .dl-pricing-card__btn:hover {
-      background: rgba(255,255,255,0.04);
-      border-color: var(--muted);
-    }
-    .dl-pricing-card__btn--primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-    .dl-pricing-card__btn--primary:hover {
-      background: var(--accent-deep);
-      border-color: var(--accent-deep);
-    }
-    .dl-pricing-lifetime {
-      max-width: 480px;
-      margin: 0 auto 1.5rem;
-    }
-    .dl-pricing-lifetime__inner {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .dl-pricing-lifetime__info {}
-    .dl-pricing-lifetime__name {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.3rem;
-    }
-    .dl-pricing-lifetime__price {
-      font-family: var(--font-display);
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--fg);
-      letter-spacing: -0.03em;
-    }
-    .dl-pricing-lifetime__price span {
-      font-size: 0.8rem;
-      font-weight: 400;
-      color: var(--muted);
-      font-family: var(--font-body);
-    }
-    .dl-pricing-lifetime__btn {
-      padding: 0.6rem 1.25rem;
-      background: transparent;
-      border: 1.5px solid var(--accent);
-      border-radius: 6px;
-      color: var(--accent);
-      font-family: var(--font-body);
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s;
-      text-decoration: none;
-    }
-    .dl-pricing-lifetime__btn:hover { background: rgba(201,123,93,0.1); }
-    .dl-pricing-cashapp-note {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-bottom: 0;
-    }
-
-    @media (max-width: 480px) {
-      .dl-pricing-cards { grid-template-columns: 1fr; }
-    }
-
-    /* ─── Auto-intercept coming soon section ─── */
-    .intercept-section {
-      background: var(--fg);
-      padding: var(--space-3xl) 2rem;
-      text-align: center;
-      position: relative;
-    }
-    .intercept-section__inner { max-width: 600px; margin: 0 auto; }
-    .intercept-section__eyebrow {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 0.75rem;
-    }
-    .intercept-section__headline {
-      font-family: var(--font-display);
-      font-size: clamp(1.8rem, 4.5vw, 2.8rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: #FAF6F0;
-      margin-bottom: 1rem;
-      line-height: 1.15;
-    }
-    .intercept-section__body {
-      font-size: 1rem;
-      color: rgba(250,246,240,0.65);
-      line-height: 1.7;
-      margin-bottom: 2rem;
-    }
-    .intercept-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-      text-align: left;
-    }
-    .intercept-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    .intercept-step__num {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 0.1rem;
-    }
-    .intercept-step__content {}
-    .intercept-step__title {
-      font-weight: 600;
-      color: #FAF6F0;
-      font-size: 0.95rem;
-      margin-bottom: 0.2rem;
-    }
-    .intercept-step__desc {
-      font-size: 0.875rem;
-      color: rgba(250,246,240,0.5);
-      line-height: 1.5;
-    }
-
-    /* ─── Notify form ─── */
-    .notify-block {
-      background: rgba(250,246,240,0.06);
-      border: 1px solid rgba(250,246,240,0.12);
-      border-radius: 8px;
-      padding: 2rem;
-      text-align: center;
-    }
-    .notify-block__label {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #FAF6F0;
-      margin-bottom: 0.5rem;
-    }
-    .notify-block__sub {
-      font-size: 0.875rem;
-      color: rgba(250,246,240,0.5);
-      margin-bottom: 1.25rem;
-    }
-    .notify-form {
-      display: flex;
-      gap: 0.5rem;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-    .notify-input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border: 1px solid rgba(250,246,240,0.2);
-      border-radius: 6px;
-      background: rgba(250,246,240,0.06);
-      color: #FAF6F0;
-      font-family: var(--font-body);
-      font-size: 1rem;
-    }
-    .notify-input::placeholder { color: rgba(250,246,240,0.35); }
-    .notify-input:focus { outline: none; border-color: var(--accent); }
-    .notify-btn {
-      padding: 0.75rem 1.25rem;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-family: var(--font-body);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s;
-    }
-    .notify-btn:hover { background: var(--accent-deep); }
-    .notify-confirm {
-      font-size: 0.875rem;
-      color: rgba(250,246,240,0.6);
-      margin-top: 0.75rem;
-    }
-
-    @media (max-width: 480px) {
-      .notify-form { flex-direction: column; }
-      .apk-card { padding: 2rem 1.25rem; }
+    .install-instructions h3 { font-size:0.95rem; margin-bottom:12px; }
+    .install-step { display:flex; gap:10px; margin-bottom:10px; font-size:0.85rem; color:var(--text-muted); }
+    .step-num {
+      width:22px; height:22px; border-radius:50%; background:var(--primary);
+      color:white; display:flex; align-items:center; justify-content:center;
+      font-size:0.75rem; font-weight:700; flex-shrink:0;
     }
   </style>
 </head>
 <body>
-
-  <!-- Navigation -->
-  <nav class="nav">
-    <a href="/" class="nav__wordmark">HoldOff</a>
-    <a href="/filter" class="nav__cta">Try it free →</a>
-  </nav>
-
-  <!-- Hero -->
-  <section class="dl-hero">
-    <div class="dl-hero__inner">
-      <p class="dl-hero__eyebrow">HoldOff for Android</p>
-      <h1 class="dl-hero__headline">The real HoldOff lives on your phone.</h1>
-      <p class="dl-hero__sub">
-        Auto-intercept ships soon. Get the app now while you wait.
-      </p>
-    </div>
-  </section>
-
-  <!-- Section 1: Get the app now -->
-  <section class="dl-section" id="get-app">
-    <span class="dl-status-badge dl-status-badge--now">Available now</span>
-    <h2 class="dl-section__headline">Get the Android app</h2>
-    <p class="dl-section__body">
-      Works today as a web wrapper — full HoldOff on your home screen, one tap away.
-      No Play Store, no waiting.
-    </p>
-
-    <!-- PWA Install Banner -->
-    <div id="pwa-install-banner" style="display:none; background: #f0fff4; border: 1.5px solid #22c55e; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-      <span style="font-size: 1.75rem;">📲</span>
-      <div style="flex:1;">
-        <div style="font-weight: 600; font-size: 0.95rem; color: #166534;">Install HoldOff on your phone — no APK needed</div>
-        <div style="font-size: 0.8rem; color: #4ade80; margin-top: 0.2rem;">Works on Android &amp; iPhone. Tap once, installs like an app.</div>
+  <div class="download-page">
+    <div class="download-icon">💜</div>
+    <h1 class="download-title">Get HoldOff</h1>
+    <p class="download-desc">Your pause button for impulsive texts. Install it like a real app — because it is one.</p>
+    
+    <div class="download-options">
+      <div class="download-card" id="pwa-install-card" onclick="installPWA()" style="display:none;">
+        <div class="download-card-header">
+          <span class="download-card-icon">📱</span>
+          <span class="download-card-title">Install Web App</span>
+          <span class="download-card-badge badge-recommended">Recommended</span>
+        </div>
+        <div class="download-card-desc">One tap install — works on any device. Always up to date.</div>
       </div>
-      <button id="pwa-install-btn" style="background: #22c55e; color: #fff; border: none; border-radius: 6px; padding: 0.6rem 1.25rem; font-weight: 600; cursor: pointer; font-size: 0.9rem;">Add to Home Screen</button>
-    </div>
-
-    <!-- App Download Card -->
-    <div class="apk-card">
-      <div class="apk-card__icon">🛡️</div>
-      <div class="apk-card__name">HoldOff</div>
-      <div class="apk-card__meta">Instant web app · No install · Works on iPhone &amp; Android</div>
-      <a class="apk-card__btn" href="https://shouldiholdoff.live/filter" style="display:block;margin-bottom:.75rem;">
-        Open HoldOff → shouldiholdoff.live
+      
+      <a class="download-card" href="https://github.com/stacyfoster30-design/Holdoff/releases/latest" target="_blank">
+        <div class="download-card-header">
+          <span class="download-card-icon">🤖</span>
+          <span class="download-card-title">Android APK</span>
+          <span class="download-card-badge badge-beta">Beta</span>
+        </div>
+        <div class="download-card-desc">Download the Android app directly. No Play Store needed.</div>
       </a>
-      <a class="apk-card__btn" href="https://app.base44.com/apps/6a2a90559f878225e8a7a50f" target="_blank" rel="noopener" style="display:block;background:rgba(255,255,255,0.1);margin-bottom:.75rem;">
-        Open Full App (Base44) →
-      </a>
-      <p class="apk-card__note">Free to start · $3/month for unlimited verdicts · Add to home screen for the full app experience</p>
-    </div>
-  </section>
-
-  <!-- Pricing section -->
-  <section class="dl-pricing-section" id="pricing">
-    <p class="dl-pricing-section__label">Get the app + auto-intercept</p>
-    <h2 class="dl-pricing-section__headline">HoldOff App — four ways to subscribe.</h2>
-
-    <div class="dl-pricing-cards">
-      <!-- App Weekly -->
-      <div class="dl-pricing-card">
-        <div class="dl-pricing-card__name">App Weekly</div>
-        <div class="dl-pricing-card__price">$7.49<span>/wk</span></div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;">Pay week to week. Cancel anytime.</div>
-        <button class="dl-pricing-card__btn" onclick="startCheckout('app_weekly')">Get Weekly →</button>
-      </div>
-
-      <!-- App Monthly -->
-      <div class="dl-pricing-card">
-        <div class="dl-pricing-card__name">App Monthly</div>
-        <div class="dl-pricing-card__price">$14.99<span>/mo</span></div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;">Billed monthly. Cancel anytime.</div>
-        <button class="dl-pricing-card__btn" onclick="startCheckout('app_monthly')">Get Monthly →</button>
-      </div>
-
-      <!-- App Annual -->
-      <div class="dl-pricing-card dl-pricing-card--featured">
-        <div class="dl-pricing-card__badge">Best value</div>
-        <div class="dl-pricing-card__name">App Annual</div>
-        <div class="dl-pricing-card__price">$149<span>/yr</span></div>
-        <div class="dl-pricing-card__savings">Save ~17% vs monthly</div>
-        <button class="dl-pricing-card__btn dl-pricing-card__btn--primary" onclick="startCheckout('app_annual')">Get Annual →</button>
-      </div>
-    </div>
-
-    <!-- Lifetime -->
-    <div class="dl-pricing-lifetime">
-      <div class="dl-pricing-lifetime__inner">
-        <div class="dl-pricing-lifetime__info">
-          <div class="dl-pricing-lifetime__name">HoldOff Lifetime</div>
-          <div class="dl-pricing-lifetime__price">$299 <span>once</span></div>
+      
+      <div class="download-card" style="opacity:0.6;cursor:default;">
+        <div class="download-card-header">
+          <span class="download-card-icon">🍎</span>
+          <span class="download-card-title">iOS App Store</span>
         </div>
-        <button class="dl-pricing-lifetime__btn" onclick="startCheckout('lifetime')">Get Lifetime →</button>
+        <div class="download-card-desc">Coming soon — use "Add to Home Screen" in Safari for now.</div>
       </div>
     </div>
-
-    <p class="dl-pricing-cashapp-note">CashApp accepted. Refunds automatic within 1–5 days.</p>
-  </section>
-
-  <!-- Section 2: Auto-intercept coming soon -->
-  <section class="intercept-section" id="notify">
-    <div class="intercept-section__inner">
-      <p class="intercept-section__eyebrow">Shipping next</p>
-      <h2 class="intercept-section__headline">Auto-intercept is coming.</h2>
-      <p class="intercept-section__body">
-        No more copy-pasting at 11 PM. HoldOff will watch your draft texts
-        and serve a verdict before you hit send.
-        Built because copy-pasting is its own kind of friction.
-      </p>
-
-      <div class="intercept-steps">
-        <div class="intercept-step">
-          <div class="intercept-step__num">1</div>
-          <div class="intercept-step__content">
-            <div class="intercept-step__title">Enable the permission once</div>
-            <div class="intercept-step__desc">One toggle in Android Accessibility Settings. That's it.</div>
-          </div>
-        </div>
-        <div class="intercept-step">
-          <div class="intercept-step__num">2</div>
-          <div class="intercept-step__content">
-            <div class="intercept-step__title">HoldOff watches your draft texts</div>
-            <div class="intercept-step__desc">Runs on-device. When you're composing a text, HoldOff is watching.</div>
-          </div>
-        </div>
-        <div class="intercept-step">
-          <div class="intercept-step__num">3</div>
-          <div class="intercept-step__content">
-            <div class="intercept-step__title">Get the verdict before you send</div>
-            <div class="intercept-step__desc">HOLD, REWRITE, or SEND — surfaced before your finger hits send.</div>
-          </div>
-        </div>
+    
+    <div class="install-instructions">
+      <h3>📋 Manual Install (if button doesn't appear)</h3>
+      <div class="install-step">
+        <span class="step-num">1</span>
+        <span><strong>Android Chrome:</strong> Tap ⋮ menu → "Add to Home Screen"</span>
       </div>
-
-      <div class="notify-block">
-        <div class="notify-block__label">Notify me when auto-intercept ships.</div>
-        <div class="notify-block__sub">One email. The day it goes live.</div>
-        <form class="notify-form" id="intercept-notify-form-download">
-          <input
-            type="email"
-            name="email"
-            placeholder="your@email.com"
-            class="notify-input"
-            required
-            autocomplete="email"
-          />
-          <button type="submit" class="notify-btn">Notify me</button>
-        </form>
-        <p class="notify-confirm" id="intercept-notify-confirm-download" hidden>
-          You're on the list. One ping when it ships — nothing else.
-        </p>
+      <div class="install-step">
+        <span class="step-num">2</span>
+        <span><strong>iPhone Safari:</strong> Tap Share → "Add to Home Screen"</span>
+      </div>
+      <div class="install-step">
+        <span class="step-num">3</span>
+        <span><strong>Desktop:</strong> Click the install icon in your address bar</span>
       </div>
     </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer__inner">
-      <div class="footer__wordmark">HoldOff</div>
-      <div class="footer__tagline">Don't send it yet.</div>
-      <div class="footer__legal">
-        <a href="/filter" class="footer__contact">Try it in your browser</a><br>
-        © 2025 HoldOff
-      </div>
-    </div>
-  </footer>
-
+    
+    <a href="/" style="margin-top:32px;color:var(--primary);font-size:0.9rem;">← Back to HoldOff</a>
+  </div>
+  
   <script>
-    // Start checkout for a specific tier
-    function startCheckout(tier) {
-      var btn = event.target;
-      btn.disabled = true;
-      btn.textContent = 'Loading...';
-      var checkoutEmail = (localStorage.getItem('holdoff_checkout_email') || '').trim();
-      if (!checkoutEmail) checkoutEmail = (prompt('What email should HoldOff use to activate your subscription?') || '').trim();
-      if (!checkoutEmail) {
-        btn.disabled = false;
-        btn.textContent = tier === 'app_weekly' ? 'Get Weekly →' :
-                         tier === 'app_monthly' ? 'Get Monthly →' :
-                         tier === 'app_annual' ? 'Get Annual →' : 'Get Lifetime →';
-        alert('Enter your email to continue to checkout.');
-        return;
-      }
-      localStorage.setItem('holdoff_checkout_email', checkoutEmail.toLowerCase());
-      fetch('/api/checkout/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: tier, email: checkoutEmail }),
-      }).then(function(r) { return r.json(); }).then(function(data) {
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          btn.disabled = false;
-          btn.textContent = tier === 'app_weekly' ? 'Get Weekly →' :
-                           tier === 'app_monthly' ? 'Get Monthly →' :
-                           tier === 'app_annual' ? 'Get Annual →' : 'Get Lifetime →';
-          alert(data.error || 'Could not start checkout.');
-        }
-      }).catch(function() {
-        btn.disabled = false;
-        btn.textContent = tier === 'app_weekly' ? 'Get Weekly →' :
-                         tier === 'app_monthly' ? 'Get Monthly →' :
-                         tier === 'app_annual' ? 'Get Annual →' : 'Get Lifetime →';
-        alert('Could not start checkout. Try again.');
-      });
-    }
-
-    (function() {
-      var form = document.getElementById('intercept-notify-form-download');
-      if (!form) return;
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var email = form.querySelector('input[name="email"]').value;
-        fetch('/api/waitlist/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email, source: 'auto_intercept' })
-        }).then(function(r) { return r.json(); }).then(function() {
-          form.hidden = true;
-          document.getElementById('intercept-notify-confirm-download').hidden = false;
-          if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'auto_intercept_waitlist' });
-        }).catch(function() {});
-      });
-    })();
-  </script>
-
-  <!-- holdoff Analytics -->
-  <!-- Analytics removed -->
-  <!-- Meta Pixel -->
-  <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '878230961304067');
-    fbq('track', 'PageView');
-  </script>
-
-
-  <script>
-    // PWA Install prompt
     let deferredPrompt;
-    const banner = document.getElementById('pwa-install-banner');
-    const installBtn = document.getElementById('pwa-install-btn');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
+    window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      if (banner) banner.style.display = 'flex';
+      document.getElementById('pwa-install-card').style.display = 'block';
     });
-
-    if (installBtn) {
-      installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
+    function installPWA() {
+      if (deferredPrompt) {
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          banner.style.display = 'none';
-        }
-        deferredPrompt = null;
-      });
-    }
-
-    // Check if already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      if (banner) banner.style.display = 'none';
+        deferredPrompt.userChoice.then(function() { deferredPrompt = null; });
+      }
     }
   </script>
 </body>
 </html>
-

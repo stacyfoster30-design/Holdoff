@@ -217,8 +217,44 @@
         </div>
       </div>
 
+      
+      <!-- App Updates -->
+      <div class="settings-group">
+        <div class="settings-label">📲 App</div>
+        <div class="settings-item" onclick="forceUpdateApp()">
+          <div class="settings-item-left">
+            <span class="settings-icon">🔄</span>
+            <div>
+              <div class="settings-item-label">Check for Updates</div>
+              <div class="settings-item-desc" id="update-status">Tap to update to the latest version</div>
+            </div>
+          </div>
+          <span class="settings-arrow">›</span>
+        </div>
+        <div class="settings-item" id="install-app-btn" style="display:none;" onclick="installApp()">
+          <div class="settings-item-left">
+            <span class="settings-icon">📱</span>
+            <div>
+              <div class="settings-item-label">Install App</div>
+              <div class="settings-item-desc">Add HoldOff to your home screen</div>
+            </div>
+          </div>
+          <span class="settings-arrow">›</span>
+        </div>
+        <div class="settings-item" onclick="window.open('https://shouldiholdoff.live/download','_blank')">
+          <div class="settings-item-left">
+            <span class="settings-icon">🤖</span>
+            <div>
+              <div class="settings-item-label">Download Android APK</div>
+              <div class="settings-item-desc">Get the native Android app</div>
+            </div>
+          </div>
+          <span class="settings-arrow">›</span>
+        </div>
+      </div>
+
       <div style="text-align:center;padding:20px 0 40px;">
-        <p style="font-size:0.75rem;color:var(--text-dim);">HoldOff v2.0 • Made with 💜</p>
+        <p style="font-size:0.75rem;color:var(--text-dim);">HoldOff v2.1.0 • Made with 💜</p>
       </div>
     </div>
 
@@ -231,6 +267,30 @@
     function toggleVerdictStyle() {
       currentStyle = (currentStyle + 1) % verdictStyles.length;
       document.getElementById('verdict-style-desc').textContent = verdictStyles[currentStyle];
+    }
+  </script>
+
+  <script>
+    // PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      var btn = document.getElementById('install-app-btn');
+      if (btn) btn.style.display = 'flex';
+    });
+    
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choice) {
+          deferredPrompt = null;
+          var btn = document.getElementById('install-app-btn');
+          if (btn) btn.style.display = 'none';
+        });
+      } else {
+        alert('To install: tap your browser menu (⋮) and select "Add to Home Screen" or "Install App"');
+      }
     }
   </script>
 </body>

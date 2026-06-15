@@ -100,5 +100,23 @@
       © 2025 HoldOff • shouldiholdoff.live
     </footer>
   </div>
+
+<script>
+  let deferredPromptLanding;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPromptLanding = e;
+    var btn = document.getElementById('landing-install-btn');
+    if (btn) btn.style.display = 'block';
+  });
+  function installAppLanding() {
+    if (deferredPromptLanding) {
+      deferredPromptLanding.prompt();
+      deferredPromptLanding.userChoice.then(function() { deferredPromptLanding = null; });
+    } else {
+      alert('To install HoldOff: tap your browser menu and select "Add to Home Screen" or "Install App"');
+    }
+  }
+</script>
 </body>
 </html>
