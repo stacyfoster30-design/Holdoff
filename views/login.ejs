@@ -9,30 +9,30 @@
       align-items:center; justify-content:center; padding:40px 24px;
       position:relative; z-index:1;
     }
-    .auth-logo {
-      font-size:3rem; margin-bottom:8px;
-    }
+    .auth-logo { font-size:3rem; margin-bottom:8px; }
     .auth-title {
       font-size:1.8rem; font-weight:700; margin-bottom:4px;
       background: linear-gradient(135deg, var(--primary), var(--rose));
       -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
     }
-    .auth-subtitle {
-      color:var(--text-muted); font-size:0.95rem; margin-bottom:32px;
-    }
+    .auth-subtitle { color:var(--text-muted); font-size:0.95rem; margin-bottom:32px; }
     .auth-card {
       width:100%; max-width:380px; background:var(--bg-card);
       border:1px solid var(--border); border-radius:var(--radius);
       padding:28px 24px;
     }
-    .auth-footer {
-      margin-top:20px; text-align:center; font-size:0.9rem; color:var(--text-muted);
-    }
+    .auth-footer { margin-top:20px; text-align:center; font-size:0.9rem; color:var(--text-muted); }
     .error-msg {
       background:rgba(232,121,121,0.1); border:1px solid rgba(232,121,121,0.3);
       border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px;
       color:var(--danger); font-size:0.9rem;
     }
+    .forgot-link {
+      display:block; text-align:right; margin-top:-8px; margin-bottom:12px;
+      font-size:0.85rem;
+    }
+    .forgot-link a { color:var(--rose); text-decoration:none; }
+    .forgot-link a:hover { color:var(--primary); text-decoration:underline; }
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -45,6 +45,9 @@
     <div class="auth-card">
       <% if (typeof error !== 'undefined' && error) { %>
         <div class="error-msg"><%= error %></div>
+      <% } %>
+      <% if (typeof message !== 'undefined' && message) { %>
+        <div style="background:rgba(109,206,168,0.1);border:1px solid rgba(109,206,168,0.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;color:var(--success);font-size:0.9rem;"><%= message %></div>
       <% } %>
 
       <!-- Google Sign-In -->
@@ -66,6 +69,9 @@
           <label class="form-label">Password</label>
           <input type="password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
         </div>
+        <div class="forgot-link">
+          <a href="/forgot-password">Forgot password?</a>
+        </div>
         <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px;">Sign In</button>
       </form>
 
@@ -81,8 +87,13 @@
 
   <script>
     function googleSignIn() {
+      const clientId = '<%= typeof googleClientId !== "undefined" ? googleClientId : "" %>';
+      if (!clientId) {
+        alert('Google sign-in is being set up. Please use email login for now.');
+        return;
+      }
       google.accounts.id.initialize({
-        client_id: '<%= typeof googleClientId !== "undefined" ? googleClientId : "" %>',
+        client_id: clientId,
         callback: handleGoogleResponse
       });
       google.accounts.id.prompt();

@@ -313,6 +313,13 @@ app.get('/reset-password', async (req, res) => {
   res.render('reset-password', buildLandingContext({ user }));
 });
 
+// Forgot password page
+app.get('/forgot-password', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('forgot-password', buildLandingContext({ user: null }));
+});
+
 // Success page — verifies Stripe session server-side before confirming
 app.get('/success', async (req, res) => {
   const user = await getUserFromCookies(req);
