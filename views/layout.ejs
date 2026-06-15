@@ -171,7 +171,7 @@
       window.addEventListener('error', function (e) {
         var src = e.filename || '';
         if (src.includes('fbevents') || src.includes('connect.facebook.net') ||
-            src.includes('resend') || src.includes('analytics') || ) return;
+            src.includes('resend') || src.includes('analytics')) return;
         fallbackDiv.style.display = 'flex';
       });
       window.addEventListener('unhandledrejection', function () {
