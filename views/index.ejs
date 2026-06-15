@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>HoldOff — Your 3-Minute Pause Before You Spiral</title>
+  <style>
+    .hero {
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:40px 24px; position:relative; z-index:1;
+    }
+    .hero-badge {
+      display:inline-flex; padding:6px 16px; border-radius:var(--radius-full);
+      background:var(--primary-glow); color:var(--primary); font-size:0.85rem;
+      font-weight:600; margin-bottom:20px;
+    }
+    .hero h1 {
+      font-size:2.5rem; font-weight:800; line-height:1.1; margin-bottom:16px;
+      background: linear-gradient(135deg, var(--primary), var(--accent), var(--rose));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .hero p { color:var(--text-muted); font-size:1.1rem; max-width:400px; margin-bottom:32px; line-height:1.6; }
+    .hero-actions { display:flex; flex-direction:column; gap:12px; width:100%; max-width:320px; }
+    .feature-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:14px;
+      max-width:480px; margin:0 auto; padding:40px 24px;
+    }
+    .feature-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:var(--radius); padding:20px; text-align:center;
+      transition:var(--transition);
+    }
+    .feature-card:hover { border-color:var(--primary); transform:translateY(-2px); }
+    .feature-icon { font-size:2rem; margin-bottom:8px; }
+    .feature-title { font-weight:600; font-size:0.9rem; margin-bottom:4px; }
+    .feature-desc { font-size:0.8rem; color:var(--text-muted); line-height:1.4; }
+    .cta-section {
+      text-align:center; padding:60px 24px; max-width:480px; margin:0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div style="position:relative;z-index:1;">
+    <!-- Hero -->
+    <section class="hero">
+      <span class="hero-badge">💜 AI-Powered Impulse Control</span>
+      <h1>Stop Texting.<br>Start Holding Off.</h1>
+      <p>The app that catches you mid-spiral, decodes their messages, and helps you respond from power — not panic.</p>
+      <div class="hero-actions">
+        <a href="/signup" class="btn btn-primary btn-lg btn-block">Get Started Free</a>
+        <a href="/login" class="btn btn-ghost btn-lg btn-block">Sign In</a>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">✍️</div>
+        <div class="feature-title">AI Verdict</div>
+        <div class="feature-desc">Type your message — AI decides if you should send it</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Decode Messages</div>
+        <div class="feature-desc">Paste their text — AI tells you what they actually meant</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Spiral Lock</div>
+        <div class="feature-desc">Locks you out when you're rapid-fire texting</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Insights</div>
+        <div class="feature-desc">Track patterns, attachment styles, and progress</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📓</div>
+        <div class="feature-title">Journal</div>
+        <div class="feature-desc">Process emotions privately before you react</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🫂</div>
+        <div class="feature-title">Community</div>
+        <div class="feature-desc">Anonymous support from people who get it</div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <h2 style="font-size:1.5rem;margin-bottom:12px;">
+        <span style="background:linear-gradient(135deg, var(--primary), var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">3 minutes.</span> That's all it takes.
+      </h2>
+      <p style="color:var(--text-muted);margin-bottom:24px;">The difference between a text you regret and a boundary you're proud of.</p>
+      <a href="/signup" class="btn btn-rose btn-lg">Start Your Pause 💜</a>
+    </section>
+
+    <footer style="text-align:center;padding:30px;color:var(--text-dim);font-size:0.8rem;">
+      © 2025 HoldOff • shouldiholdoff.live
+    </footer>
+  </div>
+</body>
+</html>
