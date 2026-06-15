@@ -23,6 +23,7 @@ const { verifyToken, getCookieTokens } = require('./lib/auth');
 const routes = require('./routes');
 const { mountSharePages } = require('./routes/share');
 const { ensureCommunityTables } = require('./db/community');
+const googleAuthHandler = require('./routes/google-auth');
 
 // Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
 if (process.env.BLAST_TRIGGER === '1') {
@@ -115,6 +116,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 // POST /api/interpret → aliased /api/filter/interpret (same AI logic)
 const interpretHandler = require('./routes/interpret');
 app.post('/api/interpret', interpretHandler);
+app.post('/api/auth/google', googleAuthHandler);
 
 // Mount SEO routes at root
 app.use('/', require('./routes/seo'));
@@ -216,7 +218,7 @@ app.get('/', async (req, res) => {
       maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
     });
   }
-  res.render('layout', buildLandingContext({ user }));
+  res.render('index', { user });
 });
 
 // Referral dashboard — tiered rewards + progress tracker
@@ -224,6 +226,14 @@ app.get('/referrals', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/filter');
   res.render('referrals', { user });
+});
+
+
+// Inbox — messaging hub (replaces old dashboard as home screen)
+app.get('/inbox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/inbox');
+  res.render('inbox', { user });
 });
 
 // Pattern journal — requires authentication
@@ -285,7 +295,7 @@ app.get('/filter', async (req, res) => {
 app.get('/compose', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/compose');
-  res.render('compose', buildLandingContext({ user }));
+  res.render('compose', { user });
 });
 
 // Redirect old /holdoff.apk URL → static APK handler (CDN blocks raw .apk)
@@ -340,6 +350,22 @@ app.get('/compare/replika', (_req, res) => res.render('compare/replika'));
 app.get('/compare/character-ai', (_req, res) => res.render('compare/character-ai'));
 app.get('/compare/chatgpt', (_req, res) => res.render('compare/chatgpt'));
 
+
+// Insights — stats, contact analysis, forecast
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user });
+});
+
+
+// Account — profile, personality, settings
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
 // Legal pages
 app.get('/privacy', (_req, res) => res.render('privacy'));
 app.get('/terms', (_req, res) => res.render('terms'));
@@ -355,20 +381,19 @@ app.get('/examples', async (req, res) => {
 // Auth pages — login, signup, dashboard, settings
 app.get('/login', async (req, res) => {
   const user = await getUserFromCookies(req);
-  if (user) return res.redirect('/dashboard');
+  if (user) return res.redirect('/inbox');
   res.render('login', buildLandingContext({ user: null }));
 });
 
 app.get('/signup', async (req, res) => {
   const user = await getUserFromCookies(req);
-  if (user) return res.redirect('/dashboard');
+  if (user) return res.redirect('/inbox');
   res.render('signup', buildLandingContext({ user: null }));
 });
 
 app.get('/dashboard', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/dashboard');
-  res.render('dashboard', buildLandingContext({ user }));
+  // Redirect to new inbox home screen
+  return res.redirect('/inbox');
 });
 
 app.get('/settings', async (req, res) => {
@@ -385,7 +410,8 @@ app.get('/profile', async (req, res) => {
 
 app.get('/community', async (req, res) => {
   const user = await getUserFromCookies(req);
-  res.render('community', buildLandingContext({ user }));
+  if (!user) return res.redirect('/login?returnTo=/community');
+  res.render('community', { user });
 });
 
 // Share page + OG image — routes extracted to routes/share.js
