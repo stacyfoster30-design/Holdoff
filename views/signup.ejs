@@ -7,12 +7,14 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="apple-mobile-web-app-title" content="HoldOff">
   <meta name="theme-color" content="#0E0C0B">
+  <meta name="google-client-id" content="<%= typeof googleClientId !== 'undefined' ? googleClientId : '' %>">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/theme.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     .auth-wrap { max-width: 420px; margin: 6rem auto 4rem; padding: 0 1.5rem; }
     .auth-wrap h1 { font-family: var(--font-serif); font-size: 2rem; margin-bottom: .5rem; }
@@ -26,6 +28,10 @@
     .auth-footer { text-align: center; margin-top: 1.5rem; color: #9ca3af; font-size: .875rem; }
     .auth-footer a { color: var(--accent); }
     .auth-fine { font-size: .75rem; color: #6b7280; margin-top: 1rem; text-align: center; }
+    .auth-divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; color: #6b7280; font-size: .8rem; }
+    .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: #374151; }
+    .google-btn-wrap { display: flex; justify-content: center; margin-bottom: .5rem; }
+    #googleSignUpBtn { min-height: 44px; }
   </style>
 </head>
 <body>
@@ -36,6 +42,13 @@
   <div class="auth-wrap">
     <h1>Create your account</h1>
     <p class="sub">Start with 5 free verdicts. No card required.</p>
+
+    <!-- Google Sign-Up -->
+    <div class="google-btn-wrap">
+      <div id="googleSignUpBtn"></div>
+    </div>
+
+    <div class="auth-divider">or</div>
 
     <form id="signupForm" onsubmit="handleSignup(event)">
       <div class="auth-field">
@@ -61,6 +74,58 @@
   </div>
 
   <script>
+    // Google Sign-Up initialization
+    function handleGoogleCredential(response) {
+      const err = document.getElementById("signupError");
+      err.style.display = "none";
+
+      fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: response.credential })
+      })
+      .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+      .then(({ ok, data }) => {
+        if (ok) {
+          window.location = "/filter";
+        } else {
+          err.textContent = data.error || "Google sign-up failed";
+          err.style.display = "block";
+        }
+      })
+      .catch(() => {
+        err.textContent = "Network error — try again";
+        err.style.display = "block";
+      });
+    }
+
+    function initGoogleSignIn() {
+      if (typeof google === "undefined" || !google.accounts) {
+        setTimeout(initGoogleSignIn, 200);
+        return;
+      }
+      const clientId = document.querySelector('meta[name="google-client-id"]')?.content;
+      if (!clientId) return;
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredential,
+        ux_mode: "popup",
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("googleSignUpBtn"),
+        {
+          theme: "filled_black",
+          size: "large",
+          width: 380,
+          text: "signup_with",
+          shape: "pill",
+          logo_alignment: "left",
+        }
+      );
+    }
+    initGoogleSignIn();
+
     async function handleSignup(e) {
       e.preventDefault();
       const btn = document.querySelector(".auth-submit");
