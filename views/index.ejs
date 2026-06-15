@@ -26,11 +26,12 @@
       max-width:480px; margin:0 auto; padding:40px 24px;
     }
     .feature-card {
+      display:block; text-decoration:none; color:inherit;
       background:var(--bg-card); border:1px solid var(--border);
       border-radius:var(--radius); padding:20px; text-align:center;
-      transition:var(--transition);
+      transition:var(--transition); cursor:pointer;
     }
-    .feature-card:hover { border-color:var(--primary); transform:translateY(-2px); }
+    .feature-card:hover { border-color:var(--primary); transform:translateY(-2px); box-shadow:0 8px 24px rgba(139,92,246,0.15); }
     .feature-icon { font-size:2rem; margin-bottom:8px; }
     .feature-title { font-weight:600; font-size:0.9rem; margin-bottom:4px; }
     .feature-desc { font-size:0.8rem; color:var(--text-muted); line-height:1.4; }
@@ -52,38 +53,38 @@
       </div>
     </section>
 
-    <!-- Features -->
+    <!-- Features — all cards are clickable links -->
     <section class="feature-grid">
-      <div class="feature-card">
+      <a href="/compose" class="feature-card">
         <div class="feature-icon">✍️</div>
         <div class="feature-title">AI Verdict</div>
         <div class="feature-desc">Type your message — AI decides if you should send it</div>
-      </div>
-      <div class="feature-card">
+      </a>
+      <a href="/compose" class="feature-card">
         <div class="feature-icon">🔍</div>
         <div class="feature-title">Decode Messages</div>
         <div class="feature-desc">Paste their text — AI tells you what they actually meant</div>
-      </div>
-      <div class="feature-card">
+      </a>
+      <a href="/compose" class="feature-card">
         <div class="feature-icon">🔒</div>
         <div class="feature-title">Spiral Lock</div>
         <div class="feature-desc">Locks you out when you're rapid-fire texting</div>
-      </div>
-      <div class="feature-card">
+      </a>
+      <a href="/insights" class="feature-card">
         <div class="feature-icon">📊</div>
         <div class="feature-title">Insights</div>
         <div class="feature-desc">Track patterns, attachment styles, and progress</div>
-      </div>
-      <div class="feature-card">
+      </a>
+      <a href="/journal" class="feature-card">
         <div class="feature-icon">📓</div>
         <div class="feature-title">Journal</div>
         <div class="feature-desc">Process emotions privately before you react</div>
-      </div>
-      <div class="feature-card">
+      </a>
+      <a href="/community" class="feature-card">
         <div class="feature-icon">🫂</div>
         <div class="feature-title">Community</div>
         <div class="feature-desc">Anonymous support from people who get it</div>
-      </div>
+      </a>
     </section>
 
     <!-- CTA -->
