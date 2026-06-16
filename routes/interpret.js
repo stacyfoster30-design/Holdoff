@@ -8,7 +8,7 @@ const { logVerdictCall } = require('../db/healthchecks');
 const {
   callWithFallback,
   HANDLER_HARD_TIMEOUT_MS,
-  SYSTEM_PROMPT: INTERPRET_SYSTEM_PROMPT,
+  INTERPRET_SYSTEM_PROMPT,
   parseCookies,
   extractProInfo,
   getVerdictCount,
