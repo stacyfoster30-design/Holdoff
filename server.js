@@ -125,6 +125,7 @@ app.use('/', require('./routes/seo'));
 app.use('/api/spiral-lock', require('./routes/spiral-lock'));
 app.use('/api/community', require('./routes/community'));
 app.use('/api/contacts', require('./routes/contacts'));
+app.use('/api/quiz-invites', require('./routes/quiz-invites'));
 app.use('/api', routes);
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
@@ -164,6 +165,7 @@ app.get('/robots.txt', (_req, res) => {
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
+app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
 
 // Static files — `index: false` so `/` hits the EJS render below, not index.html
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
