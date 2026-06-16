@@ -51,7 +51,7 @@
   <div class="app-container">
     <div class="screen-header">
       <h1>⚙️ Account</h1>
-      <a href="/logout" class="btn btn-ghost btn-sm">Log Out</a>
+      <button id="logoutBtn" class="btn btn-ghost btn-sm">Log Out</button>
     </div>
 
     <div class="screen-content">
@@ -292,6 +292,15 @@
         alert('To install: tap your browser menu (⋮) and select "Add to Home Screen" or "Install App"');
       }
     }
+  </script>
+
+  <script>
+    document.getElementById('logoutBtn')?.addEventListener('click', async function() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (_) {}
+      window.location.href = '/';
+    });
   </script>
 </body>
 </html>
