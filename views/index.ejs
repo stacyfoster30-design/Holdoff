@@ -4,6 +4,20 @@
   <%- include('partials/head') %>
   <title>HoldOff — Your 3-Minute Pause Before You Spiral</title>
   <style>
+    .promo-banner {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+      text-align: center;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-bottom: 2px solid #d8b4fe;
+    }
+    .promo-banner a {
+      color: white;
+      text-decoration: underline;
+      font-weight: 700;
+    }
     .hero {
       min-height:100vh; display:flex; flex-direction:column;
       align-items:center; justify-content:center; text-align:center;
@@ -41,6 +55,11 @@
   </style>
 </head>
 <body>
+  <!-- Promo Banner -->
+  <div class="promo-banner">
+    🎉 Limited Time: <strong>$1 for 24 hours</strong> — Use code <a href="#" onclick="document.getElementById('promo-code').textContent='ONEDOLLAR'; return false;">ONEDOLLAR</a> at checkout
+  </div>
+
   <div style="position:relative;z-index:1;">
     <!-- Hero -->
     <section class="hero">
