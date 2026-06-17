@@ -10,16 +10,72 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install -g pwabuilder
-      - run: echo "Building APK from PWA..." && pwabuilder build --platform androidTWA --url https://shouldiholdoff.live --packageId live.shouldiholdoff.app --output ./release 2>&1 || echo "Build [...]
-      - uses: softprops/action-gh-release@v2
+      
+      - name: Install Java SDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Install Cordova & Build Tools
+        run: |
+          npm install -g cordova@latest
+          echo "y" | sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+      
+      - name: Create Cordova Project
+        run: |
+          cordova create holdoff-app live.shouldiholdoff.app "HoldOff"
+          cd holdoff-app
+          cordova platform add android
+      
+      - name: Copy Web App to Cordova
+        run: |
+          cd holdoff-app
+          mkdir -p www/css www/js
+          cp -r ../public/css www/css/ || true
+          cp -r ../public/js www/js/ || true
+          cat > www/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>HoldOff</title>
+            <style>
+              body { margin: 0; padding: 0; }
+            </style>
+            <script src="cordova.js"></script>
+          </head>
+          <body>
+            <script>
+              document.addEventListener('deviceready', function() {
+                window.location.href = 'https://shouldiholdoff.live/';
+              }, false);
+            </script>
+          </body>
+          </html>
+          HTMLEOF
+      
+      - name: Build APK
+        run: |
+          cd holdoff-app
+          cordova build android --release
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: "Build ${{ github.run_number }}"
+          name: "HoldOff Build ${{ github.run_number }}"
           body: "HoldOff Android • https://shouldiholdoff.live"
+          files: holdoff-app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
