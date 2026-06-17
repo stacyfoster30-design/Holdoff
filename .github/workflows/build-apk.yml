@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install -g @pwabuilder/pwabuilder
-      - run: echo "Building APK from PWA..." && pwabuilder build --platform androidTWA --url https://shouldiholdoff.live --packageId live.shouldiholdoff.app --output ./release 2>&1 || echo "Build complete"
+      - run: npm install -g pwabuilder
+      - run: echo "Building APK from PWA..." && pwabuilder build --platform androidTWA --url https://shouldiholdoff.live --packageId live.shouldiholdoff.app --output ./release 2>&1 || echo "Build [...]
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
@@ -23,4 +23,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  
