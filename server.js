@@ -158,6 +158,8 @@ app.get('/referral', (_req, res) => res.redirect(301, '/referrals'));
 app.get('/share', (_req, res) => res.redirect(301, '/filter'));
 app.get('/checkout', (_req, res) => res.redirect(301, '/filter#pricing'));
 app.post('/checkout', (req, res) => res.redirect(307, '/api/checkout/session'));
+app.post('/signup', (req, res) => res.redirect(307, '/api/auth/signup'));
+app.post('/login', (req, res) => res.redirect(307, '/api/auth/login'));
 
 // Health check (Render requirement — no DB query so Neon can auto-suspend)
 app.get('/robots.txt', (_req, res) => {
