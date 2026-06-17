@@ -174,10 +174,8 @@ app.get('/robots.txt', (_req, res) => {
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
 app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
 app.get('/app', (_req, res) => res.redirect(302, '/inbox'));
-app.get('/notifications', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/notifications');
-  res.render('notifications', { user });
+app.get('/notifications', async (_req, res) => {
+  res.render('notifications', { user: null });
 });
 app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
 app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
