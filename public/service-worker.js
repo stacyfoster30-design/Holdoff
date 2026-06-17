@@ -1,5 +1,5 @@
-const CACHE_NAME = 'holdoff-shell-v2';
-const SHELL_URLS = ['/', '/app', '/login', '/signup', '/pricing', '/onboarding', '/questionnaire', '/manifest.json', '/icon.svg'];
+const CACHE_NAME = 'holdoff-shell-v3';
+const SHELL_URLS = ['/', '/app', '/login', '/signup', '/pricing', '/onboarding', '/questionnaire', '/notifications', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -36,5 +36,21 @@ self.addEventListener('fetch', (event) => {
       caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => undefined);
       return response;
     }))
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification && event.notification.data && event.notification.data.url) || '/app';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(targetUrl).catch(() => undefined);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
   );
 });
