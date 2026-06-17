@@ -294,6 +294,57 @@ app.get('/pricing', async (req, res) => {
   res.render('pricing', { user });
 });
 
+// ─── Free-access promo codes ─────────────────────────────────────────────────
+// Codes that grant full lifetime access when redeemed by a signed-in user.
+// Add new codes here (UPPERCASE keys). Matching is case-insensitive.
+const FREE_ACCESS_CODES = {
+  DNA: { membership: 'lifetime', label: 'Founder Free Access' },
+};
+
+// Redeem page — public. If not signed in, it routes them to log in / sign up
+// and returns them right back here to finish unlocking.
+app.get('/redeem', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  const code = (req.query.code || '').toString().replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
+  res.render('redeem', { user: user || null, code });
+});
+
+// Redeem endpoint — grants lifetime access to the signed-in user for a valid code.
+app.post('/api/redeem', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) {
+      return res.status(401).json({ ok: false, error: 'Please sign in or create your account first, then redeem.' });
+    }
+    const raw = (req.body?.code || '').toString().trim().toUpperCase();
+    const entry = FREE_ACCESS_CODES[raw];
+    if (!entry) {
+      return res.status(400).json({ ok: false, error: "That code isn't valid. Double-check it and try again." });
+    }
+    const { updateMembershipType } = require('./db/users');
+    await updateMembershipType(user.id, entry.membership);
+    // Best-effort mirror into subscriptions so paywall checks everywhere see active access.
+    try {
+      const { upsertSubscription } = require('./db/subscriptions');
+      await upsertSubscription({
+        email: (user.email || '').toLowerCase().trim(),
+        stripeCustomerId: 'promo:' + raw,
+        stripeSubscriptionId: 'promo:' + raw,
+        status: 'active',
+        currentPeriodEnd: new Date(Date.now() + 365 * 50 * 24 * 60 * 60 * 1000),
+        membershipType: entry.membership,
+      });
+    } catch (subErr) {
+      console.warn('[redeem] subscription mirror skipped:', subErr.message);
+    }
+    console.log(`[redeem] ${user.email} redeemed ${raw} → ${entry.membership}`);
+    return res.json({ ok: true, membership: entry.membership });
+  } catch (err) {
+    console.error('[redeem] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Try again in a moment.' });
+  }
+});
+
 app.get('/filter', async (req, res) => {
   const user = await getUserFromCookies(req);
   const refCode = req.query.ref;

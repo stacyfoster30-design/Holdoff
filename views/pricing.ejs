@@ -483,9 +483,109 @@
         font-size: 1.8rem;
       }
     }
+
+    /* ===== LIVELY ANIMATIONS ===== */
+    /* Floating aurora background */
+    .aurora {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .aurora span {
+      position: absolute;
+      display: block;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.45;
+      mix-blend-mode: screen;
+      animation: drift 22s ease-in-out infinite alternate;
+    }
+    .aurora .a1 { width: 480px; height: 480px; top: -120px; left: -100px;
+      background: radial-gradient(circle, #6D28D9, transparent 70%); animation-delay: 0s; }
+    .aurora .a2 { width: 560px; height: 560px; top: 20%; right: -160px;
+      background: radial-gradient(circle, #1E40AF, transparent 70%); animation-delay: -6s; }
+    .aurora .a3 { width: 420px; height: 420px; bottom: -140px; left: 25%;
+      background: radial-gradient(circle, #8B5CF6, transparent 70%); animation-delay: -12s; }
+    @keyframes drift {
+      0%   { transform: translate(0,0) scale(1); }
+      50%  { transform: translate(60px,-50px) scale(1.15); }
+      100% { transform: translate(-40px,40px) scale(0.95); }
+    }
+
+    /* Animated gradient text shimmer */
+    .hero h1, .section-header h2 {
+      background-size: 220% auto;
+      animation: shimmer 6s linear infinite;
+    }
+    @keyframes shimmer {
+      to { background-position: 220% center; }
+    }
+
+    /* Hero entrance */
+    .hero-eyebrow { animation: fadeUp 0.7s ease both; }
+    .hero h1 { animation: fadeUp 0.8s ease 0.1s both, shimmer 6s linear infinite; }
+    .hero-sub { animation: fadeUp 0.8s ease 0.25s both; }
+    .hero-ctas { animation: fadeUp 0.8s ease 0.4s both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Pulsing primary CTA glow */
+    .hero-ctas .btn-primary {
+      position: relative;
+      animation: pulseGlow 2.6s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.45); }
+      50%     { box-shadow: 0 0 28px 6px rgba(139,92,246,0.55); }
+    }
+
+    /* Eyebrow soft float */
+    .hero-eyebrow { will-change: transform; }
+    .hero-eyebrow::after { content: ""; }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity 0.7s cubic-bezier(.2,.7,.2,1), transform 0.7s cubic-bezier(.2,.7,.2,1);
+      will-change: opacity, transform;
+    }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+
+    /* Card hover lift already exists — add icon bounce */
+    .feature-card:hover .feature-icon { animation: bounce 0.6s ease; }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      30% { transform: translateY(-8px) scale(1.12); }
+      60% { transform: translateY(0) scale(1); }
+    }
+
+    /* Popular pricing card subtle breathe */
+    .pricing-card.popular { animation: breathe 4s ease-in-out infinite; }
+    @keyframes breathe {
+      0%,100% { box-shadow: 0 0 0 1px var(--primary), 0 18px 50px rgba(139,92,246,0.18); }
+      50%     { box-shadow: 0 0 0 1px var(--primary), 0 22px 60px rgba(139,92,246,0.34); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, .aurora span, .hero h1, .hero-eyebrow, .hero-sub, .hero-ctas,
+      .hero-ctas .btn-primary, .pricing-card.popular, .reveal {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="aurora" aria-hidden="true">
+    <span class="a1"></span><span class="a2"></span><span class="a3"></span>
+  </div>
   <!-- NAV -->
   <nav class="nav">
     <div class="nav-logo">💜 HoldOff</div>
@@ -882,6 +982,27 @@
           this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
       });
     });
+
+    // Scroll reveal — stagger sections, cards, faqs into view
+    (function () {
+      var targets = document.querySelectorAll(
+        '.feature-card, .pricing-card, .faq-item, .section-header, .cta-section, .hero-ctas'
+      );
+      targets.forEach(function (el, i) {
+        el.classList.add('reveal');
+        el.style.transitionDelay = (Math.min(i % 4, 3) * 0.08) + 's';
+      });
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(function (el) { el.classList.add('in'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.12 });
+      targets.forEach(function (el) { io.observe(el); });
+    })();
   </script>
 </body>
 </html>
