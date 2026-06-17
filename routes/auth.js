@@ -217,6 +217,8 @@ router.post('/signup', async (req, res) => {
     ok: true,
     user: { id: user.id, email: normalizedEmail, name: user.name },
     message: 'Account created. Check your email to confirm it.',
+    needs_questionnaire: true, // Signal frontend to show onboarding questionnaire
+    redirect_to: '/onboarding'
   });
 
   // Send welcome email async — does not block response. Dedup via markWelcomeSent (CAS).

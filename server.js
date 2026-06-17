@@ -125,7 +125,12 @@ app.use('/', require('./routes/seo'));
 app.use('/api/spiral-lock', require('./routes/spiral-lock'));
 app.use('/api/community', require('./routes/community'));
 app.use('/api/contacts', require('./routes/contacts'));
+app.use('/api/contact-insights', require('./routes/contact-insights'));
+app.use('/api/questionnaire', require('./routes/questionnaire'));
 app.use('/api/quiz-invites', require('./routes/quiz-invites'));
+app.use('/api/messaging', require('./routes/messaging'));
+app.use('/api/verdict', require('./routes/verdict'));
+app.use('/api/interpreter', require('./routes/interpreter'));
 app.use('/api', routes);
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
@@ -169,6 +174,8 @@ app.get('/robots.txt', (_req, res) => {
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
 app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
 app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
+app.get('/questionnaire', (_req, res) => res.sendFile(path.join(__dirname, 'conditions-questionnaire.html')));
+app.get('/onboarding', (_req, res) => res.render('onboarding'));
 
 // Static files — `index: false` so `/` hits the EJS render below, not index.html
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
@@ -457,6 +464,10 @@ if (!process.env.STRIPE_WEBHOOK_SECRET) {
 
 // Ensure community tables exist (idempotent)
 ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e.message));
+
+// Ensure messaging tables exist (idempotent)
+const { initializeTables: initMessagingTables } = require('./db/messages');
+initMessagingTables().catch(e => console.warn('[startup] messaging tables:', e.message));
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
 
