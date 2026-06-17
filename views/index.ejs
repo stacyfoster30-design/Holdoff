@@ -4,20 +4,6 @@
   <%- include('partials/head') %>
   <title>HoldOff — Your 3-Minute Pause Before You Spiral</title>
   <style>
-    .promo-banner {
-      background: linear-gradient(135deg, #7c3aed, #a855f7);
-      color: white;
-      text-align: center;
-      padding: 12px 24px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      border-bottom: 2px solid #d8b4fe;
-    }
-    .promo-banner a {
-      color: white;
-      text-decoration: underline;
-      font-weight: 700;
-    }
     .hero {
       min-height:100vh; display:flex; flex-direction:column;
       align-items:center; justify-content:center; text-align:center;
@@ -55,11 +41,6 @@
   </style>
 </head>
 <body>
-  <!-- Promo Banner -->
-  <div class="promo-banner">
-    🎉 Limited Time: <strong>$1 for 24 hours</strong> — Use code <a href="#" onclick="document.getElementById('promo-code').textContent='ONEDOLLAR'; return false;">ONEDOLLAR</a> at checkout
-  </div>
-
   <div style="position:relative;z-index:1;">
     <!-- Hero -->
     <section class="hero">
@@ -115,8 +96,17 @@
       <a href="/signup" class="btn btn-rose btn-lg">Start Your Pause 💜</a>
     </section>
 
-    <footer style="text-align:center;padding:30px;color:var(--text-dim);font-size:0.8rem;">
+    <footer style="text-align:center;padding:30px;color:var(--text-dim);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px;">
       © 2025 HoldOff • shouldiholdoff.live
+      <div style="margin-top:16px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+        <a href="/legal" style="color:var(--text-muted);text-decoration:none;transition:color 0.2s;">Legal & Disclaimer</a>
+        <span style="color:var(--border);">•</span>
+        <a href="/legal#privacy" style="color:var(--text-muted);text-decoration:none;transition:color 0.2s;">Privacy</a>
+        <span style="color:var(--border);">•</span>
+        <a href="/legal#terms" style="color:var(--text-muted);text-decoration:none;transition:color 0.2s;">Terms</a>
+        <span style="color:var(--border);">•</span>
+        <a href="/legal#health-disclaimer" style="color:var(--text-muted);text-decoration:none;transition:color 0.2s;">Mental Health Disclaimer</a>
+      </div>
     </footer>
   </div>
 
