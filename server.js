@@ -166,6 +166,7 @@ app.get('/robots.txt', (_req, res) => {
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
 app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
+app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
 
 // Static files — `index: false` so `/` hits the EJS render below, not index.html
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
