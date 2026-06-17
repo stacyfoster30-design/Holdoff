@@ -286,7 +286,7 @@ app.get('/affiliates', async (req, res) => {
 app.get('/pricing', async (req, res) => {
   const tokens = getCookieTokens(req);
   const user = tokens.accessPayload || tokens.refreshPayload || null;
-  res.render('layout', buildLandingContext({ user }));
+  res.render('pricing', { user });
 });
 
 app.get('/filter', async (req, res) => {
