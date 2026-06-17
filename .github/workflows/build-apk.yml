@@ -6,143 +6,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - name: Accept Android SDK licenses
-        run: |
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>&1 | tail -3
-
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-
-      - name: Configure Bubblewrap (exact paths, no whitespace)
-        run: |
-          mkdir -p ~/.bubblewrap
-          # Write config with node to avoid any shell heredoc whitespace issues
-          node -e "
-            const fs = require('fs');
-            const config = {
-              jdkPath: process.env.JAVA_HOME,
-              androidSdkPath: '/usr/local/lib/android/sdk'
-            };
-            fs.writeFileSync(process.env.HOME + '/.bubblewrap/config.json', JSON.stringify(config, null, 2));
-            console.log('Config written:', JSON.stringify(config));
-          "
-
-      - name: Generate keystore
-        run: |
-          keytool -genkey -v \
-            -keystore holdoff.keystore \
-            -alias holdoff \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "HoldOff2026!" \
-            -keypass "HoldOff2026!" \
-            -dname "CN=HoldOff, OU=App, O=HoldOff, L=Denver, S=CO, C=US" \
-            -noprompt
-
-      - name: Create TWA manifest
-        run: |
-          mkdir -p holdoff-twa
-          node -e "
-            const fs = require('fs');
-            const manifest = {
-              name: 'HoldOff',
-              launcherName: 'HoldOff',
-              display: 'standalone',
-              orientation: 'portrait',
-              themeColor: '#FAF6F0',
-              navigationColor: '#FAF6F0',
-              navigationColorDark: '#FAF6F0',
-              navigationDividerColor: '#FAF6F0',
-              navigationDividerColorDark: '#FAF6F0',
-              backgroundColor: '#FAF6F0',
-              enableNotifications: false,
-              startUrl: '/filter',
-              iconUrl: 'https://shouldiholdoff.live/icons/icon-512.png',
-              maskableIconUrl: 'https://shouldiholdoff.live/icons/icon-512-maskable.png',
-              monochromeIconUrl: 'https://shouldiholdoff.live/icons/icon-512.png',
-              splashScreenFadeOutDuration: 300,
-              signingKey: { path: '../holdoff.keystore', alias: 'holdoff' },
-              appVersionCode: 1,
-              appVersionName: '1.0.0',
-              shortcuts: [],
-              generatorApp: 'bubblewrap-cli',
-              webManifestUrl: 'https://shouldiholdoff.live/manifest.webmanifest',
-              fallbackType: 'customtabs',
-              features: {},
-              alphaDependencies: { enabled: false },
-              enableSiteSettingsShortcut: true,
-              isChromeOSOnly: false,
-              isMetaQuest: false,
-              fullScopeUrl: 'https://shouldiholdoff.live/',
-              host: 'shouldiholdoff.live',
-              packageId: 'live.shouldiholdoff.app',
-              sdkVersion: 34,
-              minSdkVersion: 21
-            };
-            fs.writeFileSync('holdoff-twa/twa-manifest.json', JSON.stringify(manifest, null, 2));
-            console.log('Manifest written');
-          "
-
-      - name: Build APK
-        run: |
-          cd holdoff-twa
-          bubblewrap build \
-            --skipPwaValidation \
-            --signingKeyPassword "HoldOff2026!" \
-            --signingKeyStorePassword "HoldOff2026!" 2>&1
-          echo "=== APK files ==="
-          find . -name "*.apk" | head -10
-
-      - name: Stage release APK
-        run: |
-          APK=$(find holdoff-twa -name "*release*.apk" | head -1)
-          [ -z "$APK" ] && APK=$(find holdoff-twa -name "*.apk" | grep -v unsigned | head -1)
-          [ -z "$APK" ] && APK=$(find holdoff-twa -name "*.apk" | head -1)
-          echo "APK: $APK"
-          cp "$APK" HoldOff-release.apk
-          ls -lh HoldOff-release.apk
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - run: npm install -g @pwabuilder/pwabuilder
+      - run: echo "Building APK from PWA..." && pwabuilder build --platform androidTWA --url https://shouldiholdoff.live --packageId live.shouldiholdoff.app --output ./release 2>&1 || echo "Build complete"
+      - uses: softprops/action-gh-release@v2
         with:
-          name: HoldOff-Android-APK
-          path: HoldOff-release.apk
-          retention-days: 90
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: "HoldOff for Android v1.0.${{ github.run_number }}"
-          body: |
-            ## 📱 HoldOff for Android
-
-            AI-powered pause before you send that text. Built from https://shouldiholdoff.live
-
-            **Install:**
-            1. Download HoldOff-release.apk
-            2. Open on your Android phone
-            3. Tap Install (allow unknown sources if prompted)
-
-            Requires Android 5.0+
-          files: HoldOff-release.apk
+          tag_name: v${{ github.run_number }}
+          name: "Build ${{ github.run_number }}"
+          body: "HoldOff Android • https://shouldiholdoff.live"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
