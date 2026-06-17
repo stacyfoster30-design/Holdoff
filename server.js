@@ -38,7 +38,7 @@ const port = process.env.PORT || 3000;
 app.use(cookieParser());
 // Inject Google Client ID into all views
 app.use((_req, res, next) => {
-  res.locals.googleClientId = process.env.GOOGLE_CLIENT_ID || '';
+  res.locals.googleClientId = process.env.GOOGLE_CLIENT_ID || '251734222269-l5fn6rbfcmtmm161q3g7e7k840lavf3f.apps.googleusercontent.com';
   next();
 });
 // Sentry request handler — guarded for @sentry/node v8+ which removed Handlers API.
