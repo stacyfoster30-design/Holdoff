@@ -172,6 +172,8 @@ app.get('/robots.txt', (_req, res) => {
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
+app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
+app.get('/app', (_req, res) => res.redirect(302, '/inbox'));
 app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
 app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
 app.get('/questionnaire', (_req, res) => res.sendFile(path.join(__dirname, 'conditions-questionnaire.html')));
