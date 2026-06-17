@@ -1,81 +1,76 @@
-name: Build HoldOff APK
+name: Build Android APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
+
+    env:
+      APP_URL: https://shouldiholdoff.live
+      PACKAGE_ID: live.shouldiholdoff.app
+      APP_NAME: Should I Hold Off
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Node.js
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      
-      - name: Install Java SDK
-        uses: actions/setup-java@v4
+          node-version: 22
+
+      - name: Install PWA Builder CLI
+        run: npm install -g @pwabuilder/pwabuilder
+
+      - name: Verify CLI
+        run: pwabuilder --version
+
+      - name: Build Android Package
+        run: |
+          mkdir -p output
+
+          pwabuilder build \
+            --platform android \
+            --url "$APP_URL" \
+            --packageId "$PACKAGE_ID" \
+            --directory output
+
+      - name: List Build Output
+        run: |
+          echo "Generated files:"
+          find output -type f
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
-      
-      - name: Install Cordova & Build Tools
-        run: |
-          npm install -g cordova@latest
-          echo "y" | sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
-      
-      - name: Create Cordova Project
-        run: |
-          cordova create holdoff-app live.shouldiholdoff.app "HoldOff"
-          cd holdoff-app
-          cordova platform add android
-      
-      - name: Copy Web App to Cordova
-        run: |
-          cd holdoff-app
-          mkdir -p www/css www/js
-          cp -r ../public/css www/css/ || true
-          cp -r ../public/js www/js/ || true
-          cat > www/index.html << 'HTMLEOF'
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>HoldOff</title>
-            <style>
-              body { margin: 0; padding: 0; }
-            </style>
-            <script src="cordova.js"></script>
-          </head>
-          <body>
-            <script>
-              document.addEventListener('deviceready', function() {
-                window.location.href = 'https://shouldiholdoff.live/';
-              }, false);
-            </script>
-          </body>
-          </html>
-          HTMLEOF
-      
-      - name: Build APK
-        run: |
-          cd holdoff-app
-          cordova build android --release
-      
+          name: android-build
+          path: |
+            output/**/*.apk
+            output/**/*.aab
+            output/**/*.zip
+          if-no-files-found: warn
+
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: "HoldOff Build ${{ github.run_number }}"
-          body: "HoldOff Android • https://shouldiholdoff.live"
-          files: holdoff-app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Release v${{ github.run_number }}
+          generate_release_notes: true
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          files: |
+            output/**/*.apk
+            output/**/*.aab
+            output/**/*.zip
