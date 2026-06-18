@@ -52,6 +52,31 @@
       font-weight: 600;
       margin-bottom: 16px;
       color: var(--light-text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .settings-btn {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: var(--light-text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .settings-btn:hover {
+      background: rgba(139, 92, 246, 0.4);
+      border-color: rgba(139, 92, 246, 0.8);
     }
 
     .contact-item {
@@ -809,7 +834,12 @@
   <div class="container">
     <!-- CONTACTS LIST -->
     <div class="contacts-panel">
-      <div class="contacts-header">Contacts</div>
+      <div class="contacts-header">
+        <span>Contacts</span>
+        <div class="header-actions">
+          <a href="/settings" class="settings-btn">⚙️ Settings</a>
+        </div>
+      </div>
       <div id="contactsList"></div>
     </div>
 
