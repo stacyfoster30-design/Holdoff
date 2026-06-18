@@ -5,7 +5,7 @@
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
-const { buildLandingContext } = require('./lib/landing-context');
+const { buildLandingContext } = require(path.join(__dirname, 'lib', 'landing-context'));
 const rateLimit = require('express-rate-limit');
 
 // Sentry error tracking — initialized before any other middleware so all downstream errors are captured.
@@ -19,16 +19,16 @@ Sentry.init({
     return 1.0;
   },
 });
-const { verifyToken, getCookieTokens } = require('./lib/auth');
-const authRouter = require('./auth');
-const { mountSharePages } = require('./routes/share');
-const { ensureCommunityTables } = require('./db/community');
-const googleAuthHandler = require('./routes/google-auth');
-const checkoutRouter = require('./holdoff_checkout');
+const { verifyToken, getCookieTokens } = require(path.join(__dirname, 'lib', 'auth'));
+const authRouter = require(path.join(__dirname, 'auth'));
+const { mountSharePages } = require(path.join(__dirname, 'routes', 'share'));
+const { ensureCommunityTables } = require(path.join(__dirname, 'db', 'community'));
+const googleAuthHandler = require(path.join(__dirname, 'routes', 'google-auth'));
+const checkoutRouter = require(path.join(__dirname, 'holdoff_checkout'));
 
 // Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
 if (process.env.BLAST_TRIGGER === '1') {
-  require('./jobs/blast-on-start')().catch(err => {
+  require(path.join(__dirname, 'jobs', 'blast-on-start'))().catch(err => {
     console.error('[blast] Fatal error:', err.message);
   });
 }
@@ -115,26 +115,26 @@ app.use('/api/verdict', rateLimit({
 // GET /api/health — health check for monitoring dashboards
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 // POST /api/interpret → aliased /api/filter/interpret (same AI logic)
-const interpretHandler = require('./routes/interpret');
+const interpretHandler = require(path.join(__dirname, 'routes', 'interpret'));
 app.post('/api/interpret', interpretHandler);
 app.post('/api/auth/google', googleAuthHandler);
 
 // Mount SEO routes at root
-app.use('/', require('./routes/seo'));
+app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 
 // Main API router — catches all /api/* not already matched above
 app.use('/api/auth', authRouter);
-app.use('/api/spiral-lock', require('./routes/spiral-lock'));
+app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
 app.use('/api/checkout', checkoutRouter);
-app.use('/api/community', require('./routes/community'));
-app.use('/api/contacts', require('./routes/contacts'));
-app.use('/api/contact-insights', require('./routes/contact-insights'));
-app.use('/api/questionnaire', require('./routes/questionnaire'));
-app.use('/api/quiz-invites', require('./routes/quiz-invites'));
-app.use('/api/messaging', require('./routes/messaging'));
-app.use('/api/verdict', require('./routes/verdict'));
-app.use('/api/interpreter', require('./routes/interpreter'));
-app.use('/api/companion', require('./routes/companion'));
+app.use('/api/community', require(path.join(__dirname, 'routes', 'community')));
+app.use('/api/contacts', require(path.join(__dirname, 'routes', 'contacts')));
+app.use('/api/contact-insights', require(path.join(__dirname, 'routes', 'contact-insights')));
+app.use('/api/questionnaire', require(path.join(__dirname, 'routes', 'questionnaire')));
+app.use('/api/quiz-invites', require(path.join(__dirname, 'routes', 'quiz-invites')));
+app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
+app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
+app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
+app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
 if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
@@ -207,7 +207,7 @@ async function getUserFromCookies(req) {
   if (!payload?.id) return null;
 
   // Enrich with membership_type for paywall decisions
-  const { findUserById } = require('./db/users');
+  const { findUserById } = require(path.join(__dirname, 'db', 'users'));
   const fullUser = await findUserById(payload.id).catch(() => null);
   return {
     id: payload.id,
@@ -320,7 +320,7 @@ app.get('/companion/:characterName', async (req, res) => {
   }
   
   const { characterName } = req.params;
-  const { CHARACTER_DEFINITIONS } = require('./lib/companion-ai');
+  const { CHARACTER_DEFINITIONS } = require(path.join(__dirname, 'lib', 'companion-ai'));
   const character = CHARACTER_DEFINITIONS[characterName];
   
   if (!character) {
@@ -401,11 +401,11 @@ app.post('/api/redeem', async (req, res) => {
     if (!entry) {
       return res.status(400).json({ ok: false, error: "That code isn't valid. Double-check it and try again." });
     }
-    const { updateMembershipType } = require('./db/users');
+    const { updateMembershipType } = require(path.join(__dirname, 'db', 'users'));
     await updateMembershipType(user.id, entry.membership);
     // Best-effort mirror into subscriptions so paywall checks everywhere see active access.
     try {
-      const { upsertSubscription } = require('./db/subscriptions');
+      const { upsertSubscription } = require(path.join(__dirname, 'db', 'subscriptions'));
       await upsertSubscription({
         email: (user.email || '').toLowerCase().trim(),
         stripeCustomerId: 'promo:' + raw,
@@ -546,7 +546,7 @@ app.get('/terms', (_req, res) => res.render('terms'));
 // Examples gallery — public, no auth required
 app.get('/examples', async (req, res) => {
   const user = await getUserFromCookies(req);
-  const examples = require('./data/examples.json');
+  const examples = require(path.join(__dirname, 'data', 'examples.json'));
   res.render('examples', { ...buildLandingContext({ user }), examples });
 });
 
@@ -602,15 +602,15 @@ if (!process.env.STRIPE_WEBHOOK_SECRET) {
 ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e.message));
 
 // Ensure messaging tables exist (idempotent)
-const { initializeTables: initMessagingTables } = require('./db/messages');
+const { initializeTables: initMessagingTables } = require(path.join(__dirname, 'db', 'messages'));
 initMessagingTables().catch(e => console.warn('[startup] messaging tables:', e.message));
 
 // Run database migrations (create user_preferences, user_conditions tables)
-const { runMigrations } = require('./db/migrations');
+const { runMigrations } = require(path.join(__dirname, 'db', 'migrations'));
 runMigrations().catch(e => console.warn('[startup] migrations:', e.message));
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
 
 // In-process cron jobs (Render compatibility) — extracted to jobs/in-process-crons.js
-require('./jobs/in-process-crons');
+require(path.join(__dirname, 'jobs', 'in-process-crons'));
 
