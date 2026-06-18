@@ -275,6 +275,19 @@ app.get('/quiz', async (req, res) => {
   res.render('quiz', { user: user || null });
 });
 
+// Interactive story experience — paid users only
+app.get('/story', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/signup');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  res.render('story-experience', { user });
+});
+
 // Detox landing page — 5-day Anxious Texting Detox email course
 app.get('/detox', async (req, res) => {
   const user = await getUserFromCookies(req);
