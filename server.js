@@ -296,6 +296,15 @@ app.get('/pricing', async (req, res) => {
   res.render('pricing', { user });
 });
 
+// Settings page — authenticated users only
+app.get('/settings', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/login?next=/settings');
+  }
+  res.render('settings', { user });
+});
+
 // ─── Free-access promo codes ─────────────────────────────────────────────────
 // Codes that grant full lifetime access when redeemed by a signed-in user.
 // Add new codes here (UPPERCASE keys). Matching is case-insensitive.
