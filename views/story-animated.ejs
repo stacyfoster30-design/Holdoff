@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Story - HoldOff</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #0f1a2e 100%);
+            min-height: 100vh;
+            color: #e0d4ff;
+            overflow-x: hidden;
+        }
+
+        .story-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(15, 10, 26, 0.95), rgba(26, 15, 46, 0.95));
+        }
+
+        .story-scene {
+            width: 100%;
+            max-width: 900px;
+            margin: 40px auto;
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+        }
+
+        .story-scene.scene-1 {
+            animation-delay: 0s;
+        }
+
+        .story-scene.scene-2 {
+            animation-delay: 8s;
+        }
+
+        .story-scene.scene-3 {
+            animation-delay: 16s;
+        }
+
+        .story-scene.scene-4 {
+            animation-delay: 24s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .scene-header {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #b8a0ff, #6b5eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .scene-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            margin-bottom: 50px;
+        }
+
+        .character-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .character-image {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(107, 94, 255, 0.5);
+            box-shadow: 0 0 30px rgba(107, 94, 255, 0.3);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(107, 94, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(107, 94, 255, 0.6);
+            }
+        }
+
+        .scene-narration {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .narration-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #d0c4e8;
+            font-weight: 300;
+            margin-bottom: 15px;
+            animation: slideInLeft 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .narration-text:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .narration-text:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .narration-text:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        .narration-text:nth-child(4) {
+            animation-delay: 0.8s;
+        }
+
+        .audio-player {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            background: rgba(107, 94, 255, 0.1);
+            border: 1px solid rgba(107, 94, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .audio-player button {
+            background: linear-gradient(135deg, #6b5eff, #8b7fff);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .audio-player button:hover {
+            box-shadow: 0 0 20px rgba(107, 94, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .audio-player audio {
+            flex: 1;
+            height: 6px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #6b5eff, #8b7fff);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(107, 94, 255, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(107, 94, 255, 0.6);
+        }
+
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
+        .companion-unlock {
+            margin-top: 50px;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(107, 94, 255, 0.1), rgba(139, 127, 255, 0.1));
+            border: 2px solid rgba(107, 94, 255, 0.3);
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .companion-unlock h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #b8a0ff, #6b5eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .companion-unlock p {
+            font-size: 1rem;
+            color: #a89fd4;
+            margin-bottom: 20px;
+        }
+
+        .companion-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #6b5eff, #8b7fff);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .companion-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(107, 94, 255, 0.5);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: rgba(107, 94, 255, 0.2);
+            margin: 40px 0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6b5eff, #8b7fff);
+            animation: progress 32s ease-out forwards;
+        }
+
+        @keyframes progress {
+            from {
+                width: 0;
+            }
+            to {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .scene-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .character-image {
+                width: 220px;
+                height: 220px;
+            }
+
+            .scene-header {
+                font-size: 1.8rem;
+            }
+
+            .narration-text {
+                font-size: 1rem;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .story-complete {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .story-complete h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #b8a0ff, #6b5eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .story-complete p {
+            font-size: 1.1rem;
+            color: #a89fd4;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="story-container">
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+
+        <!-- Scene 1: The Moment -->
+        <div class="story-scene scene-1">
+            <h2 class="scene-header">The Moment</h2>
+            <div class="scene-content">
+                <div class="character-visual">
+                    <img src="/assets/story-characters/stacy-cartoon-v2.png" alt="Stacy" class="character-image">
+                </div>
+                <div class="scene-narration">
+                    <p class="narration-text">"This is my story. The moment I realized everything had to change."</p>
+                    <p class="narration-text">"I kept doing the same thing. Reaching out when I was lonely. Pulling back when things got real."</p>
+                    <p class="narration-text">"I couldn't see it at the time, but I was stuck in a cycle I created."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scene 2: Danny -->
+        <div class="story-scene scene-2">
+            <h2 class="scene-header">Then Came Danny</h2>
+            <div class="scene-content">
+                <div class="character-visual">
+                    <img src="/assets/story-characters/danny-cartoon.png" alt="Danny" class="character-image">
+                </div>
+                <div class="scene-narration">
+                    <p class="narration-text">"Then I met Danny. And I thought *this* would be different."</p>
+                    <p class="narration-text">"But I brought the same version of myself to him. The scared one. The one who couldn't stay vulnerable."</p>
+                    <p class="narration-text">"I didn't know how to ask for what I needed. So I did what I always did—I ran. Or I clung. Or I disappeared."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scene 3: Understanding -->
+        <div class="story-scene scene-3">
+            <h2 class="scene-header">The Turning Point</h2>
+            <div class="scene-content">
+                <div class="character-visual">
+                    <img src="/assets/story-characters/stacy-cartoon-v2.png" alt="Stacy" class="character-image">
+                </div>
+                <div class="scene-narration">
+                    <p class="narration-text">"The hardest part wasn't seeing what I was doing. It was understanding *why*."</p>
+                    <p class="narration-text">"And that's where things started to shift."</p>
+                    <p class="narration-text">"I realized that understanding my patterns wasn't about fixing myself. It was about becoming the person I wanted to be. For me."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scene 4: Invitation -->
+        <div class="story-scene scene-4">
+            <div class="companion-unlock">
+                <h3>Now It's Your Turn</h3>
+                <p>Your story might look different, but maybe you recognize yourself here.</p>
+                <p>What if you could understand your patterns the way Stacy understood hers?</p>
+                <button class="companion-button" onclick="unlockCompanion()">Meet Your AI Companion →</button>
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div class="story-scene" id="completionScreen" style="display: none; animation: none;">
+            <div class="story-complete">
+                <h2>You're Not Alone in This</h2>
+                <p>Every person here has patterns that feel impossible to break. The good news? Understanding them changes everything.</p>
+                <button class="cta-button" onclick="startCompanion()">Continue with Your Companion</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-show completion after all scenes
+        setTimeout(() => {
+            document.getElementById('completionScreen').style.display = 'block';
+            document.getElementById('completionScreen').style.opacity = '1';
+        }, 32000);
+
+        function unlockCompanion() {
+            window.location.href = '/companion';
+        }
+
+        function startCompanion() {
+            window.location.href = '/companion';
+        }
+
+        // Optional: Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                unlockCompanion();
+            }
+        });
+
+        // Track story completion for analytics
+        window.addEventListener('beforeunload', () => {
+            fetch('/api/track-story-view', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: '<%= user.id %>',
+                    completed: true
+                })
+            }).catch(() => {});
+        });
+    </script>
+</body>
+</html>

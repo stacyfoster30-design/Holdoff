@@ -276,7 +276,7 @@ app.get('/quiz', async (req, res) => {
   res.render('quiz', { user: user || null });
 });
 
-// Interactive story experience — paid users only
+// Interactive story experience — paid users only (animated version)
 app.get('/story', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) {
@@ -286,7 +286,21 @@ app.get('/story', async (req, res) => {
   if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
     return res.redirect('/');
   }
-  res.render('story-experience', { user });
+  res.render('story-animated', { user });
+});
+
+// AI Companion hub — paid users only (redirect to default character)
+app.get('/companion', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/signup');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  // Redirect to default Stacy companion
+  res.redirect('/companion/stacy');
 });
 
 // AI Companion chat — paid users only
