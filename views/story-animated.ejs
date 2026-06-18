@@ -377,13 +377,38 @@
             </div>
         </div>
 
-        <!-- Scene 4: Invitation -->
+        <!-- Scene 4: Invitation with Branching -->
         <div class="story-scene scene-4">
             <div class="companion-unlock">
                 <h3>Now It's Your Turn</h3>
                 <p>Your story might look different, but maybe you recognize yourself here.</p>
                 <p>What if you could understand your patterns the way Stacy understood hers?</p>
-                <button class="companion-button" onclick="unlockCompanion()">Meet Your AI Companion →</button>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">
+                    <button class="companion-button" onclick="goToCompanion()" style="width: 100%;">
+                        Continue with Stacy's Insights →
+                    </button>
+                    <button class="companion-button" onclick="personalizeStory()" style="width: 100%; background: linear-gradient(135deg, #9b7bc7 0%, #7b5fb8 100%);">
+                        🧢 Put On My Shoes
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Personalization Modal -->
+        <div id="personalizationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: linear-gradient(135deg, #1a0033 0%, #2d1b4e 50%, #1a1a3e 100%); border: 2px solid rgba(200, 150, 255, 0.3); border-radius: 12px; padding: 40px; max-width: 400px; width: 90%;">
+                <h3 style="color: #b8a0ff; margin-bottom: 20px; font-size: 1.6rem;">Let's Make This Personal</h3>
+                <p style="color: #d0c4e8; margin-bottom: 15px;">What should we call you in this story?</p>
+                <input type="text" id="userNameInput" placeholder="Your Name" style="width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(60, 40, 100, 0.4); border: 1px solid rgba(200, 150, 255, 0.3); border-radius: 6px; color: #e0d4ff;">
+                
+                <p style="color: #d0c4e8; margin-bottom: 15px; margin-top: 20px;">And who is this story about?</p>
+                <input type="text" id="poiNameInput" placeholder="Their Name (Person of Interest)" style="width: 100%; padding: 12px; margin-bottom: 20px; background: rgba(60, 40, 100, 0.4); border: 1px solid rgba(200, 150, 255, 0.3); border-radius: 6px; color: #e0d4ff;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="closePersonalization()" style="padding: 10px; background: rgba(107, 94, 255, 0.2); border: 1px solid rgba(200, 150, 255, 0.3); border-radius: 6px; color: #d0c4e8; cursor: pointer;">Cancel</button>
+                    <button onclick="startPersonalizedStory()" style="padding: 10px; background: linear-gradient(135deg, #6b5eff, #8b7fff); border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 600;">Continue</button>
+                </div>
             </div>
         </div>
 
@@ -404,7 +429,7 @@
             document.getElementById('completionScreen').style.opacity = '1';
         }, 32000);
 
-        function unlockCompanion() {
+        function goToCompanion() {
             window.location.href = '/companion';
         }
 
@@ -412,10 +437,33 @@
             window.location.href = '/companion';
         }
 
+        function personalizeStory() {
+            document.getElementById('personalizationModal').style.display = 'flex';
+        }
+
+        function closePersonalization() {
+            document.getElementById('personalizationModal').style.display = 'none';
+        }
+
+        function startPersonalizedStory() {
+            const userName = document.getElementById('userNameInput').value.trim();
+            const poiName = document.getElementById('poiNameInput').value.trim();
+
+            if (!userName || !poiName) {
+                alert('Please enter both names to personalize your story');
+                return;
+            }
+
+            // Store in sessionStorage and redirect to experience story
+            sessionStorage.setItem('userName', userName);
+            sessionStorage.setItem('poiName', poiName);
+            window.location.href = '/story-experience?mode=personalized';
+        }
+
         // Optional: Add keyboard navigation
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                unlockCompanion();
+            if (e.key === 'Enter' && document.getElementById('personalizationModal').style.display === 'flex') {
+                startPersonalizedStory();
             }
         });
 

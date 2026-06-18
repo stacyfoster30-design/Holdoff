@@ -294,6 +294,19 @@ app.get('/story-preview', async (req, res) => {
   res.render('story-animated', { user: null });
 });
 
+// Personalized story experience
+app.get('/story-experience', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/login?returnTo=/story-experience');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  res.render('story-experience', { user });
+});
+
 // AI Companion hub — paid users only (redirect to default character)
 app.get('/companion', async (req, res) => {
   const user = await getUserFromCookies(req);
