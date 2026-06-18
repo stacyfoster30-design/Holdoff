@@ -793,7 +793,7 @@
           <p class="pricing-card-desc">Perfect for exploring HoldOff</p>
           <div class="price-amount">$0</div>
           <p class="price-period">Forever free</p>
-          <button onclick="location.href='/signup'" class="price-cta">Get Started</button>
+          <button onclick="handlePricingCTA('free')" class="price-cta">Get Started</button>
           <div class="features-list">
             <div class="feature-item">
               <span class="check">✓</span>
@@ -833,7 +833,7 @@
           <p class="pricing-card-desc">Full app + SMS integration</p>
           <div class="price-amount">$5</div>
           <p class="price-period">/month (locked in forever with LAUNCH50)</p>
-          <button onclick="location.href='/signup'" class="price-cta">Start Free Trial</button>
+          <button onclick="handlePricingCTA('plus_monthly')" class="price-cta">Start Free Trial</button>
           <div class="features-list">
             <div class="feature-item">
               <span class="check">✓</span>
@@ -1003,6 +1003,37 @@
       }, { threshold: 0.12 });
       targets.forEach(function (el) { io.observe(el); });
     })();
+
+    // Pricing CTA handler — logged-in users go straight to checkout, others to signup
+    const isLoggedIn = <%= user ? 'true' : 'false' %>;
+    function handlePricingCTA(tier) {
+      if (!isLoggedIn) {
+        location.href = '/signup';
+        return;
+      }
+      // Logged in — fetch checkout link directly
+      fetch('/api/checkout/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier })
+      })
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        if (data.url) {
+          location.href = data.url;
+        } else {
+          console.error('No checkout URL in response:', data);
+          alert('Unable to start checkout. Please try again.');
+        }
+      })
+      .catch(err => {
+        console.error('Checkout error:', err);
+        alert('Error starting checkout. Please try again.');
+      });
+    }
   </script>
 </body>
 </html>
