@@ -9,12 +9,14 @@ const {
   callWithFallback,
   HANDLER_HARD_TIMEOUT_MS,
   INTERPRET_SYSTEM_PROMPT,
+  buildPersonalizedInterpretPrompt,
   parseCookies,
   extractProInfo,
   getVerdictCount,
 } = require('../lib/verdict-ai');
 const { isProEmail } = require('../db/subscriptions');
 const { verifyToken, getCookieTokens } = require('../lib/auth');
+const { getUserPreferences, getUserConditions } = require('../db/preferences');
 
 const FREE_VERDICT_LIMIT = 3;
 
@@ -103,10 +105,39 @@ function interpretHandler(req, res, next) {
 
       log('model_call_started');
 
+      // Fetch user preferences if logged in
+      let systemPrompt = INTERPRET_SYSTEM_PROMPT;
+      if (jwtPayload?.id) {
+        try {
+          const [prefs, conditions] = await Promise.all([
+            getUserPreferences(jwtPayload.id),
+            getUserConditions(jwtPayload.id),
+          ]);
+          
+          if (prefs) {
+            const personalizedPrefs = {
+              language_style: prefs.language_style || 'clinical',
+              tone: prefs.tone || 'direct',
+              tracking_depth: prefs.tracking_depth || 'moderate',
+              show_why: prefs.show_why !== false,
+              show_what: prefs.show_what !== false,
+              show_meaning: prefs.show_meaning !== false,
+              show_action: prefs.show_action !== false,
+              conditions: conditions || []
+            };
+            systemPrompt = buildPersonalizedInterpretPrompt(personalizedPrefs);
+            log('personalized_prompt_built', `tone=${personalizedPrefs.tone} style=${personalizedPrefs.language_style}`);
+          }
+        } catch (err) {
+          log('prefs_fetch_error', `err=${err.message}`);
+          // Fall back to default prompt if preferences can't be fetched
+        }
+      }
+
       let raw, source;
       try {
         const result = await Promise.race([
-          callWithFallback(INTERPRET_SYSTEM_PROMPT, userContent, log),
+          callWithFallback(systemPrompt, userContent, log),
           new Promise((_, reject) => setTimeout(() => {
             const err = new Error('Handler hard timeout');
             err._hardTimeout = true;
