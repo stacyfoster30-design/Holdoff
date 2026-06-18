@@ -14,6 +14,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 const {
   createUser,
   findUserByEmail,
@@ -30,8 +31,8 @@ const {
   createPasswordResetToken,
   consumePasswordResetToken,
   invalidatePasswordResetTokens,
-} = require('../db/users');
-const { markConverted } = require('../db/referrals');
+} = require(path.join(__dirname, 'db', 'users'));
+const { markConverted } = require(path.join(__dirname, 'db', 'referrals'));
 const {
   signAccessToken,
   signRefreshToken,
@@ -40,10 +41,10 @@ const {
   refreshCookieOpts,
   clearAuthCookies,
   revokeRefreshToken,
-} = require('../lib/auth');
-const { buildWelcomeEmail } = require('../services/welcome-email');
-const { buildResetPasswordEmail } = require('../services/reset-password-email');
-const { logExitIntentEvent } = require('../db/exit-intent');
+} = require(path.join(__dirname, 'lib', 'auth'));
+const { buildWelcomeEmail } = require(path.join(__dirname, 'services', 'welcome-email'));
+const { buildResetPasswordEmail } = require(path.join(__dirname, 'services', 'reset-password-email'));
+const { logExitIntentEvent } = require(path.join(__dirname, 'db', 'exit-intent'));
 
 const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
 const SALT_ROUNDS = 12;
@@ -79,7 +80,7 @@ const _rateLimitStore = new Map();
 async function sendVerificationEmail(email, token, name) {
   let sendEmail;
   try {
-    ({ sendEmail } = require('../services/email'));
+    ({ sendEmail } = require(path.join(__dirname, 'services', 'email')));
   } catch {
     sendEmail = null;
   }
@@ -133,7 +134,7 @@ Don't send it yet. — HoldOff`;
 async function sendResetPasswordEmail(email, token, name) {
   let sendEmail;
   try {
-    ({ sendEmail } = require('../services/email'));
+    ({ sendEmail } = require(path.join(__dirname, 'services', 'email')));
   } catch {
     sendEmail = null;
   }
@@ -336,7 +337,7 @@ router.post('/refresh', async (req, res) => {
   }
 
   // getRefreshTokenFromCookie reads the DB (imported lazily to avoid circular requires)
-  const { getRefreshTokenFromCookie } = require('../lib/auth');
+  const { getRefreshTokenFromCookie } = require(path.join(__dirname, 'lib', 'auth'));
   const refreshData = await getRefreshTokenFromCookie(req);
   if (!refreshData?.userId) {
     res.clearCookie('holdoff_token', clearAuthCookies());
@@ -345,7 +346,7 @@ router.post('/refresh', async (req, res) => {
   }
 
   // Rotate: revoke old token, issue new opaque refresh token, issue new access token
-  const { revokeRefreshToken } = require('../db/auth-tokens');
+  const { revokeRefreshToken } = require(path.join(__dirname, 'db', 'auth-tokens'));
   // We need the raw token to revoke it — but we only stored the hash.
   // Instead, revoke all tokens for this user and issue fresh ones.
   // (This is safe; one device at a time is ensured by the rotation logic.)
@@ -373,7 +374,7 @@ router.post('/logout', async (req, res) => {
   // Revoke the refresh token from DB
   const raw = req.cookies?.refresh_token;
   if (raw) {
-    const { getRefreshTokenFromCookie } = require('../lib/auth');
+    const { getRefreshTokenFromCookie } = require(path.join(__dirname, 'lib', 'auth'));
     const refreshData = await getRefreshTokenFromCookie(req);
     if (refreshData?.userId) {
       await revokeAllRefreshTokens(refreshData.userId);
@@ -443,7 +444,7 @@ router.post('/reset-password', async (req, res) => {
   // Fast path: attempt to consume it directly if it's a valid bcrypt hash format.
   // Since we can't know which user's token it is, we scan all unused tokens.
   // Optimize: candidate check by scanning users with a matching reset token.
-  const { pool } = require('../db/index');
+  const { pool } = require(path.join(__dirname, 'db', 'index'));
   const { rows: candidates } = await pool.query(
     `SELECT id, user_id, token_hash
      FROM password_reset_tokens
@@ -614,7 +615,7 @@ router.post('/resend-verification', requireAuth, async (req, res) => {
 // ─── DELETE /api/auth/delete-account ─────────────────────────────────────────
 router.delete('/delete-account', requireAuth, async (req, res) => {
   try {
-    const { pool } = require('../db/index');
+    const { pool } = require(path.join(__dirname, 'db', 'index'));
     const userId = req.user.id;
     // Anonymize rather than hard-delete — preserves referential integrity
     await pool.query(
@@ -686,7 +687,7 @@ router.post('/google', async (req, res) => {
       return res.status(500).json({ error: 'Failed to create account.', code: 'INTERNAL_ERROR' });
     }
     // Mark email as verified since Google already verified it
-    const { pool } = require('../db/index');
+    const { pool } = require(path.join(__dirname, 'db', 'index'));
     await pool.query(
       `UPDATE users SET email_verified_at = NOW() WHERE id = $1 AND email_verified_at IS NULL`,
       [user.id]
