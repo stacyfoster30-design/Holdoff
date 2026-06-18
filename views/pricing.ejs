@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HoldOff Pricing — AI-Powered Messaging Safety</title>
-  <meta name="description" content="Protect your relationships with AI-powered message analysis. From $5/month.">
+  <title>HoldOff Pricing — Respect Yourself</title>
+  <meta name="description" content="Choose the plan that fits your commitment to yourself. Simple pricing, no games.">
   
   <style>
     * {
@@ -13,1026 +13,426 @@
       box-sizing: border-box;
     }
 
-    :root {
-      --primary: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --accent: #3B82F6;
-      --accent-dark: #1E40AF;
-      --rose: #EC4899;
-      --green-safe: #10B981;
-      --yellow-warn: #F59E0B;
-      --red-danger: #EF4444;
-      --bg-dark: #0F172A;
-      --bg-darker: #09101F;
-      --bg-card: #1A2847;
-      --text-primary: #F1F5F9;
-      --text-muted: #CBD5E1;
-      --text-dim: #94A3B8;
-      --border: #334155;
-      --glow-primary: rgba(139, 92, 246, 0.1);
-      --radius: 12px;
-      --transition: all 0.3s ease;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, var(--bg-darker) 0%, #1a1f3a 100%);
-      color: var(--text-primary);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    body {
+      background: linear-gradient(135deg, #0F172A 0%, #1a1f3a 50%, #2d1b4e 100%);
+      color: #e0e7ff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
     }
 
-    a { color: var(--primary); text-decoration: none; transition: var(--transition); }
-    a:hover { color: var(--primary-dark); }
-
-    .nav {
+    header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 40px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(10px);
-    }
-
-    .nav-logo {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 32px;
-      align-items: center;
-    }
-
-    .nav-link {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      transition: var(--transition);
-    }
-
-    .nav-link:hover {
-      color: var(--primary);
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 10px 24px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: var(--transition);
-      border: none;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: none;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-    }
-
-    .btn-ghost:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    .container {
-      max-width: 1200px;
+      padding: 1.5rem 2rem;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 0 24px;
     }
 
-    /* HERO SECTION */
+    .logo { font-size: 24px; font-weight: 700; color: #c4b5fd; }
+
+    nav a {
+      color: #cbd5e1;
+      text-decoration: none;
+      margin: 0 1.5rem;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+    nav a:hover { color: #a78bfa; }
+
+    .cta-btn {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(139, 92, 246, 0.3);
+    }
+
     .hero {
       text-align: center;
-      padding: 80px 24px;
-      background: linear-gradient(180deg, var(--bg-darker) 0%, rgba(107, 40, 215, 0.05) 50%, transparent 100%);
-    }
-
-    .hero-eyebrow {
-      display: inline-block;
-      padding: 8px 16px;
-      background: var(--glow-primary);
-      border: 1px solid var(--primary);
-      border-radius: 20px;
-      color: var(--primary);
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 24px;
+      padding: 40px 2rem;
+      max-width: 900px;
+      margin: 0 auto;
     }
 
     .hero h1 {
-      font-size: 3.5rem;
-      font-weight: 900;
-      line-height: 1.1;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--rose) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero-sub {
-      font-size: 1.2rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 40px;
-      line-height: 1.6;
-    }
-
-    .hero-ctas {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    /* FEATURES GRID */
-    .features-section {
-      padding: 80px 24px;
-      background: var(--bg-dark);
-    }
-
-    .section-header {
-      text-align: center;
-      margin-bottom: 60px;
-    }
-
-    .section-header h2 {
-      font-size: 2.5rem;
+      font-size: 48px;
       font-weight: 800;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #a78bfa, #93c5fd);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .features-grid {
+    .hero p {
+      font-size: 18px;
+      color: #cbd5e1;
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-container {
+      max-width: 1200px;
+      margin: 60px auto;
+      padding: 0 2rem;
+    }
+
+    .pricing-intro {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .pricing-intro h2 {
+      font-size: 32px;
+      margin-bottom: 1rem;
+      color: #a78bfa;
+    }
+
+    .pricing-intro p {
+      font-size: 16px;
+      color: #cbd5e1;
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    .pricing-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 28px;
-      margin-bottom: 60px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 4rem;
     }
 
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      transition: var(--transition);
+    @media (max-width: 1024px) {
+      .pricing-cards { grid-template-columns: 1fr 1fr; }
     }
 
-    .feature-card:hover {
-      border-color: var(--primary);
-      transform: translateY(-8px);
-      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.2);
-    }
-
-    .feature-icon {
-      font-size: 2.5rem;
-      margin-bottom: 16px;
-      display: block;
-    }
-
-    .feature-card h3 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: var(--text-primary);
-    }
-
-    .feature-card p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-
-    .feature-bullets {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .bullet {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .bullet-check {
-      color: var(--green-safe);
-      font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    /* PRICING SECTION */
-    .pricing-section {
-      padding: 80px 24px;
-      background: linear-gradient(135deg, var(--bg-darker) 0%, rgba(59, 130, 246, 0.05) 100%);
-    }
-
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 32px;
-      max-width: 1000px;
-      margin: 0 auto;
+    @media (max-width: 768px) {
+      .pricing-cards { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 32px; }
     }
 
     .pricing-card {
-      background: var(--bg-card);
-      border: 2px solid var(--border);
-      border-radius: var(--radius);
-      padding: 40px;
+      background: rgba(100, 116, 139, 0.05);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      padding: 2.5rem 2rem;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s;
       position: relative;
-      transition: var(--transition);
-    }
-
-    .pricing-card.popular {
-      border-color: var(--primary);
-      transform: scale(1.05);
-      box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
     }
 
     .pricing-card:hover {
-      border-color: var(--primary);
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(139, 92, 246, 0.1);
+      transform: translateY(-8px);
     }
 
-    .price-badge {
-      display: inline-block;
-      background: var(--glow-primary);
-      border: 1px solid var(--primary);
-      color: var(--primary);
+    .pricing-card.popular {
+      border-color: #8b5cf6;
+      background: rgba(139, 92, 246, 0.15);
+      transform: scale(1.05);
+    }
+
+    .pricing-card.popular:hover {
+      transform: scale(1.05) translateY(-8px);
+    }
+
+    .badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white;
       padding: 4px 12px;
-      border-radius: 16px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-
-    .price-badge.popular {
-      background: rgba(139, 92, 246, 0.2);
-    }
-
-    .pricing-card h3 {
-      font-size: 1.4rem;
+      border-radius: 20px;
+      font-size: 11px;
       font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text-primary);
+      text-transform: uppercase;
     }
 
-    .pricing-card-desc {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 24px;
+    .plan-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #a78bfa;
+      margin-top: 0.5rem;
     }
 
-    .price-amount {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: var(--primary);
-      margin-bottom: 4px;
+    .plan-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .price {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 0.25rem;
+      color: #a78bfa;
     }
 
     .price-period {
-      color: var(--text-dim);
-      font-size: 0.9rem;
-      margin-bottom: 24px;
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-bottom: 2rem;
     }
 
-    .price-cta {
-      width: 100%;
-      padding: 14px 24px;
-      margin-bottom: 32px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--primary);
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
+    .plan-features {
+      list-style: none;
+      margin-bottom: 2rem;
+      flex-grow: 1;
     }
 
-    .price-cta:hover {
-      background: var(--glow-primary);
-      border-color: var(--primary);
+    .plan-features li {
+      padding: 0.75rem 0;
+      color: #cbd5e1;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.1);
     }
 
-    .pricing-card.popular .price-cta {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-
-    .pricing-card.popular .price-cta:hover {
-      background: var(--primary-dark);
-    }
-
-    .features-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .feature-item {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .check {
-      color: var(--green-safe);
-      font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    .cross {
-      color: var(--text-dim);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    /* FAQ SECTION */
-    .faq-section {
-      padding: 80px 24px;
-      background: var(--bg-dark);
-    }
-
-    .faq-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .faq-item {
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .faq-item:last-child {
+    .plan-features li:last-child {
       border-bottom: none;
     }
 
-    .faq-question {
+    .plan-features li:before {
+      content: "✓ ";
+      color: #10b981;
       font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 8px;
+      margin-right: 0.5rem;
+    }
+
+    .plan-cta {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
       cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      transition: all 0.3s;
     }
 
-    .faq-answer {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.6;
+    .plan-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(139, 92, 246, 0.3);
     }
 
-    /* FOOTER */
+    .plan-cta.secondary {
+      background: transparent;
+      color: #a78bfa;
+      border: 2px solid #a78bfa;
+    }
+
+    .plan-cta.secondary:hover {
+      background: rgba(167, 139, 250, 0.1);
+    }
+
+    .faq-section {
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 0 2rem;
+    }
+
+    .faq-section h2 {
+      font-size: 28px;
+      margin-bottom: 2rem;
+      text-align: center;
+      color: #a78bfa;
+    }
+
+    .faq-item {
+      background: rgba(100, 116, 139, 0.05);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+
+    .faq-item h3 {
+      color: #a78bfa;
+      margin-bottom: 0.75rem;
+      font-size: 16px;
+    }
+
+    .faq-item p {
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .disclaimer {
+      text-align: center;
+      padding: 2rem;
+      color: #94a3b8;
+      font-size: 12px;
+      border-top: 1px solid rgba(139, 92, 246, 0.2);
+      margin-top: 4rem;
+    }
+
     footer {
       text-align: center;
-      padding: 40px 24px;
-      border-top: 1px solid var(--border);
-      color: var(--text-dim);
-      font-size: 0.9rem;
+      padding: 2rem;
+      color: #64748b;
+      font-size: 12px;
+      border-top: 1px solid rgba(139, 92, 246, 0.1);
     }
 
-    .footer-links {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-      .nav {
-        padding: 16px 20px;
-      }
-
-      .hero h1 {
-        font-size: 2rem;
-      }
-
-      .hero-sub {
-        font-size: 1rem;
-      }
-
-      .hero-ctas {
-        flex-direction: column;
-      }
-
-      .hero-ctas > * {
-        width: 100%;
-      }
-
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .pricing-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .pricing-card.popular {
-        transform: scale(1);
-      }
-
-      .faq-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .section-header h2 {
-        font-size: 1.8rem;
-      }
-    }
-
-    /* ===== LIVELY ANIMATIONS ===== */
-    /* Floating aurora background */
-    .aurora {
-      position: fixed;
-      inset: 0;
-      z-index: -2;
-      overflow: hidden;
-      pointer-events: none;
-    }
-    .aurora span {
-      position: absolute;
-      display: block;
-      border-radius: 50%;
-      filter: blur(90px);
-      opacity: 0.45;
-      mix-blend-mode: screen;
-      animation: drift 22s ease-in-out infinite alternate;
-    }
-    .aurora .a1 { width: 480px; height: 480px; top: -120px; left: -100px;
-      background: radial-gradient(circle, #6D28D9, transparent 70%); animation-delay: 0s; }
-    .aurora .a2 { width: 560px; height: 560px; top: 20%; right: -160px;
-      background: radial-gradient(circle, #1E40AF, transparent 70%); animation-delay: -6s; }
-    .aurora .a3 { width: 420px; height: 420px; bottom: -140px; left: 25%;
-      background: radial-gradient(circle, #8B5CF6, transparent 70%); animation-delay: -12s; }
-    @keyframes drift {
-      0%   { transform: translate(0,0) scale(1); }
-      50%  { transform: translate(60px,-50px) scale(1.15); }
-      100% { transform: translate(-40px,40px) scale(0.95); }
-    }
-
-    /* Animated gradient text shimmer */
-    .hero h1, .section-header h2 {
-      background-size: 220% auto;
-      animation: shimmer 6s linear infinite;
-    }
-    @keyframes shimmer {
-      to { background-position: 220% center; }
-    }
-
-    /* Hero entrance */
-    .hero-eyebrow { animation: fadeUp 0.7s ease both; }
-    .hero h1 { animation: fadeUp 0.8s ease 0.1s both, shimmer 6s linear infinite; }
-    .hero-sub { animation: fadeUp 0.8s ease 0.25s both; }
-    .hero-ctas { animation: fadeUp 0.8s ease 0.4s both; }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Pulsing primary CTA glow */
-    .hero-ctas .btn-primary {
-      position: relative;
-      animation: pulseGlow 2.6s ease-in-out infinite;
-    }
-    @keyframes pulseGlow {
-      0%,100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.45); }
-      50%     { box-shadow: 0 0 28px 6px rgba(139,92,246,0.55); }
-    }
-
-    /* Eyebrow soft float */
-    .hero-eyebrow { will-change: transform; }
-    .hero-eyebrow::after { content: ""; }
-
-    /* Scroll reveal */
-    .reveal {
-      opacity: 0;
-      transform: translateY(36px);
-      transition: opacity 0.7s cubic-bezier(.2,.7,.2,1), transform 0.7s cubic-bezier(.2,.7,.2,1);
-      will-change: opacity, transform;
-    }
-    .reveal.in { opacity: 1; transform: translateY(0); }
-
-    /* Card hover lift already exists — add icon bounce */
-    .feature-card:hover .feature-icon { animation: bounce 0.6s ease; }
-    @keyframes bounce {
-      0%,100% { transform: translateY(0); }
-      30% { transform: translateY(-8px) scale(1.12); }
-      60% { transform: translateY(0) scale(1); }
-    }
-
-    /* Popular pricing card subtle breathe */
-    .pricing-card.popular { animation: breathe 4s ease-in-out infinite; }
-    @keyframes breathe {
-      0%,100% { box-shadow: 0 0 0 1px var(--primary), 0 18px 50px rgba(139,92,246,0.18); }
-      50%     { box-shadow: 0 0 0 1px var(--primary), 0 22px 60px rgba(139,92,246,0.34); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, .aurora span, .hero h1, .hero-eyebrow, .hero-sub, .hero-ctas,
-      .hero-ctas .btn-primary, .pricing-card.popular, .reveal {
-        animation: none !important;
-        transition: none !important;
-        opacity: 1 !important;
-        transform: none !important;
-      }
+    footer a {
+      color: #a78bfa;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <div class="aurora" aria-hidden="true">
-    <span class="a1"></span><span class="a2"></span><span class="a3"></span>
-  </div>
-  <!-- NAV -->
-  <nav class="nav">
-    <div class="nav-logo">💜 HoldOff</div>
-    <div class="nav-links">
-      <a href="/" class="nav-link">Home</a>
-      <a href="/#features" class="nav-link">Features</a>
-      <a href="/download" class="nav-link">Download</a>
-      <% if (user) { %>
-        <a href="/inbox" class="btn btn-primary">Open App</a>
-      <% } else { %>
-        <a href="/login" class="btn btn-ghost">Sign In</a>
-        <a href="/signup" class="btn btn-primary">Get Started</a>
-      <% } %>
-    </div>
-  </nav>
+  <!-- HEADER -->
+  <header>
+    <div class="logo">HoldOff</div>
+    <nav>
+      <a href="/">Home</a>
+      <a href="https://shouldiholdoff.live/login" style="color: #8b5cf6;">Sign In</a>
+    </nav>
+  </header>
 
   <!-- HERO -->
   <section class="hero">
-    <div class="container">
-      <div class="hero-eyebrow">🧠 Stop Spiraling. Get Clarity.</div>
-      <h1>Anxiety Around Relationships? We Fixed That.</h1>
-      <p class="hero-sub">HoldOff is your AI brain for relationships. Before you send that message, we tell you if it's safe. When they text, we decode what they actually meant. Finally, you can trust your instincts—with a backup plan.</p>
-      <div class="hero-ctas">
-        <a href="/signup" class="btn btn-primary" onclick="handlePricingCTA()">Start Free (No Card)</a>
-        <a href="#pricing" class="btn btn-ghost">See Plans</a>
-      </div>
-    </div>
+    <h1>Respect Yourself</h1>
+    <p>Simple pricing. No hidden fees. One goal: help you stop settling.</p>
   </section>
 
-  <!-- FEATURES -->
-  <section class="features-section" id="features">
-    <div class="container">
-      <div class="section-header">
-        <h2>How HoldOff Saves Your Sanity</h2>
-        <p style="color: var(--text-muted); margin-top: 12px;">Three AI tools built specifically for people who overthink relationships</p>
-      </div>
-
-      <div class="features-grid">
-        <!-- VERDICT -->
-        <div class="feature-card">
-          <span class="feature-icon">✍️</span>
-          <h3>VERDICT — Send Without Anxiety</h3>
-          <p>Before you hit send, get instant AI feedback. Is this message safe? Will they think you're needy? Crazy? Get clarity before your anxiety takes over.</p>
-          <div class="feature-bullets">
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Color-coded verdicts:</strong> Green (send), Yellow (hold 5min), Red (rethink)</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Personalized to you:</strong> Adapts to RSD, Anxiety, ADHD, Attachment Styles</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Spiral detection:</strong> Identifies anxious attachment patterns in real-time</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Grounded reframe:</strong> Get a rewrite from your secure self</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- INTERPRETER -->
-        <div class="feature-card">
-          <span class="feature-icon">🔍</span>
-          <h3>INTERPRETER — Stop Misreading People</h3>
-          <p>When they text, your brain spirals. HoldOff tells you what they actually meant. No more sleepless nights wondering if they're mad at you.</p>
-          <div class="feature-bullets">
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>3-layer analysis:</strong> Their intent • Your distortion • The truth</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Safe response options:</strong> 3 grounded ways to reply</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Condition-aware:</strong> Decodes for RSD, Attachment anxiety, ADHD paralysis</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>No guessing game:</strong> Know what they meant, not what fear says</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- SPIRAL LOCK -->
-        <div class="feature-card">
-          <span class="feature-icon">🔒</span>
-          <h3>SPIRAL LOCK — Stop the Damage</h3>
-          <p>When you're texting 5 messages in a row at 2am, HoldOff locks you. Saves your relationships from your anxiety spirals.</p>
-          <div class="feature-bullets">
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Auto-trigger:</strong> 3+ messages within 5 minutes = locked</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Visual alert:</strong> Flashing red + blue when active</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>5-min cooldown:</strong> Prevents damage, preserves relationships</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Pattern tracking:</strong> Learn your trigger points</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONTACT INSIGHTS -->
-        <div class="feature-card">
-          <span class="feature-icon">👥</span>
-          <h3>CONTACT INSIGHTS — Relationship Dashboard</h3>
-          <p>See communication patterns, relationship health, and compatibility for every contact.</p>
-          <div class="feature-bullets">
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Trust trends:</strong> How healthy is this relationship?</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Red/Yellow/Green flags:</strong> At a glance assessment</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Attachment compatibility:</strong> How do your styles align?</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Message archive:</strong> Full history with AI summaries</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONDITIONS -->
-        <div class="feature-card">
-          <span class="feature-icon">💭</span>
-          <h3>Condition-Aware AI</h3>
-          <p>Select your mental health conditions once — all features adapt to your needs.</p>
-          <div class="feature-bullets">
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>RSD Detection:</strong> Recognizes rejection sensitivity patterns</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Attachment Styles:</strong> Anxious, Avoidant, Fearful, Secure</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Additional:</strong> Anxiety, Depression, ADHD, Autism</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Changeable anytime:</strong> Update in Settings as you grow</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- REAL SMS -->
-        <div class="feature-card">
-          <span class="feature-icon">📱</span>
-          <h3>Real SMS Sync</h3>
-          <p>Connects to your actual phone contacts and message threads.</p>
-          <div class="feature-bullets">
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Phone contacts:</strong> All your real conversations</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Set as default SMS app:</strong> Full message control (Android)</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>Cross-device sync:</strong> Web + phone always in sync</span>
-            </div>
-            <div class="bullet">
-              <span class="bullet-check">✓</span>
-              <span><strong>No vendor lock-in:</strong> Your data, always exportable</span>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- PRICING CARDS -->
+  <section class="pricing-container">
+    <div class="pricing-intro">
+      <h2>Choose Your Commitment</h2>
+      <p>Every plan gives you the same core tools: message analysis, AI verdicts, and pattern insights. The only difference is access to archive history and personalized coaching.</p>
     </div>
-  </section>
 
-  <!-- PRICING -->
-  <section class="pricing-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Everyone Deserves Clarity</h2>
-        <p style="color: var(--text-muted); margin-top: 12px;">Start free and see if HoldOff changes your life. Most people upgrade within the first week.</p>
+    <div class="pricing-cards">
+      <!-- FREE PLAN -->
+      <div class="pricing-card">
+        <div class="plan-name">Trial</div>
+        <div class="plan-desc">Test the pause. See if it helps.</div>
+        <div class="price">Free</div>
+        <div class="price-period">Forever</div>
+        <ul class="plan-features">
+          <li>Unlimited message analysis</li>
+          <li>AI Verdict feedback</li>
+          <li>Basic pattern tracking</li>
+          <li>7-day message history</li>
+          <li>Standard support</li>
+        </ul>
+        <button class="plan-cta secondary" onclick="window.location.href='https://shouldiholdoff.live/signup'">Start Free</button>
       </div>
 
-      <div class="pricing-grid">
-        <!-- FREE -->
-        <div class="pricing-card">
-          <span class="price-badge">Starter</span>
-          <h3>Free</h3>
-          <p class="pricing-card-desc">Try it before you buy. See if we're worth it.</p>
-          <div class="price-amount">$0</div>
-          <p class="price-period">Forever free</p>
-          <button onclick="handlePricingCTA('free')" class="price-cta">Get Started</button>
-          <div class="features-list">
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span>Test Verdict (1 per day)</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span>Test Interpreter (1 per day)</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span>Condition setup</span>
-            </div>
-            <div class="feature-item">
-              <span class="cross">✗</span>
-              <span>Unlimited analysis</span>
-            </div>
-            <div class="feature-item">
-              <span class="cross">✗</span>
-              <span>Real SMS sync</span>
-            </div>
-            <div class="feature-item">
-              <span class="cross">✗</span>
-              <span>Contact Insights</span>
-            </div>
-            <div class="feature-item">
-              <span class="cross">✗</span>
-              <span>Spiral Lock</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- PLUS (POPULAR) -->
-        <div class="pricing-card popular">
-          <span class="price-badge popular">Popular</span>
-          <h3>Plus</h3>
-          <p class="pricing-card-desc">Full clarity. Real peace of mind.</p>
-          <div class="price-amount">$5</div>
-          <p class="price-period">/month (locked in forever with LAUNCH50)</p>
-          <button onclick="handlePricingCTA('plus_monthly')" class="price-cta">Start Free Trial</button>
-          <div class="features-list">
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Unlimited Verdicts</strong> (outgoing analysis)</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Unlimited Interpreters</strong> (incoming analysis)</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Real SMS sync</strong> — your actual phone threads</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Spiral Lock</strong> — 5-min cooldown protection</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Contact Insights</strong> — per-contact relationship dashboard</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Condition tracking</strong> — monitor your patterns</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Export data</strong> — always yours to keep</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- PROFESSIONAL -->
-        <div class="pricing-card">
-          <span class="price-badge">Coming Q4</span>
-          <h3>Professional</h3>
-          <p class="pricing-card-desc">For therapists + coaches</p>
-          <div class="price-amount">$19</div>
-          <p class="price-period">/month</p>
-          <button onclick="alert('Coming Q4 2025')" class="price-cta">Join Waitlist</button>
-          <div class="features-list">
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Everything in Plus</strong></span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Client management</strong> — track multiple users</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Insights export</strong> — PDF reports for sessions</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>White-label option</strong> — your branding</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>API access</strong> — integrate with your platform</span>
-            </div>
-            <div class="feature-item">
-              <span class="check">✓</span>
-              <span><strong>Priority support</strong></span>
-            </div>
-          </div>
-        </div>
+      <!-- PLUS PLAN (POPULAR) -->
+      <div class="pricing-card popular">
+        <div class="badge">Most Popular</div>
+        <div class="plan-name">Plus</div>
+        <div class="plan-desc">The real commitment to yourself.</div>
+        <div class="price">$5</div>
+        <div class="price-period">per month</div>
+        <ul class="plan-features">
+          <li>Everything in Trial</li>
+          <li>90-day message archive</li>
+          <li>Pattern insights & trends</li>
+          <li>AI coaching responses</li>
+          <li>Priority support</li>
+          <li>Ad-free experience</li>
+        </ul>
+        <button class="plan-cta" onclick="handlePricingCTA()">Get Started</button>
       </div>
 
-      <div style="text-align: center; margin-top: 60px; color: var(--text-muted);">
-        <p>💡 <strong>Use code LAUNCH50 for 50% off — locked in forever</strong></p>
-        <p style="font-size: 0.9rem; margin-top: 12px;">All plans include a 7-day free trial. No credit card required.</p>
+      <!-- LIFETIME PLAN -->
+      <div class="pricing-card">
+        <div class="plan-name">Lifetime</div>
+        <div class="plan-desc">One-time investment, forever freedom.</div>
+        <div class="price">$49</div>
+        <div class="price-period">one time</div>
+        <ul class="plan-features">
+          <li>Everything in Plus</li>
+          <li>Unlimited message archive</li>
+          <li>Advanced AI coaching</li>
+          <li>Custom condition profiles</li>
+          <li>Direct founder support</li>
+          <li>Access to beta features</li>
+        </ul>
+        <button class="plan-cta" onclick="handlePricingCTA()">Go Lifetime</button>
       </div>
     </div>
   </section>
 
   <!-- FAQ -->
   <section class="faq-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Common Questions</h2>
-      </div>
-
-      <div class="faq-grid">
-        <div>
-          <div class="faq-question">Is this a replacement for therapy?</div>
-          <div class="faq-answer">No. HoldOff is a support tool, not therapy. It's designed to work *alongside* professional care. We include disclaimers and always recommend professional help for serious mental health concerns.</div>
-        </div>
-
-        <div>
-          <div class="faq-question">How is my data protected?</div>
-          <div class="faq-answer">Your messages stay on your device (phone) or encrypted in our database. We never share data with third parties. You can export or delete everything anytime.</div>
-        </div>
-
-        <div>
-          <div class="faq-question">Can I change my conditions later?</div>
-          <div class="faq-answer">Yes. Your mental health profile is changeable anytime in Settings. As you grow and your needs shift, the AI personalization updates automatically.</div>
-        </div>
-
-        <div>
-          <div class="faq-question">What if I want to cancel?</div>
-          <div class="faq-answer">Cancel anytime in your account settings. No contracts, no lock-in. If you cancel, your data stays safe — you can still export it.</div>
-        </div>
-
-        <div>
-          <div class="faq-question">How does Spiral Lock work exactly?</div>
-          <div class="faq-answer">The app detects when you send 3+ messages to the same person within 5 minutes. It locks sending and shows a flashing red/blue alert. After 5 minutes, you can try again (with a fresh perspective).</div>
-        </div>
-
-        <div>
-          <div class="faq-question">Can HoldOff work offline?</div>
-          <div class="faq-answer">The PWA web app works offline. The SMS integration requires a connection since it syncs with your phone carrier. We're working on better offline support.</div>
-        </div>
-
-        <div>
-          <div class="faq-question">Do you offer a free trial?</div>
-          <div class="faq-answer">Yes — 7 days free on Plus tier. No credit card required. After that, either continue (at locked-in LAUNCH50 price) or use the free tier forever.</div>
-        </div>
-
-        <div>
-          <div class="faq-question">What are the conditions you support?</div>
-          <div class="faq-answer">At launch: RSD, Anxiety, Depression, ADHD, Autism, and all Attachment Styles (anxious, avoidant, fearful-avoidant, secure). We're adding more conditions based on user feedback.</div>
-        </div>
-      </div>
+    <h2>Questions?</h2>
+    
+    <div class="faq-item">
+      <h3>Can I upgrade or downgrade anytime?</h3>
+      <p>Yes. You can upgrade to Lifetime from Plus at any time, and only pay the difference. No lock-in, no penalty.</p>
     </div>
+
+    <div class="faq-item">
+      <h3>What if I don't like it?</h3>
+      <p>We offer a 7-day money-back guarantee. If HoldOff doesn't help, we'll refund you, no questions asked.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>Is my data private?</h3>
+      <p>Absolutely. Your messages stay on your device. We never sell your data. Read our full privacy policy for details.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>Do I need a subscription after my trial?</h3>
+      <p>No. The Trial plan works forever. But if you want deeper insights and longer history, Plus or Lifetime unlock that.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>What's included in "AI Coaching"?</h3>
+      <p>Beyond the Verdict (safe/risky), Plus and Lifetime plans get personalized coaching: why you want to send this, what pattern this triggers, and what respecting yourself looks like right now.</p>
+    </div>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <section class="disclaimer">
+    <p><strong>Disclaimer:</strong> HoldOff is a tool designed to support you. It is not therapy, diagnosis, or a substitute for professional mental health care. If you're struggling with depression, anxiety, suicidal thoughts, or other mental health concerns, please reach out to a licensed professional or crisis line.</p>
   </section>
 
   <!-- FOOTER -->
   <footer>
-    <div class="container">
-      <p>© 2025 HoldOff. Built by Stacy Martin. Designed to save relationships.</p>
-      <div class="footer-links">
-        <a href="/legal">Legal & Disclaimer</a>
-        <a href="/legal#privacy">Privacy Policy</a>
-        <a href="/legal#terms">Terms of Service</a>
-        <a href="/legal#health-disclaimer">Mental Health Disclaimer</a>
-      </div>
-    </div>
+    <p>&copy; 2026 HoldOff. Made for people who deserve better.</p>
+    <p>
+      <a href="/privacy">Privacy</a> &nbsp;|&nbsp;
+      <a href="/terms">Terms</a> &nbsp;|&nbsp;
+      <a href="https://shouldiholdoff.live/contact">Contact</a>
+    </p>
   </footer>
 
   <script>
-    // FAQ toggle (optional)
-    document.querySelectorAll('.faq-question').forEach(q => {
-      q.addEventListener('click', function() {
-        this.nextElementSibling.style.display = 
-          this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-      });
-    });
+    function handlePricingCTA() {
+      // Check if user is logged in by looking for auth token in cookies
+      const cookies = document.cookie.split(';').reduce((acc, c) => {
+        const [key, val] = c.trim().split('=');
+        acc[key] = val;
+        return acc;
+      }, {});
 
-    // Scroll reveal — stagger sections, cards, faqs into view
-    (function () {
-      var targets = document.querySelectorAll(
-        '.feature-card, .pricing-card, .faq-item, .section-header, .cta-section, .hero-ctas'
-      );
-      targets.forEach(function (el, i) {
-        el.classList.add('reveal');
-        el.style.transitionDelay = (Math.min(i % 4, 3) * 0.08) + 's';
-      });
-      if (!('IntersectionObserver' in window)) {
-        targets.forEach(function (el) { el.classList.add('in'); });
-        return;
+      if (cookies.auth_token) {
+        // User is logged in, go to checkout
+        window.location.href = 'https://shouldiholdoff.live/checkout';
+      } else {
+        // User not logged in, go to signup (which will redirect to checkout after)
+        window.location.href = 'https://shouldiholdoff.live/signup';
       }
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-        });
-      }, { threshold: 0.12 });
-      targets.forEach(function (el) { io.observe(el); });
-    })();
-
-    // Pricing CTA handler — logged-in users go straight to checkout, others to signup
-    const isLoggedIn = <%= user ? 'true' : 'false' %>;
-    function handlePricingCTA(tier) {
-      if (!isLoggedIn) {
-        location.href = '/signup';
-        return;
-      }
-      // Logged in — fetch checkout link directly
-      fetch('/api/checkout/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier })
-      })
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(data => {
-        if (data.url) {
-          location.href = data.url;
-        } else {
-          console.error('No checkout URL in response:', data);
-          alert('Unable to start checkout. Please try again.');
-        }
-      })
-      .catch(err => {
-        console.error('Checkout error:', err);
-        alert('Error starting checkout. Please try again.');
-      });
     }
   </script>
 </body>
