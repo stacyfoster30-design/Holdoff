@@ -20,7 +20,7 @@ Sentry.init({
   },
 });
 const { verifyToken, getCookieTokens } = require('./lib/auth');
-const routes = require('./routes');
+const authRouter = require('./auth');
 const { mountSharePages } = require('./routes/share');
 const { ensureCommunityTables } = require('./db/community');
 const googleAuthHandler = require('./routes/google-auth');
@@ -123,6 +123,7 @@ app.post('/api/auth/google', googleAuthHandler);
 app.use('/', require('./routes/seo'));
 
 // Main API router — catches all /api/* not already matched above
+app.use('/api/auth', authRouter);
 app.use('/api/spiral-lock', require('./routes/spiral-lock'));
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/community', require('./routes/community'));
@@ -133,7 +134,6 @@ app.use('/api/quiz-invites', require('./routes/quiz-invites'));
 app.use('/api/messaging', require('./routes/messaging'));
 app.use('/api/verdict', require('./routes/verdict'));
 app.use('/api/interpreter', require('./routes/interpreter'));
-app.use('/api', routes);
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
 if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
