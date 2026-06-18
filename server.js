@@ -24,7 +24,7 @@ const authRouter = require(path.join(__dirname, 'auth'));
 const { mountSharePages } = require(path.join(__dirname, 'routes', 'share'));
 const { ensureCommunityTables } = require(path.join(__dirname, 'db', 'community'));
 const googleAuthHandler = require(path.join(__dirname, 'routes', 'google-auth'));
-const checkoutRouter = require(path.join(__dirname, 'holdoff_checkout'));
+const checkoutRouter = require(path.join(__dirname, 'routes', 'checkout'));
 
 // Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
 if (process.env.BLAST_TRIGGER === '1') {
