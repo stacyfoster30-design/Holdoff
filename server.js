@@ -289,6 +289,11 @@ app.get('/story', async (req, res) => {
   res.render('story-animated', { user });
 });
 
+// Story preview — public for testing (remove before production)
+app.get('/story-preview', async (req, res) => {
+  res.render('story-animated', { user: null });
+});
+
 // AI Companion hub — paid users only (redirect to default character)
 app.get('/companion', async (req, res) => {
   const user = await getUserFromCookies(req);
