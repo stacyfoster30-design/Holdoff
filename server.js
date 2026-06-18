@@ -134,6 +134,7 @@ app.use('/api/quiz-invites', require('./routes/quiz-invites'));
 app.use('/api/messaging', require('./routes/messaging'));
 app.use('/api/verdict', require('./routes/verdict'));
 app.use('/api/interpreter', require('./routes/interpreter'));
+app.use('/api/companion', require('./routes/companion'));
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
 if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
@@ -286,6 +287,42 @@ app.get('/story', async (req, res) => {
     return res.redirect('/');
   }
   res.render('story-experience', { user });
+});
+
+// AI Companion chat — paid users only
+app.get('/companion/:characterName', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/signup');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  
+  const { characterName } = req.params;
+  const { CHARACTER_DEFINITIONS } = require('./lib/companion-ai');
+  const character = CHARACTER_DEFINITIONS[characterName];
+  
+  if (!character) {
+    return res.status(404).render('404');
+  }
+  
+  // Build user context for the view
+  const userContext = {
+    name: user.name || 'friend',
+    conditions: user.mental_health_conditions || [],
+    preferences: user.preferences || {},
+  };
+  
+  res.render('companion', {
+    user,
+    character: {
+      ...character,
+      name: characterName,
+    },
+    userContext,
+  });
 });
 
 // Detox landing page — 5-day Anxious Texting Detox email course

@@ -223,7 +223,12 @@
 
   <script>
     const storyState = {
-      phase: 'stacy-story', // stacy-story → shoes-mapping → their-story → recap
+      phase: 'gender-setup', // gender-setup → stacy-story → shoes-mapping → their-story → recap
+      userName: '', // Their original name (for Part 1)
+      newUserName: '', // Their name change (for Part 2 shoes)
+      userIdentity: null, // 'man', 'woman', 'nonbinary' (for Part 1)
+      newUserIdentity: null, // 'man', 'woman', 'nonbinary' (for Part 2 shoes)
+      dannyIdentity: 'man', // Danny is always a man
       stacyChoice: null,
       userPersonName: '',
       userRelationship: '',
@@ -237,8 +242,8 @@
 
     const stacyStory = [
       {
-        heading: "I Realized My Spirals Hurt Him",
-        text: "It wasn't until that Tuesday night when I watched their face go quiet that I finally understood. Not from a book. Not from a therapist. From their eyes. I'd been circling the same thought for three hours—whether they actually wanted to be with me or if they were just being nice. And I'd asked them, in seventeen different ways. Each time softer. Each time more desperate.",
+        heading: "I Realized My Spirals Hurt {{danny}}",
+        text: "It wasn't until that Tuesday night when I watched {{danny_pronoun.possessive}} face go quiet that I finally understood. Not from a book. Not from a therapist. From {{danny_pronoun.possessive}} eyes. I'd been circling the same thought for three hours—whether {{danny_pronoun.subject}} actually wanted to be with me or if {{danny_pronoun.subject}} were just being nice. And I'd asked {{danny_pronoun.object}}, in seventeen different ways. Each time softer. Each time more desperate.",
         choices: [
           { text: "I recognized the pattern immediately", next: 'stacy-2a' },
           { text: "I tried to talk myself down first", next: 'stacy-2b' }
@@ -246,7 +251,7 @@
       },
       {
         heading: "The Pattern Became Visible",
-        text: "Once you see the spiral, you can't unsee it. That loop of doubt → reassurance-seeking → temporary relief → doubt again. I was doing it in relationships, with work, in conversations. Always spiraling. Always searching for the one thing that would make the anxiety stop. But it never stopped. They couldn't stop it. My therapist couldn't stop it. Only understanding it could.",
+        text: "Once you see the spiral, you can't unsee it. That loop of doubt → reassurance-seeking → temporary relief → doubt again. I was doing it in relationships, with work, in conversations. Always spiraling. Always searching for the one thing that would make the anxiety stop. But it never stopped. {{danny_pronoun.Capitalized_subject}} couldn't stop it. My therapist couldn't stop it. Only understanding it could.",
         choices: [
           { text: "I wanted to change immediately", next: 'stacy-3a' },
           { text: "I needed time to accept it first", next: 'stacy-3b' }
@@ -254,18 +259,60 @@
       },
       {
         heading: "Pausing Changed Everything",
-        text: "The first time I noticed the spiral and didn't immediately ask for reassurance—even though every part of me screamed to—something shifted. It was brutal. My anxiety spiked. But then... it gradually settled. Not because they convinced me. Because I stayed with the uncertainty. Because I tracked what triggered it. Because I chose how to respond instead of just reacting.",
+        text: "The first time I noticed the spiral and didn't immediately ask for reassurance—even though every part of me screamed to—something shifted. It was brutal. My anxiety spiked. But then... it gradually settled. Not because {{danny_pronoun.subject}} convinced me. Because I stayed with the uncertainty. Because I tracked what triggered it. Because I chose how to respond instead of just reacting.",
         choices: [
           { text: "I'm ready to put on your shoes", next: 'shoes-mapping' }
         ]
       }
     ];
 
+    function getPronounSet(identity) {
+      const sets = {
+        'man': { subject: 'he', object: 'him', possessive: 'his', Capitalized_subject: 'He' },
+        'woman': { subject: 'she', object: 'her', possessive: 'her', Capitalized_subject: 'She' },
+        'nonbinary': { subject: 'they', object: 'them', possessive: 'their', Capitalized_subject: 'They' }
+      };
+      return sets[identity] || sets['nonbinary'];
+    }
+
+    function adaptStoryText(text, userIdentity, dannyIdentity, userName) {
+      const userPronouns = getPronounSet(userIdentity);
+      const dannyPronouns = getPronounSet(dannyIdentity);
+      
+      return text
+        .replace(/{{danny}}/g, 'Danny')
+        .replace(/{{danny_pronoun\.subject}}/g, dannyPronouns.subject)
+        .replace(/{{danny_pronoun\.object}}/g, dannyPronouns.object)
+        .replace(/{{danny_pronoun\.possessive}}/g, dannyPronouns.possessive)
+        .replace(/{{danny_pronoun\.Capitalized_subject}}/g, dannyPronouns.Capitalized_subject)
+        .replace(/{{user}}/g, userName)
+        .replace(/{{user_pronoun\.subject}}/g, userPronouns.subject)
+        .replace(/{{user_pronoun\.object}}/g, userPronouns.object)
+        .replace(/{{user_pronoun\.possessive}}/g, userPronouns.possessive)
+        .replace(/{{user_pronoun\.Capitalized_subject}}/g, userPronouns.Capitalized_subject);
+    }
+
     const shoesMapping = [
       {
         heading: "Put On My Shoes",
         subheading: "Now it's your turn. Let me know your story, and we'll track your patterns together.",
         questions: [
+          {
+            label: "What's your name?",
+            input: "userName",
+            placeholder: "Your name (or what you go by)"
+          },
+          {
+            label: "How do you identify?",
+            input: "userGender",
+            type: "select",
+            options: [
+              { value: "woman", label: "Woman" },
+              { value: "man", label: "Man" },
+              { value: "nonbinary", label: "Non-binary" },
+              { value: "other", label: "Other" }
+            ]
+          },
           {
             label: "Who's the person you spiral about?",
             input: "personName",
@@ -295,7 +342,9 @@
       const progress = calculateProgress();
       document.getElementById('progressFill').style.width = progress + '%';
 
-      if (storyState.phase === 'stacy-story') {
+      if (storyState.phase === 'gender-setup') {
+        renderGenderSetup(content);
+      } else if (storyState.phase === 'stacy-story') {
         renderStacyStory(content);
       } else if (storyState.phase === 'shoes-mapping') {
         renderShoesMapping(content);
@@ -304,6 +353,69 @@
       } else if (storyState.phase === 'recap') {
         renderRecap(content);
       }
+    }
+
+    function renderGenderSetup(content) {
+      content.innerHTML = `
+        <div class="phase-label">Your Story Starts Here</div>
+        <div class="story-scene">
+          <h2 class="scene-heading">Let's Personalize This</h2>
+          <p class="scene-text" style="margin-bottom: 40px;">This story is about you spiraling about someone. Help me get the details right.</p>
+          
+          <div style="margin-bottom: 40px;">
+            <label style="display: block; color: rgba(200, 150, 255, 0.8); font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">What's your name?</label>
+            <input type="text" id="userName" class="input-field" placeholder="Enter your name" style="width: 100%; padding: 12px; border: 1px solid rgba(200, 150, 255, 0.3); border-radius: 8px; background: rgba(20, 10, 30, 0.8); color: #fff;">
+          </div>
+
+          <div style="margin-bottom: 50px;">
+            <label style="display: block; color: rgba(200, 150, 255, 0.8); font-size: 13px; text-transform: uppercase; margin-bottom: 20px;">How do you identify?</label>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              <button class="choice-button" style="flex: 1; min-width: 120px;" onclick="setGenderSetup('man', storyState.userPreference)">Man</button>
+              <button class="choice-button" style="flex: 1; min-width: 120px;" onclick="setGenderSetup('woman', storyState.userPreference)">Woman</button>
+              <button class="choice-button" style="flex: 1; min-width: 120px;" onclick="setGenderSetup('nonbinary', storyState.userPreference)">Non-binary</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 50px;">
+            <label style="display: block; color: rgba(200, 150, 255, 0.8); font-size: 13px; text-transform: uppercase; margin-bottom: 20px;">Who are you spiraling about?</label>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              <button class="choice-button" style="flex: 1; min-width: 120px;" onclick="setGenderSetup(storyState.userIdentity, 'man')">Man</button>
+              <button class="choice-button" style="flex: 1; min-width: 120px;" onclick="setGenderSetup(storyState.userIdentity, 'woman')">Woman</button>
+              <button class="choice-button" style="flex: 1; min-width: 120px;" onclick="setGenderSetup(storyState.userIdentity, 'nonbinary')">Non-binary</button>
+            </div>
+          </div>
+
+          <button class="submit-btn" style="margin-top: 40px; opacity: ${storyState.userIdentity && storyState.userPreference && document.getElementById('userName')?.value?.trim() ? '1' : '0.5'};" 
+            ${storyState.userIdentity && storyState.userPreference ? 'onclick="startStacyStory()"' : 'disabled'}>
+            Let's Begin
+          </button>
+        </div>
+      `;
+    }
+
+    function setGenderSetup(identity, preference) {
+      if (identity) storyState.userIdentity = identity;
+      if (preference) storyState.dannyIdentity = preference;
+      render();
+    }
+
+    function startStacyStory() {
+      const userNameInput = document.getElementById('userName')?.value?.trim();
+      if (!userNameInput) {
+        alert('Please enter your name');
+        return;
+      }
+      if (!storyState.userIdentity) {
+        alert('Please select how you identify');
+        return;
+      }
+      if (!storyState.dannyIdentity) {
+        alert('Please select who you\'re spiraling about');
+        return;
+      }
+      storyState.userName = userNameInput;
+      storyState.phase = 'stacy-story';
+      render();
     }
 
     function renderStacyStory(content) {
@@ -320,11 +432,14 @@
 
       if (!scene) return;
 
+      const adaptedHeading = adaptStoryText(scene.heading, storyState.userIdentity, storyState.dannyIdentity, storyState.userName);
+      const adaptedText = adaptStoryText(scene.text, storyState.userIdentity, storyState.dannyIdentity, storyState.userName);
+
       content.innerHTML = `
-        <div class="phase-label">Part 1: Stacy's Story</div>
+        <div class="phase-label">Part 1: Your Story</div>
         <div class="story-scene">
-          <h2 class="scene-heading">${scene.heading}</h2>
-          <p class="scene-text">${scene.text}</p>
+          <h2 class="scene-heading">${adaptedHeading}</h2>
+          <p class="scene-text">${adaptedText}</p>
           <div>
             ${scene.choices.map((choice, idx) => `
               <button class="choice-button" onclick="selectStacyChoice('${choice.next}')">
@@ -339,7 +454,7 @@
     function renderShoesMapping(content) {
       const questions = shoesMapping[0].questions;
       content.innerHTML = `
-        <div class="phase-label">Part 2: Your Story</div>
+        <div class="phase-label">Part 2: Put On My Shoes</div>
         <div class="story-scene">
           <h2 class="scene-heading">${shoesMapping[0].heading}</h2>
           <p class="scene-text" style="margin-bottom: 30px;">${shoesMapping[0].subheading}</p>
@@ -347,7 +462,14 @@
             ${questions.map((q, idx) => `
               <div style="margin-bottom: 20px;">
                 <label style="display: block; color: rgba(200, 150, 255, 0.8); font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">${q.label}</label>
-                <input type="text" class="input-field" id="${q.input}" placeholder="${q.placeholder}">
+                ${q.type === 'select' ? `
+                  <select class="input-field" id="${q.input}">
+                    <option value="">Select...</option>
+                    ${q.options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+                  </select>
+                ` : `
+                  <input type="text" class="input-field" id="${q.input}" placeholder="${q.placeholder}">
+                `}
               </div>
             `).join('')}
             <button class="submit-btn" onclick="submitShoesMapping()">Continue to Your Story</button>
@@ -357,16 +479,17 @@
     }
 
     function renderTheirStory(content) {
-      const { userPersonName, userRelationship, userSpiralTrigger, userValues } = storyState;
+      const { userPersonName, userRelationship, userSpiralTrigger, userValues, newUserName, newUserIdentity } = storyState;
+      const userPronouns = getPronounSet(newUserIdentity);
       
       const theirStory = `
-        <p class="scene-text">It started with ${userSpiralTrigger} and ${userPersonName}. You weren't sure where you stood, and the uncertainty felt impossible to sit with. So you spiraled—searching for signs, asking questions in a dozen different ways, looking for the one answer that would make the anxiety vanish.</p>
-        <p class="scene-text">But ${userPersonName} couldn't give you what you were looking for. Because what you were really looking for was certainty about yourself, not about them. And that's not something anyone else can provide.</p>
-        <p class="scene-text">What ${userPersonName} <strong>could</strong> do—and still can—is notice when you're spiraling and help you pause. To track what triggers it. To understand that the spiral isn't a character flaw. It's a pattern. And patterns can be understood.</p>
+        <p class="scene-text">It started with ${userSpiralTrigger} and ${userPersonName}. You weren't sure where you stood, and the uncertainty felt impossible to sit with. So ${userPronouns.subject} spiraled—searching for signs, asking questions in a dozen different ways, looking for the one answer that would make the anxiety vanish.</p>
+        <p class="scene-text">But ${userPersonName} couldn't give ${userPronouns.object} what ${userPronouns.subject} was looking for. Because what ${userPronouns.subject} was really looking for was certainty about ${userPronouns.reflexive}, not about ${userPersonName}. And that's not something anyone else can provide.</p>
+        <p class="scene-text">What ${userPersonName} <strong>could</strong> do—and still can—is notice when ${userPronouns.subject}'re spiraling and help pause. To track what triggers it. To understand that the spiral isn't a character flaw. It's a pattern. And patterns can be understood.</p>
       `;
 
       content.innerHTML = `
-        <div class="phase-label">Part 3: Your Story Unfolds</div>
+        <div class="phase-label">Part 3: Your Story</div>
         <div class="story-scene">
           <h2 class="scene-heading">Your ${userRelationship} is Worth Understanding</h2>
           ${theirStory}
@@ -423,6 +546,14 @@
             </div>
           </div>
 
+          <div style="margin: 30px 0; padding: 20px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; border-left: 3px solid #8b5cf6;">
+            <p style="margin-bottom: 15px; font-size: 14px; color: #b8a89f;">Have questions? Chat with Stacy or Danny about their stories and what you're figuring out:</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="submit-btn" style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #c77dff 0%, #b8a89f 100%);" onclick="window.location.href='/companion/Stacy'">Chat with Stacy 💜</button>
+              <button class="submit-btn" style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #6b5bdb 0%, #5a4f9f 100%);" onclick="window.location.href='/companion/Danny'">Chat with Danny 💙</button>
+            </div>
+          </div>
+
           <button class="submit-btn" onclick="finishOnboarding()">Enter HoldOff</button>
         </div>
       `;
@@ -450,16 +581,20 @@
     }
 
     function submitShoesMapping() {
+      const newUserName = document.getElementById('userName').value.trim();
+      const newUserGender = document.getElementById('userGender').value;
       const personName = document.getElementById('personName').value.trim();
       const relationship = document.getElementById('relationship').value.trim();
       const spiralTrigger = document.getElementById('spiralTrigger').value.trim();
       const values = document.getElementById('values').value.trim();
 
-      if (!personName || !relationship || !spiralTrigger || !values) {
+      if (!newUserName || !newUserGender || !personName || !relationship || !spiralTrigger || !values) {
         alert('Please fill in all fields');
         return;
       }
 
+      storyState.newUserName = newUserName;
+      storyState.newUserIdentity = newUserGender;
       storyState.userPersonName = personName;
       storyState.userRelationship = relationship;
       storyState.userSpiralTrigger = spiralTrigger;
@@ -473,8 +608,18 @@
       render();
     }
 
+    function getPronoun(type) {
+      if (storyState.userPreference === 'women') {
+        return { subject: 'she', object: 'her', possessive: 'her' }[type] || 'she';
+      } else if (storyState.userPreference === 'men') {
+        return { subject: 'he', object: 'him', possessive: 'his' }[type] || 'he';
+      } else {
+        return { subject: 'they', object: 'them', possessive: 'their' }[type] || 'they';
+      }
+    }
+
     function calculateProgress() {
-      const phases = ['stacy-story', 'shoes-mapping', 'their-story', 'recap'];
+      const phases = ['gender-setup', 'stacy-story', 'shoes-mapping', 'their-story', 'recap'];
       const currentPhaseIdx = phases.indexOf(storyState.phase);
       return ((currentPhaseIdx + 1) / phases.length) * 100;
     }
