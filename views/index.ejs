@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>HoldOff — Your AI Safety Net for Relationships</title>
-  <meta name="description" content="Analyze every message before you send it. AI-powered relationship protection with Verdict, Interpreter, and Spiral Lock.">
+  <title>HoldOff — Stop Overthinking Your Relationships</title>
+  <meta name="description" content="Stop spinning in anxiety about what people think. Get AI clarity on your relationships, conversations, and what's really going on. Your sanity, protected.">
   
   <!-- PWA -->
   <link rel="manifest" href="/manifest.webmanifest">
@@ -52,7 +52,7 @@
 
     html, body {
       width: 100%;
-      height: 100%;
+      min-height: 100vh;
       background: linear-gradient(135deg, var(--bg-darker) 0%, #1a1f3a 100%);
       color: var(--text-primary);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -80,6 +80,7 @@
       font-size: 1.3rem;
       font-weight: 800;
       color: var(--primary);
+      letter-spacing: -0.5px;
     }
 
     .nav-links {
@@ -101,7 +102,7 @@
     /* BUTTONS */
     .btn {
       display: inline-block;
-      padding: 10px 24px;
+      padding: 12px 28px;
       border-radius: 8px;
       font-weight: 600;
       font-size: 0.95rem;
@@ -137,9 +138,9 @@
     /* HERO */
     .hero {
       text-align: center;
-      padding: 100px 40px;
+      padding: 100px 40px 120px;
       background: linear-gradient(180deg, rgba(107, 40, 215, 0.1) 0%, transparent 100%);
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
     }
 
@@ -156,11 +157,15 @@
     }
 
     .hero h1 {
-      font-size: 3rem;
+      font-size: 3.5rem;
       font-weight: 900;
-      line-height: 1.1;
+      line-height: 1.15;
       margin-bottom: 16px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--rose) 100%);
+      color: var(--text-primary);
+    }
+
+    .hero .highlight {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -168,9 +173,10 @@
 
     .hero p {
       color: var(--text-muted);
-      font-size: 1.2rem;
-      margin-bottom: 40px;
-      line-height: 1.6;
+      font-size: 1.25rem;
+      margin: 0 auto 40px;
+      max-width: 700px;
+      line-height: 1.7;
     }
 
     .hero-ctas {
@@ -180,53 +186,280 @@
       flex-wrap: wrap;
     }
 
-    /* FEATURES GRID */
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      max-width: 1200px;
-      margin: 80px auto;
-      padding: 0 40px;
-    }
-
-    .feature-card {
+    /* SOCIAL PROOF */
+    .social-proof {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 32px;
+      padding: 24px 40px;
+      text-align: center;
+      margin-top: 60px;
+      display: inline-block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .social-proof p {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* BENEFITS GRID */
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
+      max-width: 1200px;
+      margin: 100px auto;
+      padding: 0 40px;
+    }
+
+    .benefit-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 32px;
       transition: var(--transition);
       text-align: left;
     }
 
-    .feature-card:hover {
+    .benefit-card:hover {
       border-color: var(--primary);
       transform: translateY(-8px);
-      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.2);
+      box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
     }
 
-    .feature-icon {
+    .benefit-icon {
       font-size: 2.5rem;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       display: block;
     }
 
-    .feature-card h3 {
-      font-size: 1.3rem;
+    .benefit-card h3 {
+      font-size: 1.4rem;
       font-weight: 700;
       margin-bottom: 12px;
       color: var(--text-primary);
     }
 
-    .feature-card p {
+    .benefit-card p {
       color: var(--text-muted);
       font-size: 0.95rem;
-      margin-bottom: 16px;
+      line-height: 1.7;
     }
 
-    .feature-bullets {
+    /* HOW IT WORKS */
+    .how-it-works {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 80px 40px;
+      margin-top: 80px;
+    }
+
+    .how-it-works .section-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .step {
+      position: relative;
+      padding-left: 60px;
+    }
+
+    .step-number {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      border-radius: 50%;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-top: 16px;
-      border-top: 1px solid var(
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .step h4 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .step p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* CTA SECTION */
+    .cta-section {
+      text-align: center;
+      padding: 80px 40px;
+      background: linear-gradient(180deg, transparent 0%, rgba(107, 40, 215, 0.08) 100%);
+    }
+
+    .cta-section h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+      color: var(--text-primary);
+    }
+
+    .cta-section p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+
+      .hero p {
+        font-size: 1.05rem;
+      }
+
+      .nav {
+        padding: 16px 24px;
+      }
+
+      .nav-links {
+        gap: 16px;
+      }
+
+      .hero, .benefits, .how-it-works, .cta-section {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-logo">HoldOff</div>
+    <div class="nav-links">
+      <a href="/#benefits" class="nav-link">Why HoldOff</a>
+      <a href="/pricing" class="nav-link">Pricing</a>
+      <a href="/auth/login" class="btn btn-ghost">Log In</a>
+      <a href="/auth/signup" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-eyebrow">🧠 AI That Gets You</div>
+    <h1>Stop <span class="highlight">Overthinking</span> Your Relationships</h1>
+    <p>You're not broken. You're just tired of spiraling about what people think. Get AI clarity on your conversations, understand what's really going on, and finally feel at peace with your connections.</p>
+    <div class="hero-ctas">
+      <a href="/auth/signup" class="btn btn-primary">Start Free (No Card)</a>
+      <a href="/pricing" class="btn btn-ghost">See Plans</a>
+    </div>
+  </section>
+
+  <section class="benefits" id="benefits">
+    <div class="benefit-card">
+      <span class="benefit-icon">🎯</span>
+      <h3>Stop Spiraling</h3>
+      <p>Before you send that message, get instant AI feedback. Catch the spiral before it happens. Feel calmer, less anxious about how you come across.</p>
+    </div>
+
+    <div class="benefit-card">
+      <span class="benefit-icon">💡</span>
+      <h3>Understand What's Real</h3>
+      <p>Cut through the noise in your head. Is this person upset with me? Do they care? Get clarity based on what they actually said, not what your anxiety is telling you.</p>
+    </div>
+
+    <div class="benefit-card">
+      <span class="benefit-icon">🤝</span>
+      <h3>Better Relationships</h3>
+      <p>Communicate more clearly. Stop miscommunicating because of anxiety. Your relationships improve when you're not second-guessing everything.</p>
+    </div>
+
+    <div class="benefit-card">
+      <span class="benefit-icon">🛡️</span>
+      <h3>Your AI Safety Net</h3>
+      <p>You have someone (something?) in your corner. Before you react, HoldOff gives you perspective. It's like having a therapist in your pocket—but instant and always available.</p>
+    </div>
+
+    <div class="benefit-card">
+      <span class="benefit-icon">📊</span>
+      <h3>See Your Patterns</h3>
+      <p>Understand how your mind works. Track what triggers you, what your attachment looks like, where anxiety shows up. Knowledge is power.</p>
+    </div>
+
+    <div class="benefit-card">
+      <span class="benefit-icon">✌️</span>
+      <h3>Peace of Mind</h3>
+      <p>Sleep better. Stop overthinking. Send messages with confidence. Your life gets simpler when you trust your instincts—with a backup brain.</p>
+    </div>
+  </section>
+
+  <section class="how-it-works">
+    <h2 class="section-title">How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h4>Connect Your Contacts</h4>
+        <p>Sync your real phone contacts. HoldOff analyzes the conversations that matter to you.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">2</div>
+        <h4>Message + Get Verdict</h4>
+        <p>Draft a message. Before you hit send, get AI analysis: is this good to send? What might they think?</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">3</div>
+        <h4>Understand & Learn</h4>
+        <p>See what's really going on in your conversations. Track patterns. Get insights into your attachments and triggers.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">4</div>
+        <h4>Send with Confidence</h4>
+        <p>Reply or respond without the anxiety. You have clarity now. You can trust your instincts.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>Your Anxiety Doesn't Get a Vote</h2>
+    <p>Stop letting your brain convince you that everyone's mad at you. Get clarity. Fix your relationships. Feel better.</p>
+    <a href="/auth/signup" class="btn btn-primary">Start Your Free Trial</a>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 HoldOff. Built for people who overthink relationships.</p>
+  </footer>
+</body>
+</html>
