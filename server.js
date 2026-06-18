@@ -24,6 +24,7 @@ const routes = require('./routes');
 const { mountSharePages } = require('./routes/share');
 const { ensureCommunityTables } = require('./db/community');
 const googleAuthHandler = require('./routes/google-auth');
+const checkoutRouter = require('./holdoff_checkout');
 
 // Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
 if (process.env.BLAST_TRIGGER === '1') {
@@ -123,6 +124,7 @@ app.use('/', require('./routes/seo'));
 
 // Main API router — catches all /api/* not already matched above
 app.use('/api/spiral-lock', require('./routes/spiral-lock'));
+app.use('/api/checkout', checkoutRouter);
 app.use('/api/community', require('./routes/community'));
 app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/contact-insights', require('./routes/contact-insights'));
