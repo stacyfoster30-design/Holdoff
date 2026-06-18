@@ -158,7 +158,7 @@ router.post('/signup', async (req, res) => {
     return res.status(429).json({ error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' });
   }
 
-  const { email, password, name } = req.body || {};
+  const { email, password, name, phone_number, preferences } = req.body || {};
   const normalizedEmail = (email || '').toLowerCase().trim();
 
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
@@ -187,6 +187,34 @@ router.post('/signup', async (req, res) => {
   const user = await createUser({ email: normalizedEmail, name: name?.trim() || null, passwordHash });
   if (!user) {
     return res.status(409).json({ error: 'An account with this email already exists.', code: 'EMAIL_TAKEN' });
+  }
+
+  // Store user preferences and conditions from interactive story
+  if (preferences) {
+    try {
+      const { storeUserPreferences, addUserConditions } = require('../db/preferences');
+      
+      // Store preferences
+      await storeUserPreferences(user.id, {
+        language_style: preferences.language_style || 'clinical',
+        tone: preferences.tone || 'direct',
+        tracking_depth: preferences.tracking_depth || 'moderate',
+        insight_frequency: preferences.insight_frequency || 'daily',
+        show_why: preferences.show_why !== false,
+        show_what: preferences.show_what !== false,
+        show_meaning: preferences.show_meaning !== false,
+        show_action: preferences.show_action !== false,
+        onboarded: true
+      });
+
+      // Store conditions (multi-select from story)
+      if (preferences.conditions && Array.isArray(preferences.conditions) && preferences.conditions.length > 0) {
+        await addUserConditions(user.id, preferences.conditions);
+      }
+    } catch (err) {
+      console.error('[auth] Failed to store preferences:', err.message);
+      // Don't fail signup if preferences fail — continue anyway
+    }
   }
 
   // Track referral conversion if ref= param was present

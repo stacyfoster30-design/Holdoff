@@ -536,6 +536,10 @@ ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e
 const { initializeTables: initMessagingTables } = require('./db/messages');
 initMessagingTables().catch(e => console.warn('[startup] messaging tables:', e.message));
 
+// Run database migrations (create user_preferences, user_conditions tables)
+const { runMigrations } = require('./db/migrations');
+runMigrations().catch(e => console.warn('[startup] migrations:', e.message));
+
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
 
 // In-process cron jobs (Render compatibility) — extracted to jobs/in-process-crons.js

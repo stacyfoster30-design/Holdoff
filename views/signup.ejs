@@ -1,112 +1,797 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include('partials/head') %>
-  <title>HoldOff — Create Account</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HoldOff — Your Pause</title>
   <style>
-    .auth-container {
-      min-height:100vh; display:flex; flex-direction:column;
-      align-items:center; justify-content:center; padding:40px 24px;
-      position:relative; z-index:1;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .auth-logo { font-size:3rem; margin-bottom:8px; }
-    .auth-title {
-      font-size:1.8rem; font-weight:700; margin-bottom:4px;
-      background: linear-gradient(135deg, var(--primary), var(--rose));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e0e0e0;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
     }
-    .auth-subtitle { color:var(--text-muted); font-size:0.95rem; margin-bottom:32px; }
-    .auth-card {
-      width:100%; max-width:380px; background:var(--bg-card);
-      border:1px solid var(--border); border-radius:var(--radius);
-      padding:28px 24px;
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
     }
-    .auth-footer { margin-top:20px; text-align:center; font-size:0.9rem; color:var(--text-muted); }
-    .error-msg {
-      background:rgba(232,121,121,0.1); border:1px solid rgba(232,121,121,0.3);
-      border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px;
-      color:var(--danger); font-size:0.9rem;
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+
+    /* Story container */
+    .story-container {
+      display: none;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    .story-container.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .story-scene {
+      background: rgba(26, 10, 46, 0.6);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      border-radius: 12px;
+      padding: 40px;
+      margin-bottom: 30px;
+      backdrop-filter: blur(10px);
+    }
+
+    .story-scene h2 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #a78bfa;
+      line-height: 1.3;
+    }
+
+    .story-scene p {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #d0d0d0;
+      margin-bottom: 15px;
+    }
+
+    .choice-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .choice-button {
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      color: #e0e0e0;
+      padding: 16px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    .choice-button:hover {
+      background: rgba(167, 139, 250, 0.2);
+      border-color: #a78bfa;
+      color: #a78bfa;
+    }
+
+    .choice-button.selected {
+      background: rgba(167, 139, 250, 0.3);
+      border-color: #a78bfa;
+      color: #a78bfa;
+    }
+
+    /* Multi-choice group */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #a78bfa;
+    }
+
+    .checkbox-item label {
+      cursor: pointer;
+      flex: 1;
+      color: #d0d0d0;
+    }
+
+    /* Summary */
+    .summary-container {
+      display: none;
+    }
+
+    .summary-container.active {
+      display: block;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    .summary-section {
+      background: rgba(167, 139, 250, 0.1);
+      border-left: 3px solid #a78bfa;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+
+    .summary-section h3 {
+      color: #a78bfa;
+      margin-bottom: 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .summary-section p {
+      color: #d0d0d0;
+      font-size: 15px;
+    }
+
+    /* Recap */
+    .recap-container {
+      display: none;
+    }
+
+    .recap-container.active {
+      display: block;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    .recap-message {
+      background: rgba(244, 114, 182, 0.1);
+      border: 1px solid rgba(244, 114, 182, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 25px;
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    .recap-message strong {
+      color: #f472b6;
+    }
+
+    /* Signup form */
+    .signup-form {
+      display: none;
+      background: rgba(26, 10, 46, 0.6);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      border-radius: 12px;
+      padding: 40px;
+      backdrop-filter: blur(10px);
+    }
+
+    .signup-form.active {
+      display: block;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #a78bfa;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 15px;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #a78bfa;
+      background: rgba(167, 139, 250, 0.1);
+    }
+
+    /* Navigation buttons */
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+      justify-content: space-between;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 6px;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+      color: white;
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #a78bfa;
+      border: 1px solid #a78bfa;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(167, 139, 250, 0.1);
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: rgba(167, 139, 250, 0.2);
+      border-radius: 2px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a78bfa 0%, #f472b6 100%);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(167, 139, 250, 0.3);
+      border-radius: 50%;
+      border-top-color: #a78bfa;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .subtitle {
+      color: #b0b0b0;
+      font-size: 14px;
+      margin-top: 10px;
     }
   </style>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <div class="auth-container">
-    <div class="auth-logo">💜</div>
-    <h1 class="auth-title">Join HoldOff</h1>
-    <p class="auth-subtitle">Start your 3-minute pause today</p>
+  <div class="container">
+    <header>
+      <div class="logo">HoldOff</div>
+      <p class="subtitle">The moment between trigger and spiral where you see clearly</p>
+    </header>
 
-    <div class="auth-card">
-      <% if (typeof error !== 'undefined' && error) { %>
-        <div class="error-msg"><%= error %></div>
-      <% } %>
-
-      <!-- Google Sign-Up -->
-      <div id="google-signin-btn" style="margin-bottom:20px;">
-        <button class="btn-google" onclick="googleSignUp()">
-          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
-          Continue with Google
-        </button>
+    <div id="story-flow">
+      <!-- Progress bar -->
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
       </div>
 
-      <div class="divider">or sign up with email</div>
+      <!-- Story scenes container -->
+      <div id="storyContainer" class="story-container">
+        <!-- Story will be rendered here by JavaScript -->
+      </div>
 
-      <form action="/signup" method="POST">
-        <div class="form-group">
-          <label class="form-label">Name</label>
-          <input type="text" name="name" class="form-input" placeholder="Your name" required autocomplete="name">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" name="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" name="password" class="form-input" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px;">Create Account</button>
-      </form>
+      <!-- Summary container -->
+      <div id="summaryContainer" class="summary-container">
+        <!-- Summary will be rendered here -->
+      </div>
 
-      <div class="auth-footer">
-        Already have an account? <a href="/login">Sign in</a>
+      <!-- Recap container -->
+      <div id="recapContainer" class="recap-container">
+        <!-- Recap will be rendered here -->
+      </div>
+
+      <!-- Signup form container -->
+      <div id="signupContainer" class="signup-form">
+        <h2 style="color: #a78bfa; margin-bottom: 10px;">Create Your Account</h2>
+        <p style="color: #b0b0b0; margin-bottom: 25px;">Let's complete your pause.</p>
+        
+        <form id="signupForm">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="you@example.com">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="At least 8 characters">
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone (optional)</label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000">
+          </div>
+
+          <div id="formError" class="error-message" style="display: none;"></div>
+
+          <div class="button-group">
+            <button type="button" class="btn btn-secondary" id="backButton">Back</button>
+            <button type="submit" class="btn btn-primary" id="submitButton">Create Account</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Navigation buttons for story -->
+      <div id="navButtons" class="button-group" style="margin-top: 30px;">
+        <button type="button" class="btn btn-secondary" id="prevButton" style="display: none;">Back</button>
+        <button type="button" class="btn btn-primary" id="nextButton">Next</button>
       </div>
     </div>
-
-    <p style="margin-top:24px;font-size:0.8rem;color:var(--text-dim);text-align:center;">
-      By creating an account you agree to our Terms of Service
-    </p>
   </div>
 
   <script>
-    function googleSignUp() {
-      const clientId = '<%= typeof googleClientId !== "undefined" ? googleClientId : "" %>';
-      if (!clientId) {
-        alert('Google sign-in is being set up. Please use email signup for now.');
-        return;
+    // Story data - based on Stacy's journey
+    const STORY_SCENES = [
+      {
+        id: 'moment',
+        heading: "I realized my spirals were hurting him too.",
+        text: "That was the moment everything shifted. I could see the pattern — the anxiety, the recognition, the spiral. It wasn't just my pain anymore. It affected the people I loved.\n\nWhat would you have done in that moment?",
+        choices: [
+          { text: "Realized I needed to understand my pattern better", maps: { tracking_depth: 'comprehensive' } },
+          { text: "Wanted to stop the spiral in the moment, but didn't know how", maps: { tracking_depth: 'moderate' } },
+          { text: "Knew what was happening but couldn't change it in the moment", maps: { tracking_depth: 'simple' } }
+        ]
+      },
+      {
+        id: 'spiral',
+        heading: "Once you see it, you can't unsee it.",
+        text: "Every text message. Every late-night notification. Every moment of silence. I started seeing all the ways I spiraled — the same triggers, the same patterns, just different people, different contexts.\n\nWhen you look back at your patterns, how deeply do you want to understand them?",
+        choices: [
+          { text: "Everything — every contact, every interaction, full context", maps: { tracking_depth: 'comprehensive' } },
+          { text: "The main points — which contacts trigger me, what the pattern looks like", maps: { tracking_depth: 'moderate' } },
+          { text: "Just enough to notice when it's happening", maps: { tracking_depth: 'simple' } }
+        ]
+      },
+      {
+        id: 'language',
+        heading: "How do you want to talk about it?",
+        text: "I needed a language for what was happening. Some days I needed clinical precision — attachment theory, RSD, the neuroscience of anxiety. Other days I just needed it plain and real.\n\nHow do you want insights about your patterns?",
+        choices: [
+          { text: "Clinical & precise — use the psychology language", maps: { language_style: 'clinical' } },
+          { text: "Plain & direct — just tell me what's happening", maps: { language_style: 'plain' } },
+          { text: "Mix of both — depends on the moment", maps: { language_style: 'blend' } }
+        ]
+      },
+      {
+        id: 'tone',
+        heading: "What tone do you need?",
+        text: "The same insight lands differently depending on how it's delivered. Sometimes I needed directness — call it what it is. Sometimes I needed warmth — I'm not broken, just human. Sometimes neutral — just the facts.\n\nWhat voice do you need right now?",
+        choices: [
+          { text: "Direct — no sugar coating, just the truth", maps: { tone: 'direct' } },
+          { text: "Warm — understanding, compassionate, like a friend", maps: { tone: 'warm' } },
+          { text: "Neutral — objective, factual, focused", maps: { tone: 'neutral' } }
+        ]
+      },
+      {
+        id: 'conditions',
+        heading: "What are you really working with?",
+        text: "RSD hit me hardest — the fear of rejection, the intensity of perceived judgment. But it wasn't just that. Anxiety, attachment patterns, ADHD — it all connected.\n\nWhat are you working with? (Select all that apply)",
+        type: 'multi-checkbox',
+        options: [
+          { value: 'rsd', label: 'RSD (Rejection Sensitive Dysphoria)' },
+          { value: 'anxiety', label: 'Anxiety' },
+          { value: 'depression', label: 'Depression' },
+          { value: 'addiction', label: 'Addiction' },
+          { value: 'attachment', label: 'Attachment Styles' },
+          { value: 'autism', label: 'Autism' },
+          { value: 'adhd', label: 'ADHD' }
+        ]
+      },
+      {
+        id: 'insights',
+        heading: "What do you actually want to know?",
+        text: "When I look at a pattern, I want to understand the Why — the neuroscience, the psychology. But I also need the What — what actually happened. And the Meaning — what does this tell me? And the Action — what do I do differently?\n\nWhat insights matter to you? (Select all that apply)",
+        type: 'multi-checkbox',
+        options: [
+          { value: 'why', label: 'Why — the science and psychology behind the pattern' },
+          { value: 'what', label: 'What — what actually happened in this interaction' },
+          { value: 'meaning', label: 'Meaning — what this tells me about myself' },
+          { value: 'action', label: 'Action — what I can do differently next time' }
+        ]
+      },
+      {
+        id: 'frequency',
+        heading: "How often do you want to check in?",
+        text: "Some days I needed real-time analysis. Some days weekly felt like enough. Some days I just wanted the option to pull an insight when I needed it.\n\nHow often do you want insights?",
+        choices: [
+          { text: "Every time — analyze in the moment, every message", maps: { insight_frequency: 'every_time' } },
+          { text: "Daily — give me a summary each day", maps: { insight_frequency: 'daily' } },
+          { text: "Weekly — I'll check in when I want to understand the week", maps: { insight_frequency: 'weekly' } },
+          { text: "On demand — only when I ask for it", maps: { insight_frequency: 'on_demand' } }
+        ]
       }
-      google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleResponse
-      });
-      google.accounts.id.prompt();
+    ];
+
+    // State
+    let currentScene = 0;
+    let storyChoices = {};
+    let conditions = [];
+    let insights = [];
+
+    // Initialize
+    function init() {
+      renderScene();
+      updateProgress();
+      setupEventListeners();
     }
 
-    function handleGoogleResponse(response) {
-      fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          window.location.href = '/inbox';
-        } else {
-          alert(data.error || 'Google sign-up failed');
-        }
-      })
-      .catch(() => alert('Google sign-up failed. Please try email signup.'));
+    function setupEventListeners() {
+      document.getElementById('nextButton').addEventListener('click', nextScene);
+      document.getElementById('prevButton').addEventListener('click', prevScene);
+      document.getElementById('backButton').addEventListener('click', backToStory);
+      document.getElementById('signupForm').addEventListener('submit', handleSignup);
     }
+
+    function renderScene() {
+      const scene = STORY_SCENES[currentScene];
+      if (!scene) return;
+
+      const container = document.getElementById('storyContainer');
+      container.classList.add('active');
+      document.getElementById('summaryContainer').classList.remove('active');
+      document.getElementById('recapContainer').classList.remove('active');
+      document.getElementById('signupContainer').classList.remove('active');
+
+      let html = `<div class="story-scene"><h2>${escapeHtml(scene.heading)}</h2><p>${escapeHtml(scene.text)}</p>`;
+
+      if (scene.type === 'multi-checkbox') {
+        html += '<div class="checkbox-group">';
+        scene.options.forEach(option => {
+          const checked = (scene.id === 'conditions' ? conditions : insights).includes(option.value) ? 'checked' : '';
+          html += `
+            <div class="checkbox-item">
+              <input type="checkbox" id="${option.value}" value="${option.value}" ${checked} 
+                onchange="handleMultiChoice('${scene.id}', '${option.value}')">
+              <label for="${option.value}">${escapeHtml(option.label)}</label>
+            </div>
+          `;
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="choice-group">';
+        scene.choices.forEach((choice, idx) => {
+          const isSelected = storyChoices[scene.id] === idx;
+          html += `
+            <button type="button" class="choice-button ${isSelected ? 'selected' : ''}" 
+              onclick="selectChoice(${idx})">
+              ${escapeHtml(choice.text)}
+            </button>
+          `;
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+
+      // Update buttons
+      updateNavButtons();
+    }
+
+    function handleMultiChoice(sceneId, value) {
+      if (sceneId === 'conditions') {
+        if (conditions.includes(value)) {
+          conditions = conditions.filter(c => c !== value);
+        } else {
+          conditions.push(value);
+        }
+      } else if (sceneId === 'insights') {
+        if (insights.includes(value)) {
+          insights = insights.filter(i => i !== value);
+        } else {
+          insights.push(value);
+        }
+      }
+    }
+
+    function selectChoice(choiceIdx) {
+      const scene = STORY_SCENES[currentScene];
+      storyChoices[scene.id] = choiceIdx;
+      renderScene();
+    }
+
+    function updateNavButtons() {
+      const prevBtn = document.getElementById('prevButton');
+      const nextBtn = document.getElementById('nextButton');
+
+      prevBtn.style.display = currentScene > 0 ? 'block' : 'none';
+      
+      // Check if current scene has required selections
+      const scene = STORY_SCENES[currentScene];
+      let canProceed = true;
+
+      if (scene.type === 'multi-checkbox') {
+        if (scene.id === 'conditions') {
+          canProceed = conditions.length > 0;
+        } else if (scene.id === 'insights') {
+          canProceed = insights.length > 0;
+        }
+      } else {
+        canProceed = storyChoices[scene.id] !== undefined;
+      }
+
+      nextBtn.disabled = !canProceed;
+      nextBtn.textContent = currentScene === STORY_SCENES.length - 1 ? 'Continue →' : 'Next →';
+    }
+
+    function nextScene() {
+      if (currentScene < STORY_SCENES.length - 1) {
+        currentScene++;
+        updateProgress();
+        renderScene();
+      } else {
+        // Show summary
+        showSummary();
+      }
+    }
+
+    function prevScene() {
+      if (currentScene > 0) {
+        currentScene--;
+        updateProgress();
+        renderScene();
+      }
+    }
+
+    function updateProgress() {
+      const progress = ((currentScene + 1) / (STORY_SCENES.length + 2)) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+    }
+
+    function showSummary() {
+      const container = document.getElementById('summaryContainer');
+      container.classList.add('active');
+      document.getElementById('storyContainer').classList.remove('active');
+      document.getElementById('recapContainer').classList.remove('active');
+      document.getElementById('signupContainer').classList.remove('active');
+
+      const scene = STORY_SCENES[3]; // Tone scene
+      const toneChoice = scene.choices[storyChoices['tone']];
+      const langChoice = STORY_SCENES[2].choices[storyChoices['language']];
+      const freqChoice = STORY_SCENES[6].choices[storyChoices['frequency']];
+
+      let html = '<div style="text-align: center; margin-bottom: 40px;">';
+      html += '<h2 style="color: #a78bfa; font-size: 32px; margin-bottom: 10px;">Here\'s Your Pause</h2>';
+      html += '<p style="color: #b0b0b0;">The HoldOff app you just built for yourself:</p>';
+      html += '</div>';
+
+      html += '<div class="summary-section"><h3>Your Language</h3><p>' + escapeHtml(langChoice.text) + '</p></div>';
+      html += '<div class="summary-section"><h3>Your Tone</h3><p>' + escapeHtml(toneChoice.text) + '</p></div>';
+      html += '<div class="summary-section"><h3>Your Conditions</h3><p>' + (conditions.length > 0 ? conditions.join(', ') : 'Not specified') + '</p></div>';
+      html += '<div class="summary-section"><h3>Your Insights</h3><p>' + (insights.length > 0 ? insights.join(', ') : 'Not specified') + '</p></div>';
+      html += '<div class="summary-section"><h3>Your Frequency</h3><p>' + escapeHtml(freqChoice.text) + '</p></div>';
+
+      container.innerHTML = html;
+      updateProgress();
+
+      // Update nav buttons for summary
+      document.getElementById('prevButton').style.display = 'block';
+      document.getElementById('nextButton').textContent = 'Continue →';
+      document.getElementById('prevButton').onclick = () => {
+        currentScene = STORY_SCENES.length - 1;
+        renderScene();
+      };
+    }
+
+    function backToStory() {
+      showSummary();
+    }
+
+    // Show recap
+    window.showRecap = function() {
+      const container = document.getElementById('recapContainer');
+      container.classList.add('active');
+      document.getElementById('summaryContainer').classList.remove('active');
+      document.getElementById('signupContainer').classList.remove('active');
+      document.getElementById('navButtons').style.display = 'none';
+
+      let html = '<h2 style="color: #a78bfa; font-size: 32px; text-align: center; margin-bottom: 30px;">What You Just Did</h2>';
+
+      html += '<div class="recap-message">';
+      html += '<p style="margin-bottom: 15px;"><strong>You didn\'t fill out a form.</strong> You walked through my real story.</p>';
+      html += '</div>';
+
+      html += '<div class="recap-message">';
+      html += '<p style="margin-bottom: 15px;"><strong>You made choices based on your own life.</strong> Every decision you made was about how you actually work, what you actually need, how you actually heal.</p>';
+      html += '</div>';
+
+      html += '<div class="recap-message">';
+      html += '<p style="margin-bottom: 15px;"><strong>And in doing that, you just built the exact app you need.</strong></p>';
+      html += '</div>';
+
+      html += '<div class="recap-message">';
+      html += '<p style="margin-bottom: 15px;"><strong>This is HoldOff:</strong> the moment between trigger and spiral where you see clearly. The pause where you make the next choice.</p>';
+      html += '</div>';
+
+      html += '<div class="recap-message" style="border-color: #f472b6; background: rgba(244, 114, 182, 0.15);">';
+      html += '<p style="margin-bottom: 15px;"><strong style="color: #f472b6;">And you just proved you understand your own pattern.</strong> Everything that comes next is built on what you know about yourself.</p>';
+      html += '</div>';
+
+      container.innerHTML = html;
+      updateProgress();
+
+      // Show signup button
+      document.getElementById('nextButton').textContent = 'Create My Account';
+      document.getElementById('nextButton').onclick = showSignupForm;
+      document.getElementById('prevButton').style.display = 'block';
+    };
+
+    document.getElementById('nextButton').addEventListener('click', function() {
+      if (currentScene === STORY_SCENES.length - 1) {
+        showSummary();
+      }
+    });
+
+    function showSignupForm() {
+      document.getElementById('signupContainer').classList.add('active');
+      document.getElementById('recapContainer').classList.remove('active');
+      document.getElementById('navButtons').style.display = 'none';
+      document.getElementById('backButton').style.display = 'block';
+    }
+
+    // Handle signup form submission
+    async function handleSignup(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const phone = document.getElementById('phone').value.trim();
+      const errorDiv = document.getElementById('formError');
+
+      // Validation
+      if (!email || !email.includes('@')) {
+        errorDiv.textContent = 'Please enter a valid email.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      if (!password || password.length < 8) {
+        errorDiv.textContent = 'Password must be at least 8 characters.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      // Build preferences object
+      const preferences = {
+        language_style: STORY_SCENES[2].choices[storyChoices['language']].maps.language_style,
+        tone: STORY_SCENES[3].choices[storyChoices['tone']].maps.tone,
+        tracking_depth: STORY_SCENES[0].choices[storyChoices['moment']].maps.tracking_depth,
+        insight_frequency: STORY_SCENES[6].choices[storyChoices['frequency']].maps.insight_frequency,
+        show_why: insights.includes('why'),
+        show_what: insights.includes('what'),
+        show_meaning: insights.includes('meaning'),
+        show_action: insights.includes('action'),
+        conditions: conditions,
+        onboarded: true
+      };
+
+      // Disable button
+      const submitBtn = document.getElementById('submitButton');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading"></span> Creating...';
+
+      try {
+        // POST to signup
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            phone_number: phone || null,
+            preferences
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Signup failed');
+        }
+
+        // Success — redirect to dashboard
+        errorDiv.style.display = 'none';
+        window.location.href = '/dashboard';
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Create Account';
+      }
+    }
+
+    // Utility
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Hook nextButton to show recap after summary
+    const origNextClick = document.getElementById('nextButton').onclick;
+    document.getElementById('nextButton').addEventListener('click', function() {
+      if (document.getElementById('summaryContainer').classList.contains('active')) {
+        window.showRecap();
+      }
+    });
+
+    // Start
+    init();
   </script>
 </body>
 </html>
