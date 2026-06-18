@@ -30,6 +30,11 @@ const seoFiles = {
   '/patterns/avoidant-deactivation': 'avoidant-deactivation.html',
 };
 
+// Root landing page — render index.ejs
+router.get('/', (req, res) => {
+  res.render('index');
+});
+
 Object.entries(seoFiles).forEach(([route, filename]) => {
   const filePath = path.join(SEO_DIR, filename);
   router.get(route, (req, res) => {
