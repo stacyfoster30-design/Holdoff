@@ -5,636 +5,478 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HoldOff - Inbox</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-      background: linear-gradient(135deg, #0f0a1f 0%, #1a0d2e 50%, #0d1b2a 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a001f 0%, #1a0033 50%, #0d1a3a 100%);
+      color: #e0e0e0;
       min-height: 100vh;
-      color: #e0e0e0;
+      padding: 20px;
     }
-
-    .header {
-      background: rgba(15, 10, 31, 0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(139, 92, 246, 0.3);
-      padding: 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-content {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .header h1 {
-      font-size: 24px;
-      font-weight: 600;
-      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .btn {
-      padding: 0.6rem 1.2rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
-    }
-
-    .btn-secondary {
-      background: rgba(139, 92, 246, 0.1);
-      color: #8B5CF6;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(139, 92, 246, 0.2);
-      border-color: rgba(139, 92, 246, 0.5);
-    }
-
+    
     .container {
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
-      padding: 2rem 1rem;
     }
-
-    .inbox-header {
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #b794f6;
+      font-weight: 600;
+    }
+    
+    .button-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 1rem;
+      gap: 12px;
+      margin-bottom: 30px;
     }
-
-    .inbox-header h2 {
-      font-size: 18px;
+    
+    .btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #6b5b95;
+      border-radius: 8px;
+      background: #2d1b69;
       color: #e0e0e0;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-
-    /* Messenger sync section */
-    .messenger-sync-section {
-      background: rgba(139, 92, 246, 0.1);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 10px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
+    
+    .btn:hover {
+      background: #3d2b79;
+      border-color: #8b7ab8;
     }
-
-    .messenger-sync-section h3 {
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #7c5dfa 0%, #6b4dee 100%);
+      border-color: #7c5dfa;
+      flex: 2;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #8b6dff 0%, #7a5dff 100%);
+    }
+    
+    .search-box {
+      margin-bottom: 20px;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #6b5b95;
+      border-radius: 8px;
+      background: rgba(45, 27, 105, 0.6);
+      color: #e0e0e0;
+      font-size: 14px;
+    }
+    
+    .search-box input::placeholder {
+      color: #8b7ab8;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
       font-size: 14px;
       font-weight: 600;
-      color: #8B5CF6;
-      margin-bottom: 1rem;
+      color: #b794f6;
+      margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-
-    .messenger-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 1rem;
-    }
-
-    .messenger-btn {
-      padding: 0.8rem;
-      background: rgba(13, 27, 42, 0.6);
-      border: 1px solid rgba(139, 92, 246, 0.2);
-      border-radius: 8px;
-      color: #e0e0e0;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-    }
-
-    .messenger-btn:hover {
-      background: rgba(139, 92, 246, 0.15);
-      border-color: rgba(139, 92, 246, 0.5);
-      transform: translateY(-2px);
-    }
-
-    .messenger-btn.connected {
-      background: rgba(74, 222, 128, 0.1);
-      border-color: rgba(74, 222, 128, 0.3);
-      color: #4ade80;
-    }
-
-    .search-bar {
-      width: 100%;
-      padding: 0.8rem 1rem;
-      margin-bottom: 2rem;
-      background: rgba(139, 92, 246, 0.1);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 8px;
-      color: #e0e0e0;
-      font-size: 14px;
-    }
-
-    .search-bar::placeholder {
-      color: rgba(224, 224, 224, 0.5);
-    }
-
-    .search-bar:focus {
-      outline: none;
-      background: rgba(139, 92, 246, 0.15);
-      border-color: rgba(139, 92, 246, 0.6);
-      box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
-    }
-
+    
     .contacts-list {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 8px;
     }
-
-    .contact-item {
-      padding: 1rem;
-      background: rgba(26, 13, 46, 0.5);
-      border: 1px solid rgba(139, 92, 246, 0.2);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      color: inherit;
+    
+    .contact-card {
+      padding: 12px 16px;
+      border: 1px solid #6b5b95;
+      border-radius: 8px;
+      background: rgba(45, 27, 105, 0.5);
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 1rem;
+      justify-content: space-between;
+      transition: all 0.2s;
+      cursor: pointer;
     }
-
-    .contact-item:hover {
-      background: rgba(139, 92, 246, 0.15);
-      border-color: rgba(139, 92, 246, 0.4);
-      transform: translateX(4px);
+    
+    .contact-card:hover {
+      background: rgba(45, 27, 105, 0.8);
+      border-color: #8b7ab8;
     }
-
-    .contact-item.unread {
-      border-left: 4px solid #8B5CF6;
-      background: rgba(139, 92, 246, 0.08);
-    }
-
+    
     .contact-info {
       flex: 1;
-      min-width: 0;
     }
-
+    
     .contact-name {
-      font-weight: 600;
-      font-size: 15px;
-      margin-bottom: 0.3rem;
+      font-weight: 500;
       color: #e0e0e0;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      font-size: 14px;
     }
-
-    .platform-badge {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .platform-badge.sms {
-      background: rgba(59, 130, 246, 0.2);
-      color: #3b82f6;
-    }
-
-    .platform-badge.facebook {
-      background: rgba(59, 89, 152, 0.2);
-      color: #3b59a8;
-    }
-
-    .platform-badge.whatsapp {
-      background: rgba(37, 211, 102, 0.2);
-      color: #25d366;
-    }
-
-    .platform-badge.instagram {
-      background: rgba(225, 29, 153, 0.2);
-      color: #e11d93;
-    }
-
-    .platform-badge.telegram {
-      background: rgba(0, 136, 204, 0.2);
-      color: #0088cc;
-    }
-
-    .contact-preview {
-      font-size: 13px;
-      color: rgba(224, 224, 224, 0.6);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
+    
     .contact-meta {
+      font-size: 12px;
+      color: #8b7ab8;
+      margin-top: 4px;
+    }
+    
+    .contact-actions {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.5rem;
-      white-space: nowrap;
+      gap: 8px;
+      align-items: center;
     }
-
-    .contact-time {
-      font-size: 12px;
-      color: rgba(224, 224, 224, 0.5);
+    
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #8b7ab8;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px 8px;
+      transition: color 0.2s;
     }
-
-    .unread-badge {
-      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-      color: white;
-      padding: 0.3rem 0.6rem;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-      min-width: 24px;
-      text-align: center;
+    
+    .icon-btn:hover {
+      color: #b794f6;
     }
-
-    .flag {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 0.5rem;
-    }
-
-    .flag.green {
-      background: #4ade80;
-    }
-
-    .flag.yellow {
-      background: #facc15;
-    }
-
-    .flag.red {
-      background: #ef4444;
-    }
-
+    
     .empty-state {
       text-align: center;
-      padding: 4rem 2rem;
-      color: rgba(224, 224, 224, 0.5);
+      padding: 40px 20px;
+      border: 1px dashed #6b5b95;
+      border-radius: 8px;
+      color: #8b7ab8;
     }
-
+    
     .empty-state svg {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 1rem;
-      opacity: 0.3;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
     }
-
+    
     .empty-state p {
-      font-size: 16px;
-      margin-bottom: 1rem;
+      font-size: 14px;
+      margin-bottom: 12px;
     }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: linear-gradient(135deg, #1a0d2e 0%, #0d1b2a 100%);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 500px;
-      width: 100%;
-    }
-
-    .modal-content h2 {
-      font-size: 20px;
-      margin-bottom: 1.5rem;
-      color: #e0e0e0;
-    }
-
-    .modal-close {
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      color: rgba(224, 224, 224, 0.5);
-      cursor: pointer;
+    
+    .sync-button {
+      background: #7c5dfa;
       border: none;
-      background: none;
-      padding: 0;
-      width: 30px;
-      height: 30px;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-
-    .modal-close:hover {
-      color: #e0e0e0;
+    
+    .sync-button:hover {
+      background: #8b6dff;
     }
-
-    @media (max-width: 600px) {
-      .container {
-        padding: 1rem;
-      }
-
-      .header-content {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .header-actions {
-        width: 100%;
-      }
-
-      .btn {
-        flex: 1;
-        justify-content: center;
-      }
-
-      .contact-meta {
-        flex-direction: row;
-        align-items: center;
-        gap: 1rem;
-      }
-
-      .messenger-buttons {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      }
+    
+    .loading {
+      text-align: center;
+      color: #8b7ab8;
+      padding: 20px;
+    }
+    
+    .error {
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid #cc3333;
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ff6b6b;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+    
+    .badge-risk-high {
+      background: rgba(255, 107, 107, 0.3);
+      color: #ff6b6b;
+    }
+    
+    .badge-risk-med {
+      background: rgba(255, 180, 76, 0.3);
+      color: #ffb44c;
+    }
+    
+    .badge-spam {
+      background: rgba(200, 100, 100, 0.3);
+      color: #e08080;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-content">
-      <h1>HoldOff</h1>
-      <div class="header-actions">
-        <a href="/notifications" class="btn btn-primary">🔔 Notifications</a>
-        <a href="/settings" class="btn btn-secondary">⚙️ Settings</a>
-        <a href="/auth/logout" class="btn btn-secondary">Logout</a>
-      </div>
-    </div>
-  </div>
-
   <div class="container">
-    <div class="inbox-header">
-      <h2>Your Messages</h2>
-      <button class="btn btn-primary" onclick="openMessengerModal()">💬 Sync Messengers</button>
+    <div class="header">
+      <h1>HoldOff</h1>
     </div>
-
-    <!-- Messenger Sync Section -->
-    <div class="messenger-sync-section">
-      <h3>📱 Connected Accounts</h3>
-      <div class="messenger-buttons">
-        <button class="messenger-btn" onclick="connectMessenger('sms')" id="btn-sms">
-          📱 SMS
-        </button>
-        <button class="messenger-btn" onclick="connectMessenger('facebook')" id="btn-facebook">
-          📘 Facebook
-        </button>
-        <button class="messenger-btn" onclick="connectMessenger('whatsapp')" id="btn-whatsapp">
-          💚 WhatsApp
-        </button>
-        <button class="messenger-btn" onclick="connectMessenger('instagram')" id="btn-instagram">
-          📸 Instagram
-        </button>
-        <button class="messenger-btn" onclick="connectMessenger('telegram')" id="btn-telegram">
-          ✈️ Telegram
-        </button>
+    
+    <div class="button-row">
+      <a href="/compose" class="btn btn-primary">✍️ Compose</a>
+      <a href="/settings" class="btn">⚙️ Settings</a>
+    </div>
+    
+    <div class="search-box">
+      <input 
+        type="text" 
+        id="searchBar" 
+        placeholder="🔍 Search names, numbers, messages..."
+      >
+    </div>
+    
+    <div id="errorContainer"></div>
+    
+    <!-- SMS & Messengers Section -->
+    <div class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 class="section-title">📱 SMS & Messengers</h2>
+        <button class="sync-button" onclick="syncMessengers()">🔄 Sync</button>
+      </div>
+      <div id="contactsList" class="contacts-list">
+        <div class="loading">Loading contacts...</div>
       </div>
     </div>
-
-    <input 
-      type="text" 
-      class="search-bar" 
-      id="searchBar" 
-      placeholder="🔍 Search contacts..."
-    >
-
-    <div class="contacts-list" id="contactsList">
-      <!-- Populated by JavaScript -->
-    </div>
-
-    <div id="emptyState" class="empty-state" style="display: none;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-      </svg>
-      <p>No messages yet. Connect an account or start a conversation!</p>
-    </div>
-  </div>
-
-  <!-- Messenger Modal -->
-  <div class="modal" id="messengerModal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeMessengerModal()">&times;</button>
-      <h2>Connect Your Messengers</h2>
-      <p style="color: rgba(224, 224, 224, 0.7); margin-bottom: 1.5rem;">
-        Sync your SMS and social media accounts to see all conversations in one place.
-      </p>
-      <div class="messenger-buttons" style="grid-template-columns: 1fr;">
-        <button class="messenger-btn" onclick="authMessenger('sms')" style="padding: 1rem; font-size: 14px;">
-          📱 SMS Threads
-        </button>
-        <button class="messenger-btn" onclick="authMessenger('facebook')" style="padding: 1rem; font-size: 14px;">
-          📘 Facebook Messenger
-        </button>
-        <button class="messenger-btn" onclick="authMessenger('whatsapp')" style="padding: 1rem; font-size: 14px;">
-          💚 WhatsApp
-        </button>
-        <button class="messenger-btn" onclick="authMessenger('instagram')" style="padding: 1rem; font-size: 14px;">
-          📸 Instagram DMs
-        </button>
-        <button class="messenger-btn" onclick="authMessenger('telegram')" style="padding: 1rem; font-size: 14px;">
-          ✈️ Telegram
-        </button>
-      </div>
+    
+    <!-- Recent Conversations -->
+    <div class="section" id="threadsSection" style="display: none;">
+      <h2 class="section-title">💬 Recent Conversations</h2>
+      <div id="threadsList" class="contacts-list"></div>
     </div>
   </div>
 
   <script>
+    // State
     let contacts = [];
-    let connectedPlatforms = [];
+    let threads = [];
+    let filteredContacts = [];
 
-    async function loadContacts() {
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadData();
+      setupSearchListener();
+    });
+
+    async function loadData() {
       try {
-        const res = await fetch('/api/contacts');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        contacts = await res.json();
+        showError(null);
         
-        // Load connected platforms
-        const platformRes = await fetch('/api/platforms');
-        if (platformRes.ok) {
-          connectedPlatforms = await platformRes.json();
+        // Load contacts
+        const contactsRes = await fetch('/api/messaging/contacts', {
+          credentials: 'include'
+        });
+        
+        if (!contactsRes.ok) {
+          throw new Error(`Contacts API error: ${contactsRes.status}`);
         }
         
-        renderContacts();
-        updatePlatformButtons();
+        const contactsData = await contactsRes.json();
+        contacts = contactsData.contacts || [];
+
+        // Load threads
+        try {
+          const threadsRes = await fetch('/api/messaging/threads', {
+            credentials: 'include'
+          });
+          
+          if (threadsRes.ok) {
+            const threadsData = await threadsRes.json();
+            threads = threadsData.threads || [];
+          }
+        } catch (e) {
+          console.warn('Threads load error:', e.message);
+        }
+
+        // Render UI
+        renderContacts(contacts);
+        renderThreads(threads);
+        
       } catch (err) {
-        console.error('Failed to load contacts:', err);
-        document.getElementById('contactsList').innerHTML = 
-          '<p style="color: #ef4444; text-align: center; margin: 2rem 0;">Failed to load contacts. Try refreshing.</p>';
+        console.error('Load error:', err);
+        showError(
+          'Unable to load contacts. ' +
+          (err.message.includes('401') ? 'Please log in again.' : 'Please try again.')
+        );
+        renderEmpty();
       }
     }
 
-    function updatePlatformButtons() {
-      const platforms = ['sms', 'facebook', 'whatsapp', 'instagram', 'telegram'];
-      platforms.forEach(platform => {
-        const btn = document.getElementById(`btn-${platform}`);
-        if (connectedPlatforms.includes(platform)) {
-          btn.classList.add('connected');
-          btn.textContent = '✓ ' + btn.textContent;
-        }
-      });
-    }
-
-    function renderContacts() {
-      const list = document.getElementById('contactsList');
-      const empty = document.getElementById('emptyState');
-
-      if (!contacts.length) {
-        list.innerHTML = '';
-        empty.style.display = 'block';
+    function renderContacts(list) {
+      const container = document.getElementById('contactsList');
+      
+      if (!list || list.length === 0) {
+        renderEmpty();
         return;
       }
 
-      empty.style.display = 'none';
-      list.innerHTML = contacts.map(contact => {
-        const platformClass = contact.platform || 'sms';
-        return `
-          <a href="/thread?contact=${encodeURIComponent(contact.phone)}" class="contact-item ${contact.unread ? 'unread' : ''}">
-            <div class="contact-info">
-              <div class="contact-name">
-                <span class="flag ${contact.flag || 'green'}"></span>
-                ${escapeHtml(contact.name)}
-                <span class="platform-badge ${platformClass}">${platformClass.toUpperCase()}</span>
-              </div>
-              <div class="contact-preview">${escapeHtml(contact.lastMessage || '(No messages)')}</div>
+      filteredContacts = list;
+      const html = list.map(contact => `
+        <div class="contact-card" onclick="openContact('${contact.id}')">
+          <div class="contact-info">
+            <div class="contact-name">
+              ${contact.name || 'Unknown'}
+              ${contact.is_spam ? '<span class="badge badge-spam">🚫 Spam</span>' : ''}
+              ${contact.risk_level === 'high' ? '<span class="badge badge-risk-high">⚠️ High Risk</span>' : ''}
             </div>
             <div class="contact-meta">
-              <div class="contact-time">${formatTime(contact.lastMessageTime)}</div>
-              ${contact.unread ? `<div class="unread-badge">${contact.unread}</div>` : ''}
+              ${contact.phone_number || 'No number'}
+              ${contact.last_messaged_at ? ' • ' + formatTime(contact.last_messaged_at) : ''}
             </div>
-          </a>
-        `;
-      }).join('');
+          </div>
+          <div class="contact-actions">
+            <button class="icon-btn" onclick="event.stopPropagation(); toggleFavorite('${contact.id}')">
+              ${contact.is_favorited ? '⭐' : '☆'}
+            </button>
+            <span style="color: #8b7ab8;">→</span>
+          </div>
+        </div>
+      `).join('');
+      
+      container.innerHTML = html;
     }
 
-    function formatTime(timestamp) {
-      if (!timestamp) return '';
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
+    function renderThreads(list) {
+      const section = document.getElementById('threadsSection');
+      const container = document.getElementById('threadsList');
+      
+      if (!list || list.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
 
-      if (diffMins < 1) return 'now';
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      if (diffDays < 7) return `${diffDays}d ago`;
-      return date.toLocaleDateString();
+      section.style.display = 'block';
+      const html = list.map(thread => `
+        <div class="contact-card" onclick="openThread('${thread.id}')">
+          <div class="contact-info">
+            <div class="contact-name">${thread.contact_name || thread.contact_phone || 'Conversation'}</div>
+            <div class="contact-meta">Last message: ${formatTime(thread.last_message_at)}</div>
+          </div>
+          <span style="color: #8b7ab8;">→</span>
+        </div>
+      `).join('');
+      
+      container.innerHTML = html;
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+    function renderEmpty() {
+      document.getElementById('contactsList').innerHTML = `
+        <div class="empty-state">
+          <div style="font-size: 32px; margin-bottom: 8px;">📭</div>
+          <p>No contacts yet</p>
+          <p style="font-size: 12px; color: #6b5b95;">Connect your first messenger or message someone to get started</p>
+          <button class="sync-button" onclick="syncMessengers()" style="margin-top: 12px;">
+            🔄 Sync Your Messengers
+          </button>
+        </div>
+      `;
+      document.getElementById('threadsSection').style.display = 'none';
     }
 
-    function filterContacts(query) {
-      const list = document.getElementById('contactsList');
-      const items = list.querySelectorAll('.contact-item');
-      const q = query.toLowerCase();
-
-      items.forEach(item => {
-        const name = item.querySelector('.contact-name').textContent.toLowerCase();
-        item.style.display = name.includes(q) ? 'flex' : 'none';
+    function setupSearchListener() {
+      const searchBar = document.getElementById('searchBar');
+      searchBar.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        if (!query) {
+          renderContacts(contacts);
+          return;
+        }
+        
+        const filtered = contacts.filter(c => 
+          (c.name && c.name.toLowerCase().includes(query)) ||
+          (c.phone_number && c.phone_number.includes(query))
+        );
+        renderContacts(filtered);
       });
     }
 
-    function openMessengerModal() {
-      document.getElementById('messengerModal').classList.add('active');
+    async function syncMessengers() {
+      alert('Messenger sync coming soon! For now, SMS threads are automatically synced.');
     }
 
-    function closeMessengerModal() {
-      document.getElementById('messengerModal').classList.remove('active');
-    }
-
-    function connectMessenger(platform) {
-      console.log(`Connecting ${platform}...`);
-      // Later: integrate OAuth flow for each platform
-      alert(`${platform} sync coming soon!`);
-    }
-
-    function authMessenger(platform) {
-      console.log(`Authenticating ${platform}...`);
-      // Later: Redirect to OAuth flow
-      alert(`${platform} authentication flow coming soon!`);
-    }
-
-    // Search filter
-    document.getElementById('searchBar').addEventListener('input', (e) => {
-      filterContacts(e.target.value);
-    });
-
-    // Close modal on background click
-    document.getElementById('messengerModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeMessengerModal();
+    async function toggleFavorite(contactId) {
+      try {
+        const res = await fetch(`/api/messaging/contacts/${contactId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ isFavorited: !contacts.find(c => c.id == contactId)?.is_favorited })
+        });
+        
+        if (res.ok) {
+          await loadData();
+        }
+      } catch (err) {
+        console.error('Favorite toggle error:', err);
       }
-    });
+    }
 
-    // Load on page load
-    loadContacts();
+    function openContact(contactId) {
+      window.location.href = `/thread/${contactId}`;
+    }
 
-    // Refresh every 10 seconds
-    setInterval(loadContacts, 10000);
+    function openThread(threadId) {
+      window.location.href = `/thread/${threadId}`;
+    }
+
+    function formatTime(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return d.toLocaleDateString();
+    }
+
+    function showError(msg) {
+      const container = document.getElementById('errorContainer');
+      if (!msg) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = `<div class="error">${msg}</div>`;
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadData, 30000);
   </script>
 </body>
 </html>
