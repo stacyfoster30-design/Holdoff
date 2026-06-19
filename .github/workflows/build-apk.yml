@@ -71,6 +71,14 @@ jobs:
         run: |
           cd holdoff-app
           cordova build android --release
+          find . -name "*.apk" -type f
+      
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: holdoff-apk
+          path: holdoff-app/platforms/android/app/build/outputs/apk/release/
+          if-no-files-found: warn
       
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -78,9 +86,9 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: "HoldOff Build ${{ github.run_number }}"
           body: "HoldOff Android • https://shouldiholdoff.live"
-          files: holdoff-app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          files: holdoff-app/platforms/android/app/build/outputs/apk/release/*.apk
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+```
 
