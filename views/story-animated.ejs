@@ -469,14 +469,17 @@
 
         // Track story completion for analytics
         window.addEventListener('beforeunload', () => {
-            fetch('/api/track-story-view', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: '<%= user.id %>',
-                    completed: true
-                })
-            }).catch(() => {});
+            const userId = '<%= user ? user.id : "guest" %>';
+            if (userId !== 'guest') {
+                fetch('/api/track-story-view', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userId,
+                        completed: true
+                    })
+                }).catch(() => {});
+            }
         });
     </script>
 </body>
