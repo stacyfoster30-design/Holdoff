@@ -7,6 +7,8 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../lib/auth');
 const msgDb = require('../db/messages');
+const contactDb = require('../db/contacts');
+const smsSyncService = require('../services/sms-sync');
 
 // ─── CONTACTS ────────────────────────────────────────────────────────────────
 
@@ -35,16 +37,24 @@ router.post('/contacts', requireAuth, async (req, res) => {
     const userId = req.user.id;
     const { name, phoneNumber, isFavorited } = req.body;
 
-    if (!phoneNumber) {
-      return res.status(400).json({ error: 'phoneNumber required' });
+    if (!name || !phoneNumber) {
+      return res.status(400).json({ error: 'Name and phoneNumber required' });
     }
 
     // Upsert contact
     const contact = await msgDb.upsertContact(userId, {
-      name: name || phoneNumber,
+      name,
       phoneNumber,
       isFavorited: isFavorited ?? false,
     });
+
+    // Auto-sync SMS from this contact (mock for now)
+    try {
+      await smsSyncService.syncSMSThread(userId, { name, phoneNumber }, { useMock: true });
+    } catch (syncErr) {
+      console.warn('[API] SMS sync warning:', syncErr.message);
+      // Don't fail the contact creation if SMS sync fails
+    }
 
     res.json({ contact });
   } catch (err) {
@@ -65,31 +75,6 @@ router.delete('/contacts/:contactId', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[API] DELETE /contacts error:', err.message);
     res.status(500).json({ error: 'Failed to delete contact' });
-  }
-});
-
-
-// ─── NATIVE ANDROID SYNC ─────────────────────────────────────────────────────
-
-/**
- * POST /api/messaging/native-sync
- * Import Android contacts and queued SMS into HoldOff threads.
- * Body: { contacts?: [{ name, phoneNumber }], messages?: [{ from|to|phoneNumber, body, direction, timestamp }] }
- */
-router.post('/native-sync', requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { contacts = [], messages = [] } = req.body || {};
-
-    if (!Array.isArray(contacts) || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'contacts and messages must be arrays' });
-    }
-
-    const sync = await msgDb.importNativeSync(userId, { contacts, messages });
-    res.json({ ok: true, sync });
-  } catch (err) {
-    console.error('[API] POST /native-sync error:', err.message);
-    res.status(500).json({ error: 'Failed to sync native SMS data' });
   }
 });
 
@@ -120,7 +105,7 @@ router.get('/threads/:threadId', requireAuth, async (req, res) => {
     const userId = req.user.id;
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -140,6 +125,7 @@ router.get('/threads/:threadId', requireAuth, async (req, res) => {
  * POST /api/messaging/threads/:threadId/messages
  * Add a message to a thread.
  * Body: { body, senderType?, timestamp? }
+ * Returns sobriety warnings if drunk texting detected.
  */
 router.post('/threads/:threadId/messages', requireAuth, async (req, res) => {
   try {
@@ -152,8 +138,28 @@ router.post('/threads/:threadId/messages', requireAuth, async (req, res) => {
     }
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
+    }
+
+    // Detect sobriety issues on outgoing messages
+    let sobrietyWarning = null;
+    if (senderType === 'user') {
+      sobrietyWarning = await contactDb.detectDrunkTexting(
+        userId,
+        thread.contact_id,
+        body,
+        timestamp || new Date()
+      );
+
+      // Block message send if sobriety lock triggered
+      if (sobrietyWarning.shouldLock) {
+        return res.status(429).json({
+          error: 'Sobriety lock activated',
+          sobrietyWarning,
+          message: 'Please take a moment and review what you're about to send.'
+        });
+      }
     }
 
     const msg = await msgDb.insertMessage(threadId, {
@@ -163,7 +169,10 @@ router.post('/threads/:threadId/messages', requireAuth, async (req, res) => {
       timestamp: timestamp ? new Date(timestamp) : new Date(),
     });
 
-    res.json({ message: msg });
+    res.json({
+      message: msg,
+      sobrietyWarning: sobrietyWarning && sobrietyWarning.shouldWarn ? sobrietyWarning : null
+    });
   } catch (err) {
     console.error('[API] POST /messages error:', err.message);
     res.status(500).json({ error: 'Failed to add message' });
@@ -182,7 +191,7 @@ router.get('/threads/:threadId/spiral-state', requireAuth, async (req, res) => {
     const userId = req.user.id;
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -221,7 +230,7 @@ router.post('/threads/:threadId/spiral-quiz', requireAuth, async (req, res) => {
     const { answers } = req.body; // Optional quiz answers for validation
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -246,7 +255,7 @@ router.post('/threads/:threadId/spiral-reset', requireAuth, async (req, res) => 
     const userId = req.user.id;
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -318,7 +327,7 @@ router.post('/threads/:threadId/analyze', requireAuth, async (req, res) => {
     }
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -367,7 +376,7 @@ router.post('/threads/:threadId/send', requireAuth, async (req, res) => {
     }
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || String(thread.user_id) !== String(userId)) {
+    if (!thread || thread.user_id !== userId) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -408,6 +417,338 @@ router.post('/threads/:threadId/send', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to send message' });
   }
 });
+
+// ─── MESSENGER PLATFORMS ─────────────────────────────────────────────────────
+
+/**
+ * GET /api/messaging/platforms
+ * Get list of connected messenger platforms for the user.
+ */
+router.get('/platforms', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const platforms = await msgDb.getConnectedPlatforms(userId);
+    res.json({ platforms });
+  } catch (err) {
+    console.error('[API] GET /platforms error:', err.message);
+    res.status(500).json({ error: 'Failed to load platforms' });
+  }
+});
+
+/**
+ * POST /api/messaging/platforms/:platform/connect
+ * Initiate OAuth connection for a messenger platform.
+ * Body: { redirectUri? }
+ */
+router.post('/platforms/:platform/connect', requireAuth, async (req, res) => {
+  try {
+    const { platform } = req.params;
+    const userId = req.user.id;
+    const { redirectUri } = req.body;
+
+    const validPlatforms = ['sms', 'facebook', 'whatsapp', 'instagram', 'telegram'];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: `Invalid platform: ${platform}` });
+    }
+
+    // Generate OAuth state and store it
+    const state = require('crypto').randomBytes(16).toString('hex');
+    await msgDb.storeOAuthState(userId, platform, state);
+
+    // Return OAuth URL for frontend redirect
+    const oauthUrls = {
+      facebook: `https://www.facebook.com/v18.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${redirectUri}&state=${state}&scope=messages_read,messages_manage`,
+      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${redirectUri}&scope=instagram_business_basic,instagram_business_manage_messages&state=${state}`,
+      whatsapp: `https://www.whatsapp.com/business/api/auth?client_id=${process.env.WHATSAPP_CLIENT_ID}&redirect_uri=${redirectUri}&state=${state}`,
+      telegram: `https://telegram.org/bot/login?state=${state}`,
+      sms: null, // SMS uses device permissions, not OAuth
+    };
+
+    res.json({ 
+      platform, 
+      oauthUrl: oauthUrls[platform] || null,
+      state 
+    });
+  } catch (err) {
+    console.error('[API] POST /platforms/:platform/connect error:', err.message);
+    res.status(500).json({ error: 'Failed to initiate connection' });
+  }
+});
+
+/**
+ * POST /api/messaging/platforms/:platform/oauth-callback
+ * Handle OAuth callback from messenger platforms.
+ * Body: { code, state }
+ */
+router.post('/platforms/:platform/oauth-callback', requireAuth, async (req, res) => {
+  try {
+    const { platform } = req.params;
+    const userId = req.user.id;
+    const { code, state } = req.body;
+
+    // Verify state
+    const storedState = await msgDb.getOAuthState(userId, platform);
+    if (storedState !== state) {
+      return res.status(401).json({ error: 'Invalid OAuth state' });
+    }
+
+    // Exchange code for token (varies by platform)
+    let accessToken;
+    switch (platform) {
+      case 'facebook':
+        accessToken = await exchangeFacebookToken(code);
+        break;
+      case 'instagram':
+        accessToken = await exchangeInstagramToken(code);
+        break;
+      case 'whatsapp':
+        accessToken = await exchangeWhatsAppToken(code);
+        break;
+      case 'telegram':
+        accessToken = await exchangeTelegramToken(code);
+        break;
+      default:
+        return res.status(400).json({ error: `Unsupported platform: ${platform}` });
+    }
+
+    // Store connection
+    await msgDb.storePlatformConnection(userId, platform, {
+      accessToken,
+      refreshToken: null,
+      expiresAt: null,
+      metadata: {},
+    });
+
+    // Sync initial messages
+    await syncMessengerPlatform(userId, platform, accessToken);
+
+    res.json({ ok: true, platform, connected: true });
+  } catch (err) {
+    console.error('[API] POST /oauth-callback error:', err.message);
+    res.status(500).json({ error: 'Failed to complete OAuth' });
+  }
+});
+
+/**
+ * POST /api/messaging/platforms/:platform/disconnect
+ * Disconnect a messenger platform.
+ */
+router.post('/platforms/:platform/disconnect', requireAuth, async (req, res) => {
+  try {
+    const { platform } = req.params;
+    const userId = req.user.id;
+
+    await msgDb.removePlatformConnection(userId, platform);
+    res.json({ ok: true, platform, connected: false });
+  } catch (err) {
+    console.error('[API] POST /platforms/:platform/disconnect error:', err.message);
+    res.status(500).json({ error: 'Failed to disconnect platform' });
+  }
+});
+
+/**
+ * POST /api/messaging/platforms/:platform/sync
+ * Manually sync messages from a platform.
+ */
+router.post('/platforms/:platform/sync', requireAuth, async (req, res) => {
+  try {
+    const { platform } = req.params;
+    const userId = req.user.id;
+
+    // Get platform connection
+    const connection = await msgDb.getPlatformConnection(userId, platform);
+    if (!connection) {
+      return res.status(404).json({ error: `${platform} not connected` });
+    }
+
+    // Sync messages
+    const syncResult = await syncMessengerPlatform(userId, platform, connection.access_token);
+
+    res.json({ 
+      ok: true, 
+      platform, 
+      messagesSynced: syncResult.count,
+      lastSyncAt: new Date(),
+    });
+  } catch (err) {
+    console.error('[API] POST /platforms/:platform/sync error:', err.message);
+    res.status(500).json({ error: 'Failed to sync platform' });
+  }
+});
+
+// ─── CALL TRACKING ─────────────────────────────────────────────────────────
+
+/**
+ * POST /api/messaging/contacts/:contactId/call
+ * Log an incoming or outgoing call.
+ * Body: { direction, duration?, timestamp? }
+ */
+router.post('/contacts/:contactId/call', requireAuth, async (req, res) => {
+  try {
+    const { contactId } = req.params;
+    const userId = req.user.id;
+    const { direction, duration, timestamp } = req.body;
+
+    if (!direction || !['incoming', 'outgoing'].includes(direction)) {
+      return res.status(400).json({ error: 'direction must be "incoming" or "outgoing"' });
+    }
+
+    const contact = await contactDb.getContact(contactId, userId);
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    const call = await contactDb.addCall({
+      userId,
+      contactId,
+      direction,
+      duration: duration || 0,
+      timestamp: timestamp || new Date()
+    });
+
+    res.json({ call });
+  } catch (err) {
+    console.error('[API] POST /call error:', err.message);
+    res.status(500).json({ error: 'Failed to log call' });
+  }
+});
+
+/**
+ * GET /api/messaging/contacts/:contactId/calls
+ * Get call history for a contact.
+ */
+router.get('/contacts/:contactId/calls', requireAuth, async (req, res) => {
+  try {
+    const { contactId } = req.params;
+    const userId = req.user.id;
+    const { limit = 20 } = req.query;
+
+    const contact = await contactDb.getContact(contactId, userId);
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    const calls = await contactDb.getCallHistory(userId, contactId, { limit: parseInt(limit) });
+    res.json({ calls });
+  } catch (err) {
+    console.error('[API] GET /calls error:', err.message);
+    res.status(500).json({ error: 'Failed to load calls' });
+  }
+});
+
+// ─── SPAM DETECTION ────────────────────────────────────────────────────────
+
+/**
+ * POST /api/messaging/contacts/:contactId/spam
+ * Flag a contact as spam.
+ */
+router.post('/contacts/:contactId/spam', requireAuth, async (req, res) => {
+  try {
+    const { contactId } = req.params;
+    const userId = req.user.id;
+
+    const contact = await contactDb.getContact(contactId, userId);
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    const updated = await contactDb.markAsSpam(contactId, userId);
+    res.json({ contact: updated });
+  } catch (err) {
+    console.error('[API] POST /spam error:', err.message);
+    res.status(500).json({ error: 'Failed to flag contact as spam' });
+  }
+});
+
+/**
+ * GET /api/messaging/spam-contacts
+ * Get all flagged spam contacts for the user.
+ */
+router.get('/spam-contacts', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const spamContacts = await contactDb.getSpamContacts(userId);
+    res.json({ spamContacts });
+  } catch (err) {
+    console.error('[API] GET /spam-contacts error:', err.message);
+    res.status(500).json({ error: 'Failed to load spam contacts' });
+  }
+});
+
+// ─── SOBRIETY LOCK ─────────────────────────────────────────────────────────
+
+/**
+ * POST /api/messaging/sobriety-check
+ * Check if a message has sobriety warning/lock indicators.
+ * Body: { messageBody, timestamp? }
+ */
+router.post('/sobriety-check', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { messageBody, timestamp } = req.body;
+
+    if (!messageBody) {
+      return res.status(400).json({ error: 'messageBody required' });
+    }
+
+    // Use dummy contact ID 0 for general sobriety check
+    const warning = await contactDb.detectDrunkTexting(
+      userId,
+      0,
+      messageBody,
+      timestamp || new Date()
+    );
+
+    res.json({ sobrietyWarning: warning });
+  } catch (err) {
+    console.error('[API] POST /sobriety-check error:', err.message);
+    res.status(500).json({ error: 'Failed to check sobriety' });
+  }
+});
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+/**
+ * Helper: Exchange OAuth code for access token (Facebook).
+ */
+async function exchangeFacebookToken(code) {
+  // TODO: Implement Facebook token exchange
+  // POST to https://graph.instagram.com/v18.0/oauth/access_token
+  return 'mock-facebook-token';
+}
+
+/**
+ * Helper: Exchange OAuth code for access token (Instagram).
+ */
+async function exchangeInstagramToken(code) {
+  // TODO: Implement Instagram token exchange
+  return 'mock-instagram-token';
+}
+
+/**
+ * Helper: Exchange OAuth code for access token (WhatsApp).
+ */
+async function exchangeWhatsAppToken(code) {
+  // TODO: Implement WhatsApp Business API token exchange
+  return 'mock-whatsapp-token';
+}
+
+/**
+ * Helper: Exchange OAuth code for access token (Telegram).
+ */
+async function exchangeTelegramToken(code) {
+  // TODO: Implement Telegram Bot token exchange
+  return 'mock-telegram-token';
+}
+
+/**
+ * Helper: Sync messages from a messenger platform.
+ */
+async function syncMessengerPlatform(userId, platform, accessToken) {
+  // TODO: Implement platform-specific sync logic
+  // For now, return mock data
+  return { count: 0, lastSyncAt: new Date() };
+}
 
 /**
  * Helper: Analyze message using verdict-ai logic.

@@ -95,12 +95,63 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
     .inbox-header h2 {
       font-size: 18px;
       color: #e0e0e0;
+    }
+
+    /* Messenger sync section */
+    .messenger-sync-section {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .messenger-sync-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #8B5CF6;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .messenger-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .messenger-btn {
+      padding: 0.8rem;
+      background: rgba(13, 27, 42, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .messenger-btn:hover {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .messenger-btn.connected {
+      background: rgba(74, 222, 128, 0.1);
+      border-color: rgba(74, 222, 128, 0.3);
+      color: #4ade80;
     }
 
     .search-bar {
@@ -167,6 +218,44 @@
       font-size: 15px;
       margin-bottom: 0.3rem;
       color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .platform-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .platform-badge.sms {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+    }
+
+    .platform-badge.facebook {
+      background: rgba(59, 89, 152, 0.2);
+      color: #3b59a8;
+    }
+
+    .platform-badge.whatsapp {
+      background: rgba(37, 211, 102, 0.2);
+      color: #25d366;
+    }
+
+    .platform-badge.instagram {
+      background: rgba(225, 29, 153, 0.2);
+      color: #e11d93;
+    }
+
+    .platform-badge.telegram {
+      background: rgba(0, 136, 204, 0.2);
+      color: #0088cc;
     }
 
     .contact-preview {
@@ -239,6 +328,57 @@
       margin-bottom: 1rem;
     }
 
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #1a0d2e 0%, #0d1b2a 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .modal-content h2 {
+      font-size: 20px;
+      margin-bottom: 1.5rem;
+      color: #e0e0e0;
+    }
+
+    .modal-close {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      color: rgba(224, 224, 224, 0.5);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+    }
+
+    .modal-close:hover {
+      color: #e0e0e0;
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: 1rem;
@@ -263,6 +403,10 @@
         align-items: center;
         gap: 1rem;
       }
+
+      .messenger-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      }
     }
   </style>
 </head>
@@ -271,23 +415,46 @@
     <div class="header-content">
       <h1>HoldOff</h1>
       <div class="header-actions">
-        <a href="/compose" class="btn btn-primary">✍️ Compose</a>
-        <button id="nativeSyncBtn" class="btn btn-secondary" type="button" style="display:none;">📲 Sync phone</button>
+        <a href="/notifications" class="btn btn-primary">🔔 Notifications</a>
         <a href="/settings" class="btn btn-secondary">⚙️ Settings</a>
+        <a href="/auth/logout" class="btn btn-secondary">Logout</a>
       </div>
     </div>
   </div>
 
   <div class="container">
     <div class="inbox-header">
-      <h2>Your SMS Threads</h2>
+      <h2>Your Messages</h2>
+      <button class="btn btn-primary" onclick="openMessengerModal()">💬 Sync Messengers</button>
+    </div>
+
+    <!-- Messenger Sync Section -->
+    <div class="messenger-sync-section">
+      <h3>📱 Connected Accounts</h3>
+      <div class="messenger-buttons">
+        <button class="messenger-btn" onclick="connectMessenger('sms')" id="btn-sms">
+          📱 SMS
+        </button>
+        <button class="messenger-btn" onclick="connectMessenger('facebook')" id="btn-facebook">
+          📘 Facebook
+        </button>
+        <button class="messenger-btn" onclick="connectMessenger('whatsapp')" id="btn-whatsapp">
+          💚 WhatsApp
+        </button>
+        <button class="messenger-btn" onclick="connectMessenger('instagram')" id="btn-instagram">
+          📸 Instagram
+        </button>
+        <button class="messenger-btn" onclick="connectMessenger('telegram')" id="btn-telegram">
+          ✈️ Telegram
+        </button>
+      </div>
     </div>
 
     <input 
       type="text" 
       class="search-bar" 
       id="searchBar" 
-      placeholder="🔍 Search names, numbers, messages..."
+      placeholder="🔍 Search contacts..."
     >
 
     <div class="contacts-list" id="contactsList">
@@ -298,113 +465,100 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
-      <p>No SMS threads yet. Tap Sync phone in the APK or start a protected message.</p>
+      <p>No messages yet. Connect an account or start a conversation!</p>
+    </div>
+  </div>
+
+  <!-- Messenger Modal -->
+  <div class="modal" id="messengerModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeMessengerModal()">&times;</button>
+      <h2>Connect Your Messengers</h2>
+      <p style="color: rgba(224, 224, 224, 0.7); margin-bottom: 1.5rem;">
+        Sync your SMS and social media accounts to see all conversations in one place.
+      </p>
+      <div class="messenger-buttons" style="grid-template-columns: 1fr;">
+        <button class="messenger-btn" onclick="authMessenger('sms')" style="padding: 1rem; font-size: 14px;">
+          📱 SMS Threads
+        </button>
+        <button class="messenger-btn" onclick="authMessenger('facebook')" style="padding: 1rem; font-size: 14px;">
+          📘 Facebook Messenger
+        </button>
+        <button class="messenger-btn" onclick="authMessenger('whatsapp')" style="padding: 1rem; font-size: 14px;">
+          💚 WhatsApp
+        </button>
+        <button class="messenger-btn" onclick="authMessenger('instagram')" style="padding: 1rem; font-size: 14px;">
+          📸 Instagram DMs
+        </button>
+        <button class="messenger-btn" onclick="authMessenger('telegram')" style="padding: 1rem; font-size: 14px;">
+          ✈️ Telegram
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
-    let threads = [];
-    const isNativeAndroid = !!(window.Android && (typeof window.Android.getQueuedSms === 'function' || typeof window.Android.getDeviceContacts === 'function'));
-    const syncBtn = document.getElementById('nativeSyncBtn');
+    let contacts = [];
+    let connectedPlatforms = [];
 
-    if (isNativeAndroid && syncBtn) {
-      syncBtn.style.display = 'inline-flex';
-      syncBtn.addEventListener('click', function() { syncNativeAndroid(true); });
-    }
-
-    async function syncNativeAndroid(showStatus) {
-      if (!isNativeAndroid) return null;
-      const payload = { contacts: [], messages: [] };
-
+    async function loadContacts() {
       try {
-        if (window.Android && typeof window.Android.getDeviceContacts === 'function') {
-          payload.contacts = JSON.parse(window.Android.getDeviceContacts() || '[]');
-        }
-      } catch (err) {
-        payload.contacts = [];
-      }
-
-      try {
-        if (window.Android && typeof window.Android.getQueuedSms === 'function') {
-          payload.messages = JSON.parse(window.Android.getQueuedSms() || '[]');
-        }
-      } catch (err) {
-        payload.messages = [];
-      }
-
-      if (!payload.contacts.length && !payload.messages.length) {
-        if (showStatus) showInlineStatus('No new phone data yet. If Android asks, approve SMS/Contacts permission and tap Sync again.');
-        return null;
-      }
-
-      const res = await fetch('/api/messaging/native-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Sync failed');
-      const result = await res.json();
-      if (payload.messages.length && window.Android && typeof window.Android.clearQueuedSms === 'function') {
-        window.Android.clearQueuedSms();
-      }
-      if (showStatus) {
-        const sync = result.sync || {};
-        showInlineStatus('Synced ' + (sync.contactsImported || 0) + ' contacts and ' + (sync.messagesImported || 0) + ' SMS messages.');
-      }
-      return result;
-    }
-
-    function showInlineStatus(text) {
-      const list = document.getElementById('contactsList');
-      const note = document.createElement('div');
-      note.style.cssText = 'padding:.8rem 1rem;margin-bottom:.75rem;border-radius:10px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#d8ccff;font-size:13px;';
-      note.textContent = text;
-      list.prepend(note);
-      setTimeout(function() { note.remove(); }, 4500);
-    }
-
-    async function loadThreads() {
-      try {
-        await syncNativeAndroid(false).catch(function() {});
-        const res = await fetch('/api/messaging/threads');
+        const res = await fetch('/api/contacts');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        threads = data.threads || [];
-        renderThreads();
+        contacts = await res.json();
+        
+        // Load connected platforms
+        const platformRes = await fetch('/api/platforms');
+        if (platformRes.ok) {
+          connectedPlatforms = await platformRes.json();
+        }
+        
+        renderContacts();
+        updatePlatformButtons();
       } catch (err) {
-        console.error('Failed to load threads:', err);
-        document.getElementById('contactsList').innerHTML =
-          '<p style="color: #ef4444; text-align: center; margin: 2rem 0;">Failed to load SMS threads</p>';
+        console.error('Failed to load contacts:', err);
+        document.getElementById('contactsList').innerHTML = 
+          '<p style="color: #ef4444; text-align: center; margin: 2rem 0;">Failed to load contacts. Try refreshing.</p>';
       }
     }
 
-    function renderThreads() {
+    function updatePlatformButtons() {
+      const platforms = ['sms', 'facebook', 'whatsapp', 'instagram', 'telegram'];
+      platforms.forEach(platform => {
+        const btn = document.getElementById(`btn-${platform}`);
+        if (connectedPlatforms.includes(platform)) {
+          btn.classList.add('connected');
+          btn.textContent = '✓ ' + btn.textContent;
+        }
+      });
+    }
+
+    function renderContacts() {
       const list = document.getElementById('contactsList');
       const empty = document.getElementById('emptyState');
 
-      if (!threads.length) {
+      if (!contacts.length) {
         list.innerHTML = '';
         empty.style.display = 'block';
         return;
       }
 
       empty.style.display = 'none';
-      list.innerHTML = threads.map(thread => {
-        const name = thread.name || thread.phone_number || thread.contact_phone || 'Unknown contact';
-        const phone = thread.phone_number || thread.contact_phone || '';
-        const preview = thread.last_message_preview || 'No messages yet';
+      list.innerHTML = contacts.map(contact => {
+        const platformClass = contact.platform || 'sms';
         return `
-          <a href="/compose?threadId=${encodeURIComponent(thread.id)}" class="contact-item">
+          <a href="/thread?contact=${encodeURIComponent(contact.phone)}" class="contact-item ${contact.unread ? 'unread' : ''}">
             <div class="contact-info">
               <div class="contact-name">
-                <span class="flag green"></span>
-                ${escapeHtml(name)}
+                <span class="flag ${contact.flag || 'green'}"></span>
+                ${escapeHtml(contact.name)}
+                <span class="platform-badge ${platformClass}">${platformClass.toUpperCase()}</span>
               </div>
-              <div class="contact-preview">${escapeHtml(preview)}</div>
-              ${phone ? `<div class="contact-preview" style="font-size:12px;opacity:.75;">${escapeHtml(phone)}</div>` : ''}
+              <div class="contact-preview">${escapeHtml(contact.lastMessage || '(No messages)')}</div>
             </div>
             <div class="contact-meta">
-              <div class="contact-time">${formatTime(thread.last_message_at)}</div>
+              <div class="contact-time">${formatTime(contact.lastMessageTime)}</div>
+              ${contact.unread ? `<div class="unread-badge">${contact.unread}</div>` : ''}
             </div>
           </a>
         `;
@@ -429,27 +583,58 @@
 
     function escapeHtml(text) {
       const div = document.createElement('div');
-      div.textContent = text || '';
+      div.textContent = text;
       return div.innerHTML;
     }
 
-    function filterThreads(query) {
+    function filterContacts(query) {
       const list = document.getElementById('contactsList');
       const items = list.querySelectorAll('.contact-item');
       const q = query.toLowerCase();
 
       items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.style.display = text.includes(q) ? 'flex' : 'none';
+        const name = item.querySelector('.contact-name').textContent.toLowerCase();
+        item.style.display = name.includes(q) ? 'flex' : 'none';
       });
     }
 
+    function openMessengerModal() {
+      document.getElementById('messengerModal').classList.add('active');
+    }
+
+    function closeMessengerModal() {
+      document.getElementById('messengerModal').classList.remove('active');
+    }
+
+    function connectMessenger(platform) {
+      console.log(`Connecting ${platform}...`);
+      // Later: integrate OAuth flow for each platform
+      alert(`${platform} sync coming soon!`);
+    }
+
+    function authMessenger(platform) {
+      console.log(`Authenticating ${platform}...`);
+      // Later: Redirect to OAuth flow
+      alert(`${platform} authentication flow coming soon!`);
+    }
+
+    // Search filter
     document.getElementById('searchBar').addEventListener('input', (e) => {
-      filterThreads(e.target.value);
+      filterContacts(e.target.value);
     });
 
-    loadThreads();
-    setInterval(loadThreads, 10000);
+    // Close modal on background click
+    document.getElementById('messengerModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeMessengerModal();
+      }
+    });
+
+    // Load on page load
+    loadContacts();
+
+    // Refresh every 10 seconds
+    setInterval(loadContacts, 10000);
   </script>
 </body>
 </html>

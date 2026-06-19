@@ -33,16 +33,18 @@ async function getContacts(userId, { includeDeleted = false } = {}) {
   return rows;
 }
 
-async function updateContact(contactId, userId, { displayName, relationship, durationDays }) {
+async function updateContact(contactId, userId, { displayName, relationship, durationDays, isSpam, spamReports }) {
   const { rows } = await pool.query(
     `UPDATE contacts SET
        display_name = COALESCE($3, display_name),
        relationship = COALESCE($4, relationship),
        duration_days = COALESCE($5, duration_days),
+       is_spam = COALESCE($6, is_spam),
+       spam_reports = COALESCE($7, spam_reports),
        updated_at = NOW()
      WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
      RETURNING *`,
-    [contactId, userId, displayName, relationship, durationDays]
+    [contactId, userId, displayName, relationship, durationDays, isSpam, spamReports]
   );
   return rows[0] || null;
 }
@@ -135,6 +137,105 @@ async function getAnalysisHistory(userId, contactId, { limit = 12 } = {}) {
   return rows;
 }
 
+// ── spam & call tracking ──────────────────────────────────────────────────────
+
+async function markAsSpam(contactId, userId) {
+  const { rows } = await pool.query(
+    `UPDATE contacts SET
+       is_spam = true,
+       spam_reports = COALESCE(spam_reports, 0) + 1,
+       updated_at = NOW()
+     WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
+     RETURNING id, is_spam, spam_reports`,
+    [contactId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function getSpamContacts(userId) {
+  const { rows } = await pool.query(
+    `SELECT id, display_name, spam_reports, is_spam FROM contacts
+     WHERE user_id = $1 AND is_spam = true AND deleted_at IS NULL
+     ORDER BY spam_reports DESC`,
+    [userId]
+  );
+  return rows;
+}
+
+async function addCall({ userId, contactId, direction, duration, timestamp }) {
+  const callTime = timestamp ? new Date(timestamp) : new Date();
+  const hour = callTime.getHours();
+  const { rows } = await pool.query(
+    `INSERT INTO call_history (user_id, contact_id, direction, duration_seconds, hour_of_day, called_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, direction, duration_seconds, called_at`,
+    [userId, contactId, direction, duration || 0, hour, callTime]
+  );
+  return rows[0];
+}
+
+async function getCallHistory(userId, contactId, { limit = 20 } = {}) {
+  const { rows } = await pool.query(
+    `SELECT id, direction, duration_seconds, hour_of_day, called_at
+     FROM call_history
+     WHERE user_id = $1 AND contact_id = $2
+     ORDER BY called_at DESC
+     LIMIT $3`,
+    [userId, contactId, limit]
+  );
+  return rows;
+}
+
+// ── sobriety lock detection ────────────────────────────────────────────────────
+
+/**
+ * Detect drunk texting patterns:
+ * - Late night (10pm - 6am)
+ * - Multiple rapid messages (3+ in 5 min)
+ * - Typos/emoji spam (broken words, emoji clusters)
+ */
+async function detectDrunkTexting(userId, contactId, messageBody, sentTime) {
+  const hour = new Date(sentTime).getHours();
+  const isLateNight = hour >= 22 || hour <= 6;
+  
+  // Check for typo indicators (repeated chars, missing vowels, etc)
+  const hasTypos = /(.)\1{2,}|[aeiou]{0,1}[bcdfghjklmnpqrstvwxyz]{3,}/i.test(messageBody);
+  
+  // Check for emoji spam (3+ emojis in 10 chars)
+  const emojiCount = (messageBody.match(/[\p{Emoji_Presentation}]/gu) || []).length;
+  const hasEmojiSpam = emojiCount >= 3 && messageBody.length < 50;
+  
+  // Get recent message velocity
+  const { rows } = await pool.query(
+    `SELECT COUNT(*) as recent_count
+     FROM message_history
+     WHERE user_id = $1 AND contact_id = $2 AND direction = 'sent'
+       AND sent_at > NOW() - INTERVAL '5 minutes'`,
+    [userId, contactId]
+  );
+  
+  const rapidFire = rows[0]?.recent_count >= 3;
+  
+  // Score the risk
+  let riskScore = 0;
+  if (isLateNight) riskScore += 30;
+  if (hasTypos) riskScore += 20;
+  if (hasEmojiSpam) riskScore += 25;
+  if (rapidFire) riskScore += 25;
+  
+  return {
+    riskScore,
+    flags: {
+      isLateNight,
+      hasTypos,
+      hasEmojiSpam,
+      rapidFire
+    },
+    shouldWarn: riskScore >= 50,
+    shouldLock: riskScore >= 75
+  };
+}
+
 module.exports = {
   createContact,
   getContact,
@@ -147,4 +248,9 @@ module.exports = {
   saveAnalysis,
   getLatestAnalysis,
   getAnalysisHistory,
+  markAsSpam,
+  getSpamContacts,
+  addCall,
+  getCallHistory,
+  detectDrunkTexting,
 };
