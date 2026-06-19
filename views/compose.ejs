@@ -18,20 +18,20 @@
 
     /* Top bar */
     .topbar{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;border-bottom:1px solid #2E2924;position:sticky;top:0;background:#0E0C0B;z-index:20;}
-    .topbar__back{color:#C97B5D;text-decoration:none;font-size:.88rem;display:flex;align-items:center;gap:.25rem;}
+    .topbar__back{color:#8B5CF6;text-decoration:none;font-size:.88rem;display:flex;align-items:center;gap:.25rem;}
     .topbar__title{font-family:'Fraunces',serif;font-size:1.05rem;color:#F2EDE5;}
-    .topbar__action{color:#C97B5D;background:none;border:none;font-size:.85rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .topbar__action{color:#8B5CF6;background:none;border:none;font-size:.85rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
 
     /* Mode tabs */
     .mode-tabs{display:flex;border-bottom:1px solid #2E2924;position:sticky;top:52px;background:#0E0C0B;z-index:15;}
     .mode-tab{flex:1;padding:.7rem;text-align:center;font-size:.82rem;font-weight:500;color:#9E948E;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;background:none;border-top:none;border-left:none;border-right:none;}
-    .mode-tab.active{color:#C97B5D;border-bottom-color:#C97B5D;}
+    .mode-tab.active{color:#8B5CF6;border-bottom-color:#8B5CF6;}
 
     /* Contact selector */
     .contact-bar{padding:.75rem 1.25rem;border-bottom:1px solid #2E2924;display:flex;align-items:center;gap:.65rem;}
     .contact-bar label{font-size:.75rem;color:#9E948E;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
     .contact-bar select,.contact-bar input{flex:1;background:#1A1714;border:1px solid #2E2924;border-radius:8px;padding:.5rem .75rem;color:#F2EDE5;font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none;}
-    .contact-bar select:focus,.contact-bar input:focus{border-color:#C97B5D;}
+    .contact-bar select:focus,.contact-bar input:focus{border-color:#8B5CF6;}
     .contact-bar select option{background:#1A1714;color:#F2EDE5;}
 
     /* Message area */
@@ -39,7 +39,7 @@
     .msg-bubble{max-width:80%;padding:.75rem 1rem;border-radius:16px;font-size:.9rem;line-height:1.45;word-wrap:break-word;}
     .msg-outgoing{background:#C97B5D;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
     .msg-incoming{background:#1A1714;color:#F2EDE5;align-self:flex-start;border-bottom-left-radius:4px;border:1px solid #2E2924;}
-    .msg-system{align-self:center;background:rgba(201,123,93,.1);border:1px solid rgba(201,123,93,.2);color:#C97B5D;border-radius:12px;padding:.65rem 1rem;font-size:.82rem;text-align:center;max-width:90%;}
+    .msg-system{align-self:center;background:rgba(201,123,93,.1);border:1px solid rgba(201,123,93,.2);color:#8B5CF6;border-radius:12px;padding:.65rem 1rem;font-size:.82rem;text-align:center;max-width:90%;}
     .msg-time{font-size:.65rem;color:#9E948E;margin-top:.2rem;}
 
     /* Verdict card */
@@ -50,7 +50,7 @@
     .verdict-badge--SEND{background:rgba(76,175,80,.12);color:#4CAF50;}
     .verdict-badge--REWRITE{background:rgba(255,152,0,.12);color:#FF9800;}
     .verdict-section{margin-top:.65rem;font-size:.85rem;line-height:1.5;}
-    .verdict-section strong{color:#C97B5D;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:.2rem;}
+    .verdict-section strong{color:#8B5CF6;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:.2rem;}
     .verdict-actions{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;}
     .verdict-btn{padding:.55rem 1rem;border-radius:10px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.15s;}
     .verdict-btn--send{background:#4CAF50;color:#fff;}
@@ -60,16 +60,16 @@
 
     /* Interpret card (decode mode) */
     .interpret-card{background:#1A1714;border:1px solid #2E2924;border-radius:16px;padding:1.25rem;margin:.5rem 0;max-width:95%;align-self:center;}
-    .interpret-card h3{font-family:'Fraunces',serif;font-size:1rem;margin-bottom:.65rem;color:#C97B5D;}
+    .interpret-card h3{font-family:'Fraunces',serif;font-size:1rem;margin-bottom:.65rem;color:#8B5CF6;}
     .interpret-section{margin-top:.55rem;font-size:.85rem;line-height:1.5;}
     .interpret-section strong{color:#9E948E;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:.15rem;}
-    .style-badge{display:inline-block;background:rgba(201,123,93,.12);color:#C97B5D;padding:.2rem .6rem;border-radius:4px;font-size:.75rem;font-weight:600;margin-bottom:.5rem;}
+    .style-badge{display:inline-block;background:rgba(201,123,93,.12);color:#8B5CF6;padding:.2rem .6rem;border-radius:4px;font-size:.75rem;font-weight:600;margin-bottom:.5rem;}
 
     /* Compose bar */
     .compose-bar{position:fixed;bottom:0;left:0;right:0;background:#0E0C0B;border-top:1px solid #2E2924;padding:.65rem 1rem max(.65rem,env(safe-area-inset-bottom));z-index:20;}
     .compose-inner{display:flex;align-items:flex-end;gap:.5rem;max-width:480px;margin:0 auto;}
     .compose-textarea{flex:1;background:#1A1714;border:1px solid #2E2924;border-radius:20px;padding:.6rem 1rem;color:#F2EDE5;font-size:.9rem;font-family:'DM Sans',sans-serif;resize:none;outline:none;max-height:120px;min-height:40px;line-height:1.4;overflow-y:auto;}
-    .compose-textarea:focus{border-color:#C97B5D;}
+    .compose-textarea:focus{border-color:#8B5CF6;}
     .compose-textarea::placeholder{color:#9E948E;}
     .send-btn{width:40px;height:40px;border-radius:50%;background:#C97B5D;border:none;color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;}
     .send-btn:hover{background:#b56a4d;transform:scale(1.05);}
@@ -79,14 +79,14 @@
     /* Spiral Lock Overlay */
     .spiral-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.95);color:#fff;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;}
     .spiral-overlay.active{display:flex;}
-    .spiral-overlay h2{font-family:'Fraunces',serif;color:#C97B5D;font-size:1.5rem;margin-bottom:.5rem;}
+    .spiral-overlay h2{font-family:'Fraunces',serif;color:#8B5CF6;font-size:1.5rem;margin-bottom:.5rem;}
     .spiral-overlay p{color:#9E948E;font-size:.9rem;max-width:320px;margin-bottom:1rem;}
     .spiral-timer{font-family:'Fraunces',serif;font-size:3.5rem;font-weight:700;color:#F44336;margin:.5rem 0;}
     .spiral-quiz{display:none;margin-top:1.5rem;text-align:left;max-width:320px;width:100%;}
     .spiral-quiz p{color:#F2EDE5;font-size:.85rem;margin-bottom:.3rem;}
     .spiral-quiz input{width:100%;background:#1A1714;border:1px solid #2E2924;border-radius:8px;padding:.5rem .75rem;color:#F2EDE5;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:.75rem;}
-    .spiral-quiz input:focus{border-color:#C97B5D;}
-    .spiral-btn{padding:.6rem 1.25rem;border-radius:10px;background:rgba(201,123,93,.15);border:1px solid rgba(201,123,93,.3);color:#C97B5D;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.5rem;}
+    .spiral-quiz input:focus{border-color:#8B5CF6;}
+    .spiral-btn{padding:.6rem 1.25rem;border-radius:10px;background:rgba(201,123,93,.15);border:1px solid rgba(201,123,93,.3);color:#8B5CF6;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:.5rem;}
     .spiral-btn:hover{background:rgba(201,123,93,.25);}
 
     /* Empty state */
@@ -177,12 +177,15 @@
   let mode = 'send'; // 'send' or 'decode'
   let contacts = [];
   let currentContact = null;
+  let currentThreadId = null;
   let sendAttempts = [];
   let spiralLocked = false;
   const SPIRAL_THRESHOLD = 5;
   const SPIRAL_WINDOW = 10 * 60 * 1000; // 10 min
   const SPIRAL_DURATION = 5 * 60 * 1000; // 5 min lock
   const hasNativeAndroid = !!(window.Android && typeof window.Android.sendSms === 'function');
+  const nativeSyncAvailable = !!(window.Android && (typeof window.Android.getQueuedSms === 'function' || typeof window.Android.getDeviceContacts === 'function'));
+  const startupThreadId = new URLSearchParams(window.location.search).get('threadId');
 
   // Elements
   const msgInput = document.getElementById('msgInput');
@@ -253,6 +256,7 @@
       newContactInput.focus();
     } else {
       currentContact = contacts.find(c => c.id == this.value) || null;
+      currentThreadId = null;
     }
   });
 
@@ -263,44 +267,144 @@
   });
 
   async function createContact(name) {
+    const phoneNumber = prompt('Enter their phone number for SMS:');
+    if (!phoneNumber || !phoneNumber.trim()) {
+      addSystemMsg('☎️ A phone number is needed for real SMS threads.');
+      return;
+    }
+
     try {
-      const resp = await fetch('/api/contacts', {
+      const resp = await fetch('/api/messaging/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: name }),
+        body: JSON.stringify({ name, phoneNumber: phoneNumber.trim() }),
       });
       if (resp.ok) {
-        const c = await resp.json();
+        const data = await resp.json();
+        const c = data.contact || data;
         contacts.push(c);
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.displayName || c.display_name;
-        contactSelect.insertBefore(opt, contactSelect.querySelector('[value="__new__"]'));
+        addContactOption(c);
         contactSelect.value = c.id;
         contactSelect.style.display = 'block';
         newContactInput.style.display = 'none';
         newContactInput.value = '';
         currentContact = c;
+        currentThreadId = null;
       }
     } catch (e) {
       console.error('Create contact failed:', e);
+      addSystemMsg('⚠️ Could not save that contact yet.');
+    }
+  }
+
+  function contactName(contact) {
+    return contact?.name || contact?.displayName || contact?.display_name || contact?.phone_number || contact?.phoneNumber || 'Contact';
+  }
+
+  function addContactOption(c) {
+    if (!c || !c.id) return;
+    if (contactSelect.querySelector('option[value="' + c.id + '"]')) return;
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = contactName(c) + (contactPhone(c) ? ' · ' + contactPhone(c) : '');
+    contactSelect.insertBefore(opt, contactSelect.querySelector('[value="__new__"]'));
+  }
+
+  async function syncNativeAndroid(showStatus) {
+    if (!nativeSyncAvailable) return null;
+    const payload = { contacts: [], messages: [] };
+
+    try {
+      if (window.Android && typeof window.Android.getDeviceContacts === 'function') {
+        payload.contacts = JSON.parse(window.Android.getDeviceContacts() || '[]');
+      }
+    } catch (e) { payload.contacts = []; }
+
+    try {
+      if (window.Android && typeof window.Android.getQueuedSms === 'function') {
+        payload.messages = JSON.parse(window.Android.getQueuedSms() || '[]');
+      }
+    } catch (e) { payload.messages = []; }
+
+    if (!payload.contacts.length && !payload.messages.length) return null;
+
+    const resp = await fetch('/api/messaging/native-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error('Native sync failed');
+    const result = await resp.json();
+    if (payload.messages.length && window.Android && typeof window.Android.clearQueuedSms === 'function') {
+      window.Android.clearQueuedSms();
+    }
+    if (showStatus) {
+      const sync = result.sync || {};
+      addSystemMsg('📬 Synced ' + (sync.contactsImported || 0) + ' contacts and ' + (sync.messagesImported || 0) + ' SMS messages from this phone.');
+    }
+    return result;
+  }
+
+  async function persistNativeMessage(phoneNumber, body, direction) {
+    if (!phoneNumber || !body) return;
+    try {
+      await fetch('/api/messaging/native-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contacts: currentContact ? [{ name: contactName(currentContact), phoneNumber }] : [],
+          messages: [{ phoneNumber, body, direction, timestamp: Date.now() }],
+        }),
+      });
+    } catch (e) {
+      console.warn('Could not persist native SMS:', e);
     }
   }
 
   // Load contacts
   async function loadContacts() {
     try {
-      const resp = await fetch('/api/contacts');
+      await syncNativeAndroid(false).catch(function() {});
+      const resp = await fetch('/api/messaging/contacts');
       if (resp.ok) {
-        contacts = await resp.json();
-        contacts.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c.id;
-          opt.textContent = (c.displayName || c.display_name) + (c.health_score ? ` (${c.health_score}%)` : '');
-          contactSelect.insertBefore(opt, contactSelect.querySelector('[value="__new__"]'));
-        });
+        const data = await resp.json();
+        contacts = data.contacts || [];
+        contactSelect.querySelectorAll('option:not([value=""]):not([value="__new__"])').forEach(function(opt) { opt.remove(); });
+        contacts.forEach(addContactOption);
       }
     } catch (e) { /* silent */ }
+  }
+
+  async function loadThread(threadId) {
+    if (!threadId) return;
+    try {
+      const resp = await fetch('/api/messaging/threads/' + encodeURIComponent(threadId));
+      if (!resp.ok) throw new Error('Thread not found');
+      const data = await resp.json();
+      const thread = data.thread;
+      const messages = data.messages || [];
+
+      currentThreadId = thread.id;
+      currentContact = {
+        id: thread.contact_id,
+        name: thread.name,
+        phone_number: thread.phone_number || thread.contact_phone,
+      };
+      document.getElementById('topTitle').textContent = contactName(currentContact);
+      addContactOption(currentContact);
+      if (currentContact.id) contactSelect.value = currentContact.id;
+
+      clearMessages();
+      messages.forEach(function(msg) {
+        addBubble(msg.body, msg.sender_type === 'user' ? 'outgoing' : 'incoming', msg.timestamp);
+      });
+      if (!messages.length) {
+        addSystemMsg('This thread is ready. New SMS messages will sync here.');
+      }
+    } catch (e) {
+      console.error('Load thread failed:', e);
+      addSystemMsg('⚠️ Could not load that SMS thread.');
+    }
   }
 
   // Clear
@@ -321,14 +425,14 @@
     if (es) es.remove();
   }
 
-  function addBubble(text, type) {
+  function addBubble(text, type, timestamp) {
     removeEmpty();
     const div = document.createElement('div');
     div.className = 'msg-bubble msg-' + type;
     div.textContent = text;
     const time = document.createElement('div');
     time.className = 'msg-time';
-    time.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    time.textContent = new Date(timestamp || Date.now()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     const wrap = document.createElement('div');
     wrap.style.display = 'flex';
     wrap.style.flexDirection = 'column';
@@ -498,12 +602,12 @@
         const resp = await fetch('/api/filter/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, context: currentContact ? 'Sending to: ' + (currentContact.displayName || currentContact.display_name) : '' }),
+          body: JSON.stringify({ message: text, context: currentContact ? 'Sending to: ' + contactName(currentContact) : '' }),
         });
         removeLoading();
 
         if (resp.status === 402) {
-          addSystemMsg('🔒 Free verdicts used up. <a href="/pricing" style="color:#C97B5D;">Upgrade to Pro</a> for unlimited protection.');
+          addSystemMsg('🔒 Free verdicts used up. <a href="/pricing" style="color:#8B5CF6;">Upgrade to Pro</a> for unlimited protection.');
           return;
         }
 
@@ -529,7 +633,7 @@
         removeLoading();
 
         if (resp.status === 402) {
-          addSystemMsg('🔒 Free analyses used up. <a href="/pricing" style="color:#C97B5D;">Upgrade to Pro</a> for unlimited decoding.');
+          addSystemMsg('🔒 Free analyses used up. <a href="/pricing" style="color:#8B5CF6;">Upgrade to Pro</a> for unlimited decoding.');
           return;
         }
 
@@ -585,6 +689,7 @@
       }
       const status = window.Android.sendSms(phone, pendingMessage);
       if (status === 'sent') {
+        syncNativeAndroid(false).catch(function() {});
         addSystemMsg('📱 SMS sent through HoldOff. Protected, then delivered.');
         pendingMessage = '';
         return;
@@ -611,7 +716,7 @@
   };
 
   window._composeHold = function() {
-    addSystemMsg('🛡️ <strong>Message held.</strong> You chose your peace over the impulse. That\'s growth.<br><br>📓 <a href="/journal" style="color:#C97B5D;">Write about it in your journal</a> instead.');
+    addSystemMsg('🛡️ <strong>Message held.</strong> You chose your peace over the impulse. That\'s growth.<br><br>📓 <a href="/journal" style="color:#8B5CF6;">Write about it in your journal</a> instead.');
     pendingMessage = '';
   };
 
@@ -672,24 +777,26 @@
       }
     }).catch(function() {});
 
-  function importQueuedNativeSms() {
-    if (!window.Android || typeof window.Android.getQueuedSms !== 'function') return;
-    try {
-      const queued = JSON.parse(window.Android.getQueuedSms() || '[]');
-      queued.forEach(function(msg) {
-        if (msg.direction === 'incoming') {
-          addBubble((msg.from ? msg.from + ': ' : '') + msg.body, 'incoming');
-        } else {
-          addBubble(msg.body, 'outgoing');
-        }
-      });
-      if (queued.length) addSystemMsg('📬 Synced ' + queued.length + ' SMS message' + (queued.length === 1 ? '' : 's') + ' from this phone.');
-    } catch (e) {}
+  async function importQueuedNativeSms() {
+    if (!nativeSyncAvailable) return;
+    const result = await syncNativeAndroid(false).catch(function() { return null; });
+    if (result && result.sync && result.sync.messagesImported) {
+      if (currentThreadId) {
+        await loadThread(currentThreadId);
+      } else {
+        addSystemMsg('📬 Synced ' + result.sync.messagesImported + ' SMS message' + (result.sync.messagesImported === 1 ? '' : 's') + '. Open Inbox to pick a thread.');
+      }
+    }
   }
 
   // Init
-  loadContacts();
-  importQueuedNativeSms();
+  loadContacts().then(function() {
+    if (startupThreadId) {
+      loadThread(startupThreadId).then(importQueuedNativeSms);
+    } else {
+      importQueuedNativeSms();
+    }
+  });
   msgInput.focus();
 
   // Mental Health Disclaimer Modal — show on first visit
@@ -713,7 +820,7 @@
 <!-- Mental Health Disclaimer Modal -->
 <div id="disclaimer-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:9998;flex-direction:column;align-items:center;justify-content:center;padding:2rem;overflow-y:auto;">
   <div style="background:#1A1714;border:2px solid #C97B5D;border-radius:20px;padding:2rem;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.8);">
-    <h2 style="font-family:'Fraunces',serif;font-size:1.4rem;color:#C97B5D;margin-bottom:1rem;text-align:center;">⚠️ Important Disclaimer</h2>
+    <h2 style="font-family:'Fraunces',serif;font-size:1.4rem;color:#8B5CF6;margin-bottom:1rem;text-align:center;">⚠️ Important Disclaimer</h2>
     
     <div style="color:#F2EDE5;font-size:.95rem;line-height:1.7;margin-bottom:1.5rem;">
       <p style="margin-bottom:1rem;"><strong>HoldOff is not a mental health treatment or therapy tool.</strong></p>
@@ -735,7 +842,7 @@
       </ul>
       
       <p style="margin-top:1rem;font-size:.85rem;color:#9E948E;">
-        HoldOff is a tool for self-awareness and communication improvement. If you're struggling with mental health, please reach out to a licensed therapist or counselor. <a href="/legal#health-disclaimer" style="color:#C97B5D;text-decoration:underline;">Read full disclaimer</a>
+        HoldOff is a tool for self-awareness and communication improvement. If you're struggling with mental health, please reach out to a licensed therapist or counselor. <a href="/legal#health-disclaimer" style="color:#8B5CF6;text-decoration:underline;">Read full disclaimer</a>
       </p>
     </div>
     

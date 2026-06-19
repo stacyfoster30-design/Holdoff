@@ -7,7 +7,6 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../lib/auth');
 const msgDb = require('../db/messages');
-const smsSyncService = require('../services/sms-sync');
 
 // ─── CONTACTS ────────────────────────────────────────────────────────────────
 
@@ -36,24 +35,16 @@ router.post('/contacts', requireAuth, async (req, res) => {
     const userId = req.user.id;
     const { name, phoneNumber, isFavorited } = req.body;
 
-    if (!name || !phoneNumber) {
-      return res.status(400).json({ error: 'Name and phoneNumber required' });
+    if (!phoneNumber) {
+      return res.status(400).json({ error: 'phoneNumber required' });
     }
 
     // Upsert contact
     const contact = await msgDb.upsertContact(userId, {
-      name,
+      name: name || phoneNumber,
       phoneNumber,
       isFavorited: isFavorited ?? false,
     });
-
-    // Auto-sync SMS from this contact (mock for now)
-    try {
-      await smsSyncService.syncSMSThread(userId, { name, phoneNumber }, { useMock: true });
-    } catch (syncErr) {
-      console.warn('[API] SMS sync warning:', syncErr.message);
-      // Don't fail the contact creation if SMS sync fails
-    }
 
     res.json({ contact });
   } catch (err) {
@@ -74,6 +65,31 @@ router.delete('/contacts/:contactId', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[API] DELETE /contacts error:', err.message);
     res.status(500).json({ error: 'Failed to delete contact' });
+  }
+});
+
+
+// ─── NATIVE ANDROID SYNC ─────────────────────────────────────────────────────
+
+/**
+ * POST /api/messaging/native-sync
+ * Import Android contacts and queued SMS into HoldOff threads.
+ * Body: { contacts?: [{ name, phoneNumber }], messages?: [{ from|to|phoneNumber, body, direction, timestamp }] }
+ */
+router.post('/native-sync', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { contacts = [], messages = [] } = req.body || {};
+
+    if (!Array.isArray(contacts) || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'contacts and messages must be arrays' });
+    }
+
+    const sync = await msgDb.importNativeSync(userId, { contacts, messages });
+    res.json({ ok: true, sync });
+  } catch (err) {
+    console.error('[API] POST /native-sync error:', err.message);
+    res.status(500).json({ error: 'Failed to sync native SMS data' });
   }
 });
 
@@ -104,7 +120,7 @@ router.get('/threads/:threadId', requireAuth, async (req, res) => {
     const userId = req.user.id;
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -136,7 +152,7 @@ router.post('/threads/:threadId/messages', requireAuth, async (req, res) => {
     }
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -166,7 +182,7 @@ router.get('/threads/:threadId/spiral-state', requireAuth, async (req, res) => {
     const userId = req.user.id;
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -205,7 +221,7 @@ router.post('/threads/:threadId/spiral-quiz', requireAuth, async (req, res) => {
     const { answers } = req.body; // Optional quiz answers for validation
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -230,7 +246,7 @@ router.post('/threads/:threadId/spiral-reset', requireAuth, async (req, res) => 
     const userId = req.user.id;
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -302,7 +318,7 @@ router.post('/threads/:threadId/analyze', requireAuth, async (req, res) => {
     }
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
@@ -351,7 +367,7 @@ router.post('/threads/:threadId/send', requireAuth, async (req, res) => {
     }
 
     const thread = await msgDb.getThreadById(threadId);
-    if (!thread || thread.user_id !== userId) {
+    if (!thread || String(thread.user_id) !== String(userId)) {
       return res.status(404).json({ error: 'Thread not found' });
     }
 

@@ -4,6 +4,26 @@
  */
 
 const pool = require('./pool');
+const crypto = require('crypto');
+
+function normalizePhoneNumber(raw) {
+  if (!raw) return '';
+  const trimmed = String(raw).trim();
+  if (!trimmed) return '';
+  let cleaned = trimmed.replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('00')) cleaned = '+' + cleaned.slice(2);
+  const digits = cleaned.replace(/\D/g, '');
+  if (cleaned.startsWith('+')) return '+' + digits;
+  if (digits.length === 10) return '+1' + digits;
+  if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+  return digits || cleaned;
+}
+
+function messageExternalId({ phoneNumber, body, direction, timestamp }) {
+  const ts = timestamp ? new Date(timestamp).getTime() : Date.now();
+  const hash = crypto.createHash('sha1').update(`${phoneNumber}|${body}|${direction}|${ts}`).digest('hex').slice(0, 16);
+  return `native:${direction || 'unknown'}:${ts}:${hash}`;
+}
 
 /**
  * CONTACT MANAGEMENT
@@ -12,16 +32,22 @@ const pool = require('./pool');
 /**
  * Create or update a contact.
  */
-async function upsertContact(userId, { name, phoneNumber, isFavorited }) {
+async function upsertContact(userId, { name, phoneNumber, isFavorited, lastMessagedAt }) {
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+  if (!normalizedPhone) throw new Error('phoneNumber required');
+  const trimmedName = name ? String(name).trim() : '';
+  const safeName = trimmedName && normalizePhoneNumber(trimmedName) !== normalizedPhone ? trimmedName : null;
+
   const query = `
-    INSERT INTO user_contacts (user_id, name, phone_number, is_favorited)
-    VALUES ($1, $2, $3, $4)
-    ON CONFLICT (phone_number)
-    DO UPDATE SET name = COALESCE($2, user_contacts.name),
-                  is_favorited = COALESCE($4, user_contacts.is_favorited)
+    INSERT INTO user_contacts (user_id, name, phone_number, is_favorited, last_messaged_at)
+    VALUES ($1, NULLIF($2, ''), $3, COALESCE($4, false), $5)
+    ON CONFLICT (user_id, phone_number)
+    DO UPDATE SET name = COALESCE(NULLIF($2, ''), user_contacts.name),
+                  is_favorited = COALESCE($4, user_contacts.is_favorited),
+                  last_messaged_at = COALESCE($5, user_contacts.last_messaged_at)
     RETURNING id, name, phone_number, is_favorited, last_messaged_at;
   `;
-  const result = await pool.query(query, [userId, name, phoneNumber, isFavorited ?? false]);
+  const result = await pool.query(query, [userId, safeName, normalizedPhone, isFavorited ?? null, lastMessagedAt || null]);
   return result.rows[0];
 }
 
@@ -75,11 +101,116 @@ async function getOrCreateThread(userId, contactId) {
     INSERT INTO message_threads (user_id, contact_id, contact_phone, last_message_at)
     VALUES ($1, $2, $3, NOW())
     ON CONFLICT (user_id, contact_id) DO UPDATE
-    SET last_message_at = NOW()
+    SET contact_phone = EXCLUDED.contact_phone
     RETURNING id, user_id, contact_id, contact_phone, last_message_at;
   `;
   const result = await pool.query(query, [userId, contactId, contact.phone_number]);
   return result.rows[0];
+}
+
+/**
+ * Get or create a message thread for a phone number.
+ * Used by native SMS/contact sync where we may not have a contact ID yet.
+ */
+async function getOrCreateThreadByPhone(userId, { name, phoneNumber, lastMessagedAt }) {
+  const contact = await upsertContact(userId, {
+    name,
+    phoneNumber,
+    lastMessagedAt,
+  });
+  const thread = await getOrCreateThread(userId, contact.id);
+  if (lastMessagedAt) {
+    await pool.query(
+      `UPDATE message_threads
+       SET last_message_at = $2
+       WHERE id = $1
+         AND NOT EXISTS (SELECT 1 FROM messages WHERE thread_id = $1)`,
+      [thread.id, lastMessagedAt]
+    );
+    thread.last_message_at = lastMessagedAt;
+  }
+  return thread;
+}
+
+/**
+ * Insert one SMS imported from the Android app into its contact thread.
+ */
+async function insertNativeMessage(userId, { phoneNumber, name, body, direction = 'incoming', timestamp, externalId }) {
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+  const messageBody = String(body || '').trim();
+  if (!normalizedPhone || !messageBody) return null;
+
+  const messageTimestamp = timestamp ? new Date(Number(timestamp) || timestamp) : new Date();
+  const thread = await getOrCreateThreadByPhone(userId, {
+    name: name || normalizedPhone,
+    phoneNumber: normalizedPhone,
+    lastMessagedAt: messageTimestamp,
+  });
+  const senderType = ['outgoing', 'sent', 'user'].includes(String(direction).toLowerCase()) ? 'user' : 'contact';
+  const smsExternalId = externalId || messageExternalId({
+    phoneNumber: normalizedPhone,
+    body: messageBody,
+    direction: senderType,
+    timestamp: messageTimestamp,
+  });
+
+  const message = await insertMessage(thread.id, {
+    senderType,
+    body: messageBody,
+    externalId: smsExternalId,
+    timestamp: messageTimestamp,
+  });
+
+  return { thread, message };
+}
+
+/**
+ * Import native Android contacts and queued SMS into HoldOff threads.
+ */
+async function importNativeSync(userId, { contacts = [], messages = [] } = {}) {
+  let contactsImported = 0;
+  let messagesImported = 0;
+  const touchedThreadIds = new Set();
+
+  for (const contact of contacts || []) {
+    try {
+      const phoneNumber = contact.phoneNumber || contact.phone || contact.number;
+      if (!phoneNumber) continue;
+      await upsertContact(userId, {
+        name: contact.name || contact.displayName || phoneNumber,
+        phoneNumber,
+      });
+      contactsImported += 1;
+    } catch (err) {
+      console.warn('[native-sync] contact skipped:', err.message);
+    }
+  }
+
+  for (const sms of messages || []) {
+    try {
+      const phoneNumber = sms.phoneNumber || sms.phone || sms.from || sms.to || sms.address;
+      const imported = await insertNativeMessage(userId, {
+        phoneNumber,
+        name: sms.name || sms.displayName || null,
+        body: sms.body || sms.message || sms.text,
+        direction: sms.direction,
+        timestamp: sms.timestamp,
+        externalId: sms.externalId || sms.id,
+      });
+      if (imported) {
+        messagesImported += 1;
+        touchedThreadIds.add(String(imported.thread.id));
+      }
+    } catch (err) {
+      console.warn('[native-sync] sms skipped:', err.message);
+    }
+  }
+
+  return {
+    contactsImported,
+    messagesImported,
+    touchedThreadIds: Array.from(touchedThreadIds),
+  };
 }
 
 /**
@@ -140,17 +271,36 @@ async function getMessagesByThread(threadId, limit = 50) {
  * senderType: 'user' | 'contact'
  */
 async function insertMessage(threadId, { senderType, body, externalId, timestamp }) {
+  const messageTimestamp = timestamp ? new Date(timestamp) : new Date();
+
+  if (externalId) {
+    const existing = await pool.query(
+      'SELECT id, thread_id, sender_type, body, external_id, timestamp, created_at FROM messages WHERE thread_id = $1 AND external_id = $2 LIMIT 1',
+      [threadId, externalId]
+    );
+    if (existing.rows[0]) return existing.rows[0];
+  }
+
   const query = `
     INSERT INTO messages (thread_id, sender_type, body, external_id, timestamp)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING id, thread_id, sender_type, body, external_id, timestamp, created_at;
   `;
-  const result = await pool.query(query, [threadId, senderType, body, externalId, timestamp || new Date()]);
+  const result = await pool.query(query, [threadId, senderType, body, externalId, messageTimestamp]);
   
-  // Update thread's last_message_at
+  // Update thread/contact recency using the actual message timestamp.
   await pool.query(
-    'UPDATE message_threads SET last_message_at = NOW() WHERE id = $1',
-    [threadId]
+    `UPDATE message_threads
+     SET last_message_at = GREATEST(COALESCE(last_message_at, $2), $2)
+     WHERE id = $1`,
+    [threadId, messageTimestamp]
+  );
+  await pool.query(
+    `UPDATE user_contacts uc
+     SET last_messaged_at = GREATEST(COALESCE(uc.last_messaged_at, $2), $2)
+     FROM message_threads mt
+     WHERE mt.id = $1 AND uc.id = mt.contact_id`,
+    [threadId, messageTimestamp]
   );
   
   return result.rows[0];
@@ -415,12 +565,15 @@ async function initializeTables() {
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
         name VARCHAR(255),
-        phone_number VARCHAR(20) UNIQUE NOT NULL,
+        phone_number VARCHAR(32) NOT NULL,
         is_favorited BOOLEAN DEFAULT false,
         last_messaged_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id, phone_number)
       );
+      ALTER TABLE user_contacts DROP CONSTRAINT IF EXISTS user_contacts_phone_number_key;
+      ALTER TABLE user_contacts ALTER COLUMN phone_number TYPE VARCHAR(32);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_user_contacts_user_phone_unique ON user_contacts(user_id, phone_number);
       CREATE INDEX IF NOT EXISTS idx_user_contacts_user_id ON user_contacts(user_id);
       CREATE INDEX IF NOT EXISTS idx_user_contacts_phone ON user_contacts(phone_number);
     `);
@@ -431,11 +584,13 @@ async function initializeTables() {
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
         contact_id INT REFERENCES user_contacts(id) ON DELETE SET NULL,
-        contact_phone VARCHAR(20),
+        contact_phone VARCHAR(32),
         last_message_at TIMESTAMP DEFAULT NOW(),
         created_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id, contact_id)
       );
+      ALTER TABLE message_threads ALTER COLUMN contact_phone TYPE VARCHAR(32);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_threads_user_contact_unique ON message_threads(user_id, contact_id);
       CREATE INDEX IF NOT EXISTS idx_threads_user_id ON message_threads(user_id);
       CREATE INDEX IF NOT EXISTS idx_threads_contact_id ON message_threads(contact_id);
     `);
@@ -527,6 +682,7 @@ async function initializeTables() {
 
 module.exports = {
   // Contacts
+  normalizePhoneNumber,
   upsertContact,
   getContactsByUser,
   getContactById,
@@ -534,12 +690,15 @@ module.exports = {
 
   // Threads
   getOrCreateThread,
+  getOrCreateThreadByPhone,
   getThreadsByUser,
   getThreadById,
 
   // Messages
   getMessagesByThread,
   insertMessage,
+  insertNativeMessage,
+  importNativeSync,
 
   // Spiral Lock
   getSpiralLockState,

@@ -271,23 +271,23 @@
     <div class="header-content">
       <h1>HoldOff</h1>
       <div class="header-actions">
-        <a href="/notifications" class="btn btn-primary">🔔 Notifications</a>
+        <a href="/compose" class="btn btn-primary">✍️ Compose</a>
+        <button id="nativeSyncBtn" class="btn btn-secondary" type="button" style="display:none;">📲 Sync phone</button>
         <a href="/settings" class="btn btn-secondary">⚙️ Settings</a>
-        <a href="/auth/logout" class="btn btn-secondary">Logout</a>
       </div>
     </div>
   </div>
 
   <div class="container">
     <div class="inbox-header">
-      <h2>Your Messages</h2>
+      <h2>Your SMS Threads</h2>
     </div>
 
     <input 
       type="text" 
       class="search-bar" 
       id="searchBar" 
-      placeholder="🔍 Search contacts..."
+      placeholder="🔍 Search names, numbers, messages..."
     >
 
     <div class="contacts-list" id="contactsList">
@@ -298,52 +298,117 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
-      <p>No messages yet. Start a conversation!</p>
+      <p>No SMS threads yet. Tap Sync phone in the APK or start a protected message.</p>
     </div>
   </div>
 
   <script>
-    let contacts = [];
+    let threads = [];
+    const isNativeAndroid = !!(window.Android && (typeof window.Android.getQueuedSms === 'function' || typeof window.Android.getDeviceContacts === 'function'));
+    const syncBtn = document.getElementById('nativeSyncBtn');
 
-    async function loadContacts() {
+    if (isNativeAndroid && syncBtn) {
+      syncBtn.style.display = 'inline-flex';
+      syncBtn.addEventListener('click', function() { syncNativeAndroid(true); });
+    }
+
+    async function syncNativeAndroid(showStatus) {
+      if (!isNativeAndroid) return null;
+      const payload = { contacts: [], messages: [] };
+
       try {
-        const res = await fetch('/api/contacts');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        contacts = await res.json();
-        renderContacts();
+        if (window.Android && typeof window.Android.getDeviceContacts === 'function') {
+          payload.contacts = JSON.parse(window.Android.getDeviceContacts() || '[]');
+        }
       } catch (err) {
-        console.error('Failed to load contacts:', err);
-        document.getElementById('contactsList').innerHTML = 
-          '<p style="color: #ef4444; text-align: center; margin: 2rem 0;">Failed to load contacts</p>';
+        payload.contacts = [];
+      }
+
+      try {
+        if (window.Android && typeof window.Android.getQueuedSms === 'function') {
+          payload.messages = JSON.parse(window.Android.getQueuedSms() || '[]');
+        }
+      } catch (err) {
+        payload.messages = [];
+      }
+
+      if (!payload.contacts.length && !payload.messages.length) {
+        if (showStatus) showInlineStatus('No new phone data yet. If Android asks, approve SMS/Contacts permission and tap Sync again.');
+        return null;
+      }
+
+      const res = await fetch('/api/messaging/native-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Sync failed');
+      const result = await res.json();
+      if (payload.messages.length && window.Android && typeof window.Android.clearQueuedSms === 'function') {
+        window.Android.clearQueuedSms();
+      }
+      if (showStatus) {
+        const sync = result.sync || {};
+        showInlineStatus('Synced ' + (sync.contactsImported || 0) + ' contacts and ' + (sync.messagesImported || 0) + ' SMS messages.');
+      }
+      return result;
+    }
+
+    function showInlineStatus(text) {
+      const list = document.getElementById('contactsList');
+      const note = document.createElement('div');
+      note.style.cssText = 'padding:.8rem 1rem;margin-bottom:.75rem;border-radius:10px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#d8ccff;font-size:13px;';
+      note.textContent = text;
+      list.prepend(note);
+      setTimeout(function() { note.remove(); }, 4500);
+    }
+
+    async function loadThreads() {
+      try {
+        await syncNativeAndroid(false).catch(function() {});
+        const res = await fetch('/api/messaging/threads');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        threads = data.threads || [];
+        renderThreads();
+      } catch (err) {
+        console.error('Failed to load threads:', err);
+        document.getElementById('contactsList').innerHTML =
+          '<p style="color: #ef4444; text-align: center; margin: 2rem 0;">Failed to load SMS threads</p>';
       }
     }
 
-    function renderContacts() {
+    function renderThreads() {
       const list = document.getElementById('contactsList');
       const empty = document.getElementById('emptyState');
 
-      if (!contacts.length) {
+      if (!threads.length) {
         list.innerHTML = '';
         empty.style.display = 'block';
         return;
       }
 
       empty.style.display = 'none';
-      list.innerHTML = contacts.map(contact => `
-        <a href="/thread?contact=${encodeURIComponent(contact.phone)}" class="contact-item ${contact.unread ? 'unread' : ''}">
-          <div class="contact-info">
-            <div class="contact-name">
-              <span class="flag ${contact.flag || 'green'}"></span>
-              ${escapeHtml(contact.name)}
+      list.innerHTML = threads.map(thread => {
+        const name = thread.name || thread.phone_number || thread.contact_phone || 'Unknown contact';
+        const phone = thread.phone_number || thread.contact_phone || '';
+        const preview = thread.last_message_preview || 'No messages yet';
+        return `
+          <a href="/compose?threadId=${encodeURIComponent(thread.id)}" class="contact-item">
+            <div class="contact-info">
+              <div class="contact-name">
+                <span class="flag green"></span>
+                ${escapeHtml(name)}
+              </div>
+              <div class="contact-preview">${escapeHtml(preview)}</div>
+              ${phone ? `<div class="contact-preview" style="font-size:12px;opacity:.75;">${escapeHtml(phone)}</div>` : ''}
             </div>
-            <div class="contact-preview">${escapeHtml(contact.lastMessage || '(No messages)')}</div>
-          </div>
-          <div class="contact-meta">
-            <div class="contact-time">${formatTime(contact.lastMessageTime)}</div>
-            ${contact.unread ? `<div class="unread-badge">${contact.unread}</div>` : ''}
-          </div>
-        </a>
-      `).join('');
+            <div class="contact-meta">
+              <div class="contact-time">${formatTime(thread.last_message_at)}</div>
+            </div>
+          </a>
+        `;
+      }).join('');
     }
 
     function formatTime(timestamp) {
@@ -364,31 +429,27 @@
 
     function escapeHtml(text) {
       const div = document.createElement('div');
-      div.textContent = text;
+      div.textContent = text || '';
       return div.innerHTML;
     }
 
-    function filterContacts(query) {
+    function filterThreads(query) {
       const list = document.getElementById('contactsList');
       const items = list.querySelectorAll('.contact-item');
       const q = query.toLowerCase();
 
       items.forEach(item => {
-        const name = item.querySelector('.contact-name').textContent.toLowerCase();
-        item.style.display = name.includes(q) ? 'flex' : 'none';
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? 'flex' : 'none';
       });
     }
 
-    // Search filter
     document.getElementById('searchBar').addEventListener('input', (e) => {
-      filterContacts(e.target.value);
+      filterThreads(e.target.value);
     });
 
-    // Load on page load
-    loadContacts();
-
-    // Refresh every 10 seconds
-    setInterval(loadContacts, 10000);
+    loadThreads();
+    setInterval(loadThreads, 10000);
   </script>
 </body>
 </html>

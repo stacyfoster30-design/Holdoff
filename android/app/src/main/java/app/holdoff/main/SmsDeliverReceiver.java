@@ -34,19 +34,32 @@ public class SmsDeliverReceiver extends BroadcastReceiver {
         }
 
         if (from == null || body.length() == 0) return;
-        enqueueIncomingSms(context, from, body.toString(), timestamp);
+        enqueueSms(context, from, body.toString(), timestamp, "incoming");
     }
 
     static void enqueueIncomingSms(Context context, String from, String body, long timestamp) {
+        enqueueSms(context, from, body, timestamp, "incoming");
+    }
+
+    static void enqueueOutgoingSms(Context context, String to, String body, long timestamp) {
+        enqueueSms(context, to, body, timestamp, "outgoing");
+    }
+
+    static void enqueueSms(Context context, String address, String body, long timestamp, String direction) {
         try {
             SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
             String raw = prefs.getString(QUEUE_KEY, "[]");
             JSONArray queue = new JSONArray(raw);
             JSONObject item = new JSONObject();
-            item.put("from", from);
+            if ("outgoing".equals(direction)) {
+                item.put("to", address);
+            } else {
+                item.put("from", address);
+            }
+            item.put("phoneNumber", address);
             item.put("body", body);
             item.put("timestamp", timestamp);
-            item.put("direction", "incoming");
+            item.put("direction", direction);
             queue.put(item);
             prefs.edit().putString(QUEUE_KEY, queue.toString()).apply();
         } catch (Exception ignored) {}

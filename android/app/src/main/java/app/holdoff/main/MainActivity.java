@@ -8,11 +8,13 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SmsManager;
+import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.provider.Telephony;
 import android.view.View;
@@ -29,6 +31,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -127,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
             }
             try {
                 SmsManager.getDefault().sendTextMessage(phoneNumber.trim(), null, message.trim(), null, null);
-                SmsDeliverReceiver.enqueueIncomingSms(MainActivity.this, phoneNumber.trim(), message.trim(), System.currentTimeMillis());
+                SmsDeliverReceiver.enqueueOutgoingSms(MainActivity.this, phoneNumber.trim(), message.trim(), System.currentTimeMillis());
                 return "sent";
             } catch (Exception e) {
                 return "error:" + e.getMessage();
@@ -137,13 +142,67 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public String getQueuedSms() {
             String raw = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(SmsDeliverReceiver.QUEUE_KEY, "[]");
-            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(SmsDeliverReceiver.QUEUE_KEY, "[]").apply();
             try {
                 new JSONArray(raw);
                 return raw;
             } catch (Exception e) {
                 return "[]";
             }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void clearQueuedSms() {
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(SmsDeliverReceiver.QUEUE_KEY, "[]").apply();
+        }
+
+        @android.webkit.JavascriptInterface
+        public boolean hasContactsPermission() {
+            return ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @android.webkit.JavascriptInterface
+        public String getDeviceContacts() {
+            if (!hasContactsPermission()) {
+                requestSmsPermission();
+                return "[]";
+            }
+
+            JSONArray contacts = new JSONArray();
+            Set<String> seenNumbers = new HashSet<>();
+            Cursor cursor = null;
+            try {
+                String[] projection = new String[] {
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                };
+                cursor = getContentResolver().query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+                );
+                if (cursor == null) return "[]";
+                int nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+                int phoneIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                while (cursor.moveToNext() && contacts.length() < 2000) {
+                    String phone = phoneIdx >= 0 ? cursor.getString(phoneIdx) : null;
+                    if (phone == null || phone.trim().isEmpty()) continue;
+                    String key = phone.replaceAll("[^0-9+]", "");
+                    if (seenNumbers.contains(key)) continue;
+                    seenNumbers.add(key);
+
+                    JSONObject item = new JSONObject();
+                    item.put("name", nameIdx >= 0 ? cursor.getString(nameIdx) : phone);
+                    item.put("phoneNumber", phone);
+                    contacts.put(item);
+                }
+            } catch (Exception ignored) {
+                return "[]";
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+            return contacts.toString();
         }
 
         @android.webkit.JavascriptInterface
