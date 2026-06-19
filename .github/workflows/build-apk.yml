@@ -4,14 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-jobs:
-  permissions:
+
+permissions:
   contents: write
 
 jobs:
-  build::
-  contents: write
-
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,3 +82,5 @@ jobs:
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
