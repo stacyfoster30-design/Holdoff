@@ -1,15 +1,18 @@
 package app.holdoff.main;
 
+import android.Manifest;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.role.RoleManager;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.telephony.SmsManager;
 import android.provider.Settings;
 import android.provider.Telephony;
 import android.view.View;
@@ -23,6 +26,9 @@ import android.widget.TextView;
 import android.view.LayoutInflater;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import org.json.JSONArray;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_LAST_VERDICT = "last_verdict";
     private static final String KEY_WIDGET_AUTO_ADDED = "widget_auto_added";
     private static final int REQUEST_CODE_ADD_WIDGET = 1001;
+    private static final int REQUEST_CODE_SMS_PERMISSION = 1002;
 
     private WebView webView;
     private FrameLayout promptOverlay;
@@ -96,6 +103,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private final class WidgetBridge {
+        @android.webkit.JavascriptInterface
+        public boolean hasSmsPermission() {
+            return ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @android.webkit.JavascriptInterface
+        public void requestSmsPermission() {
+            postOnUiThread(() -> ActivityCompat.requestPermissions(
+                MainActivity.this,
+                new String[]{ Manifest.permission.SEND_SMS, Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_CONTACTS },
+                REQUEST_CODE_SMS_PERMISSION
+            ));
+        }
+
+        @android.webkit.JavascriptInterface
+        public String sendSms(final String phoneNumber, final String message) {
+            if (phoneNumber == null || phoneNumber.trim().isEmpty()) return "missing_phone";
+            if (message == null || message.trim().isEmpty()) return "missing_message";
+            if (!hasSmsPermission()) {
+                requestSmsPermission();
+                return "permission_required";
+            }
+            try {
+                SmsManager.getDefault().sendTextMessage(phoneNumber.trim(), null, message.trim(), null, null);
+                SmsDeliverReceiver.enqueueIncomingSms(MainActivity.this, phoneNumber.trim(), message.trim(), System.currentTimeMillis());
+                return "sent";
+            } catch (Exception e) {
+                return "error:" + e.getMessage();
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public String getQueuedSms() {
+            String raw = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(SmsDeliverReceiver.QUEUE_KEY, "[]");
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString(SmsDeliverReceiver.QUEUE_KEY, "[]").apply();
+            try {
+                new JSONArray(raw);
+                return raw;
+            } catch (Exception e) {
+                return "[]";
+            }
+        }
+
         @android.webkit.JavascriptInterface
         public void updateWidget(final String verdict) {
             postOnUiThread(() -> {

@@ -182,6 +182,7 @@
   const SPIRAL_THRESHOLD = 5;
   const SPIRAL_WINDOW = 10 * 60 * 1000; // 10 min
   const SPIRAL_DURATION = 5 * 60 * 1000; // 5 min lock
+  const hasNativeAndroid = !!(window.Android && typeof window.Android.sendSms === 'function');
 
   // Elements
   const msgInput = document.getElementById('msgInput');
@@ -387,7 +388,7 @@
 
     html += '<div class="verdict-actions">';
     if (data.verdict === 'SEND') {
-      html += '<button class="verdict-btn verdict-btn--send" onclick="window._composeSendFinal()">📋 Copy & Send</button>';
+      html += '<button class="verdict-btn verdict-btn--send" onclick="window._composeSendFinal()">' + (hasNativeAndroid ? '📱 Send SMS' : '📋 Copy & Send') + '</button>';
     } else {
       html += '<button class="verdict-btn verdict-btn--send" onclick="window._composeSendFinal()">Send Anyway</button>';
       if (data.rewrite && data.rewrite !== 'send nothing tonight') {
@@ -542,23 +543,62 @@
     }
   }
 
+  function contactPhone(contact) {
+    if (!contact) return '';
+    return contact.phone_number || contact.phoneNumber || contact.phone || contact.mobile || '';
+  }
+
+  function askForPhoneIfNeeded() {
+    let phone = contactPhone(currentContact);
+    if (phone) return phone;
+    phone = prompt('Enter their phone number to send this SMS:');
+    if (!phone || !phone.trim()) return '';
+    if (currentContact) {
+      currentContact.phone_number = phone.trim();
+    }
+    return phone.trim();
+  }
+
+  function copyPendingMessageFallback() {
+    navigator.clipboard.writeText(pendingMessage).then(function() {
+      addSystemMsg('📋 Message copied. Paste it into your messaging app to send.');
+    }).catch(function() {
+      const ta = document.createElement('textarea');
+      ta.value = pendingMessage;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      addSystemMsg('📋 Message copied. Paste it into your messaging app to send.');
+    });
+  }
+
   // Global actions for verdict card buttons
   window._composeSendFinal = function() {
-    if (pendingMessage) {
-      // Copy to clipboard
-      navigator.clipboard.writeText(pendingMessage).then(function() {
-        addSystemMsg('📋 Message copied to clipboard. Paste it in your messaging app to send.<br><span style="font-size:.75rem;color:#9E948E;">Native SMS sending coming soon with the HoldOff app.</span>');
-      }).catch(function() {
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = pendingMessage;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        addSystemMsg('📋 Message copied. Paste it in your messaging app to send.');
-      });
+    if (!pendingMessage) return;
+
+    if (hasNativeAndroid) {
+      const phone = askForPhoneIfNeeded();
+      if (!phone) {
+        addSystemMsg('☎️ Add a phone number first, then HoldOff can send this as a real SMS.');
+        return;
+      }
+      const status = window.Android.sendSms(phone, pendingMessage);
+      if (status === 'sent') {
+        addSystemMsg('📱 SMS sent through HoldOff. Protected, then delivered.');
+        pendingMessage = '';
+        return;
+      }
+      if (status === 'permission_required') {
+        addSystemMsg('🔐 Android SMS permission requested. Tap send again after approving it.');
+        return;
+      }
+      addSystemMsg('⚠️ Native SMS send failed, so I copied it as a fallback.');
+      copyPendingMessageFallback();
+      return;
     }
+
+    copyPendingMessageFallback();
   };
 
   window._composeUseRewrite = function(rewrite) {
@@ -632,8 +672,24 @@
       }
     }).catch(function() {});
 
+  function importQueuedNativeSms() {
+    if (!window.Android || typeof window.Android.getQueuedSms !== 'function') return;
+    try {
+      const queued = JSON.parse(window.Android.getQueuedSms() || '[]');
+      queued.forEach(function(msg) {
+        if (msg.direction === 'incoming') {
+          addBubble((msg.from ? msg.from + ': ' : '') + msg.body, 'incoming');
+        } else {
+          addBubble(msg.body, 'outgoing');
+        }
+      });
+      if (queued.length) addSystemMsg('📬 Synced ' + queued.length + ' SMS message' + (queued.length === 1 ? '' : 's') + ' from this phone.');
+    } catch (e) {}
+  }
+
   // Init
   loadContacts();
+  importQueuedNativeSms();
   msgInput.focus();
 
   // Mental Health Disclaimer Modal — show on first visit
