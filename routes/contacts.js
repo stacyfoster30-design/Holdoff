@@ -19,12 +19,21 @@ const {
 router.get('/', requireAuth, async (req, res) => {
   try {
     const contacts = await getContacts(req.user.id);
-    // Enrich with latest analysis for each
+    // Enrich with latest analysis for each + normalize field names for frontend
     const enriched = await Promise.all(contacts.map(async c => {
       const analysis = await getLatestAnalysis(req.user.id, c.id).catch(() => null);
       const stats = await getMessageStats(req.user.id, c.id).catch(() => null);
       return {
         ...c,
+        // Normalize: frontend expects `name` and `phone`
+        name: c.display_name || c.name || 'Unknown',
+        phone: c.phone || c.phone_number || null,
+        // Inbox preview fields
+        lastMessage: c.last_message || null,
+        lastMessageTime: c.last_messaged_at || c.updated_at || c.created_at || null,
+        unread: c.unread_count || 0,
+        flag: c.flag || 'green',
+        // Analysis enrichment
         health_score: analysis?.health_score ?? null,
         attachment_style: analysis?.attachment_pattern ?? null,
         exit_warning: analysis?.exit_warning ?? false,
