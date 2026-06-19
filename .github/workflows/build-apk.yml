@@ -1,92 +1,65 @@
-name: Build HoldOff APK
+name: Build & Release APK
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      
-      - name: Install Java SDK
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build --if-present
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '17'
-      
-      - name: Install Android SDK
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      
-      - name: Install Cordova & Build Tools
+
+      - name: Decode Keystore
         run: |
-          npm install -g cordova@latest
-          echo "y" | sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
-      
-      - name: Create Cordova Project
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/holdoff-release.keystore
+
+      - name: Build Release APK
+        working-directory: android
+        env:
+          KEYSTORE_PATH: app/holdoff-release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          cordova create holdoff-app live.shouldiholdoff.app "HoldOff"
-          cd holdoff-app
-          cordova platform add android
-      
-      - name: Copy Web App to Cordova
-        run: |
-          cd holdoff-app
-          mkdir -p www/css www/js
-          cp -r ../public/css www/css/ || true
-          cp -r ../public/js www/js/ || true
-          cat > www/index.html << 'HTMLEOF'
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>HoldOff</title>
-            <style>
-              body { margin: 0; padding: 0; }
-            </style>
-            <script src="cordova.js"></script>
-          </head>
-          <body>
-            <script>
-              document.addEventListener('deviceready', function() {
-                window.location.href = 'https://shouldiholdoff.live/';
-              }, false);
-            </script>
-          </body>
-          </html>
-          HTMLEOF
-      
-      - name: Build APK
-        run: |
-          cd holdoff-app
-          cordova build android --release
-          find . -name "*.apk" -type f
-      
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: holdoff-apk
-          path: holdoff-app/platforms/android/app/build/outputs/apk/release/
-          if-no-files-found: warn
-      
+          name: holdoff-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v${{ github.run_number }}
-          name: "HoldOff Build ${{ github.run_number }}"
-          body: "HoldOff Android • https://shouldiholdoff.live"
-          files: holdoff-app/platforms/android/app/build/outputs/apk/release/*.apk
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: build-${{ github.run_number }}
+          name: HoldOff v1.0.0 Build ${{ github.run_number }}
+          files: android/app/build/outputs/apk/release/app-release.apk
+          generate_release_notes: true
