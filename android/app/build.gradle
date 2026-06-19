@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'live.shouldiholdoff.app'
+    namespace 'app.holdoff.main'
     compileSdk 34
 
     defaultConfig {
