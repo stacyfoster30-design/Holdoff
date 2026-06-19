@@ -320,6 +320,13 @@
             <span class="checkbox-sublabel">Attention, impulse, or executive function challenges</span>
           </div>
         </label>
+        <label class="checkbox-item">
+          <input type="checkbox" name="condition" value="attachment_styles">
+          <div class="checkbox-label">
+            Attachment Styles
+            <span class="checkbox-sublabel">Patterns in how you connect, trust, and respond in relationships</span>
+          </div>
+        </label>
       </div>
     </div>
 
@@ -419,7 +426,8 @@
 
       // Update button visibility
       document.getElementById('prevBtn').style.display = step === 1 ? 'none' : 'block';
-      document.getElementById('skipBtn').style.display = step === totalSteps ? 'none' : 'block';
+      // Step 1 (conditions) is required — no skipping; also hidden on final step
+      document.getElementById('skipBtn').style.display = (step === 1 || step === totalSteps) ? 'none' : 'block';
 
       if (step === totalSteps) {
         document.getElementById('nextBtn').textContent = 'Complete Setup';
@@ -479,6 +487,11 @@
         submitQuestionnaire();
       } else {
         collectData();
+        // Conditions are required at signup — block advancing from step 1 with none selected
+        if (currentStep === 1 && conditions.length === 0) {
+          alert('Please select at least one condition so HoldOff can tailor your insights. You can edit these anytime in Settings.');
+          return;
+        }
         currentStep++;
         showStep(currentStep);
       }

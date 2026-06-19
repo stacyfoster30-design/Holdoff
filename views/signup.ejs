@@ -393,8 +393,12 @@
           return;
         }
 
-        // Signup successful — redirect to dashboard
-        window.location.href = '/dashboard';
+        // Signup successful — store user id and send to required onboarding
+        try {
+          const newId = (data.user && data.user.id) || data.id;
+          if (newId) localStorage.setItem('user_id', newId);
+        } catch (e) {}
+        window.location.href = '/onboarding';
       } catch (error) {
         alert('Error during signup. Please try again.');
         console.error(error);
