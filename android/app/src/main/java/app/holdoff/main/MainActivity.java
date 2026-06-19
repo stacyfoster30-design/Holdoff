@@ -445,18 +445,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isAccessibilityServiceEnabled() {
-        ComponentName serviceComponent = new ComponentName(this, HoldOffAccessibilityService.class);
-        AccessibilityServiceInfo info = getServiceInfo();
-        if (info != null) {
-            return true;
-        }
-        // Also check via Settings.Secure
-        String enabledServices = Settings.Secure.getString(
-            getContentResolver(),
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        );
-        if (enabledServices != null) {
-            return enabledServices.contains(serviceComponent.flattenToString());
+        android.view.accessibility.AccessibilityManager am =
+            (android.view.accessibility.AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
+        java.util.List<AccessibilityServiceInfo> enabled =
+            am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+        for (AccessibilityServiceInfo svc : enabled) {
+            android.content.pm.ServiceInfo si = svc.getResolveInfo().serviceInfo;
+            if (si.packageName.equals(getPackageName()) &&
+                si.name.equals(HoldOffAccessibilityService.class.getName())) {
+                return true;
+            }
         }
         return false;
     }
