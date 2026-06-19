@@ -123,7 +123,7 @@ public class HoldOffAccessibilityService extends AccessibilityService {
         }
     }
 
-    private String getDeviceId() {
+    private String getHoldOffDeviceId() {
         return prefs.getString(KEY_DEVICE_ID, "unknown");
     }
 
@@ -434,7 +434,7 @@ public class HoldOffAccessibilityService extends AccessibilityService {
 
                 JSONObject body = new JSONObject();
                 body.put("event_type", eventType);
-                body.put("device_id", getDeviceId());
+                body.put("device_id", getHoldOffDeviceId());
 
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(body.toString().getBytes(StandardCharsets.UTF_8));
