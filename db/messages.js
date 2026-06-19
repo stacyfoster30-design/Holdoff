@@ -356,10 +356,10 @@ async function getContactInsights(contactId) {
  */
 async function addUserCondition(userId, condition) {
   const query = `
-    INSERT INTO user_conditions (user_id, condition)
+    INSERT INTO user_conditions (user_id, condition_name)
     VALUES ($1, $2)
-    ON CONFLICT (user_id, condition) DO NOTHING
-    RETURNING id, user_id, condition;
+    ON CONFLICT (user_id, condition_name) DO NOTHING
+    RETURNING id, user_id, condition_name;
   `;
   const result = await pool.query(query, [userId, condition]);
   return result.rows[0];
@@ -370,13 +370,13 @@ async function addUserCondition(userId, condition) {
  */
 async function getUserConditions(userId) {
   const query = `
-    SELECT id, user_id, condition
+    SELECT id, user_id, condition_name
     FROM user_conditions
     WHERE user_id = $1
     ORDER BY created_at ASC;
   `;
   const result = await pool.query(query, [userId]);
-  return result.rows.map(r => r.condition);
+  return result.rows.map(r => r.condition_name);
 }
 
 /**
@@ -385,7 +385,7 @@ async function getUserConditions(userId) {
 async function removeUserCondition(userId, condition) {
   const query = `
     DELETE FROM user_conditions
-    WHERE user_id = $1 AND condition = $2;
+    WHERE user_id = $1 AND condition_name = $2;
   `;
   await pool.query(query, [userId, condition]);
 }
@@ -490,9 +490,9 @@ async function initializeTables() {
       CREATE TABLE IF NOT EXISTS user_conditions (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
-        condition VARCHAR(50) NOT NULL, -- 'RSD', 'Anxiety', 'Depression', 'Addiction', 'Attachment_Styles'
+        condition_name VARCHAR(50) NOT NULL, -- 'RSD', 'Anxiety', 'Depression', 'Addiction', 'Attachment_Styles'
         created_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(user_id, condition)
+        UNIQUE(user_id, condition_name)
       );
       CREATE INDEX IF NOT EXISTS idx_user_conditions_user_id ON user_conditions(user_id);
     `);
