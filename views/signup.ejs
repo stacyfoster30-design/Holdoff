@@ -12,49 +12,59 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #1a0033 0%, #2d1b4e 50%, #0f1a2e 100%);
-      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a0033 0%, #2d1b4e 50%, #1a1a3e 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      overflow-x: hidden;
     }
 
     .container {
       width: 100%;
-      max-width: 700px;
-      background: rgba(20, 10, 40, 0.85);
-      border: 1px solid rgba(168, 85, 247, 0.3);
+      max-width: 480px;
+      background: rgba(20, 10, 40, 0.8);
+      border: 1px solid rgba(200, 150, 255, 0.2);
       border-radius: 12px;
       padding: 40px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    /* Choice Screen */
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo h1 {
+      color: #d4af9a;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .logo p {
+      color: rgba(200, 150, 255, 0.6);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    /* Choice Screen Styles */
     .choice-screen {
       text-align: center;
-      animation: fadeIn 0.6s ease-out;
     }
 
     .choice-screen h1 {
-      font-size: 2.2em;
-      margin-bottom: 15px;
-      background: linear-gradient(135deg, #a855f7, #6366f1);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+      color: #e8dcc8;
+      font-size: 24px;
+      margin-bottom: 12px;
     }
 
     .choice-screen p {
-      font-size: 1.05em;
-      color: #b8b8d8;
-      margin-bottom: 40px;
+      color: rgba(200, 150, 255, 0.7);
+      font-size: 14px;
+      margin-bottom: 30px;
       line-height: 1.5;
     }
 
@@ -65,1195 +75,329 @@
     }
 
     .choice-btn {
-      padding: 18px 24px;
-      font-size: 1em;
-      border: 2px solid rgba(168, 85, 247, 0.4);
-      background: rgba(168, 85, 247, 0.1);
-      color: #e0e0e0;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(100, 70, 150, 0.3) 0%, rgba(80, 50, 130, 0.3) 100%);
+      border: 1px solid rgba(200, 150, 255, 0.3);
       border-radius: 8px;
+      color: #e8dcc8;
       cursor: pointer;
       transition: all 0.3s ease;
-      font-weight: 500;
-      letter-spacing: 0.3px;
+      text-align: left;
+      font-size: 14px;
     }
 
     .choice-btn:hover {
-      background: rgba(168, 85, 247, 0.2);
-      border-color: rgba(168, 85, 247, 0.7);
+      background: linear-gradient(135deg, rgba(120, 80, 170, 0.4) 0%, rgba(100, 60, 150, 0.4) 100%);
+      border-color: rgba(200, 150, 255, 0.5);
+      box-shadow: 0 4px 16px rgba(139, 107, 183, 0.2);
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(168, 85, 247, 0.2);
     }
 
-    .choice-btn:active {
-      transform: translateY(0);
-    }
-
-    /* Story Screen */
-    .story-screen {
-      display: none;
-    }
-
-    .story-screen.active {
+    .choice-btn strong {
       display: block;
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    .story-header {
-      margin-bottom: 35px;
-    }
-
-    .story-title {
-      font-size: 1.4em;
-      margin-bottom: 8px;
-      color: #a855f7;
+      margin-bottom: 6px;
       font-weight: 600;
     }
 
-    .story-subtitle {
-      font-size: 0.9em;
-      color: #888;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .choice-btn span {
+      color: rgba(200, 150, 255, 0.6);
+      font-size: 0.85em;
     }
 
-    .story-subtitle .progress {
-      height: 4px;
-      background: rgba(168, 85, 247, 0.2);
-      border-radius: 2px;
-      width: 80px;
-      overflow: hidden;
-    }
-
-    .story-subtitle .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #a855f7, #6366f1);
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-
-    .story-scene {
-      margin-bottom: 30px;
-      padding: 20px;
-      background: rgba(168, 85, 247, 0.08);
-      border-left: 3px solid rgba(168, 85, 247, 0.4);
-      border-radius: 6px;
-      min-height: 100px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .story-text {
-      font-size: 1.05em;
-      line-height: 1.7;
-      color: #d0d0e0;
-      margin-bottom: 15px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      min-height: 40px;
-    }
-
-    .typing-effect {
-      border-right: 2px solid #a855f7;
-      animation: blink 0.7s infinite;
-    }
-
-    @keyframes blink {
-      0%, 49% { border-right-color: #a855f7; }
-      50%, 100% { border-right-color: transparent; }
-    }
-
-    .story-choices {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .story-choice-btn {
-      padding: 14px 16px;
-      font-size: 0.95em;
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      background: rgba(99, 102, 241, 0.1);
-      color: #c0c0d8;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      text-align: left;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    .story-choice-btn:hover {
-      background: rgba(99, 102, 241, 0.2);
-      border-color: rgba(99, 102, 241, 0.7);
-      transform: translateX(4px);
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
-    }
-
-    .story-choice-btn:active {
-      transform: translateX(2px);
-    }
-
-    /* Input Screens */
-    .input-screen {
-      display: none;
-    }
-
-    .input-screen.active {
-      display: block;
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    .input-screen h2 {
-      font-size: 1.6em;
-      margin-bottom: 12px;
-      color: #a855f7;
-    }
-
-    .input-screen p {
-      color: #b8b8d8;
-      margin-bottom: 25px;
-      font-size: 0.95em;
-    }
-
-    .input-group {
+    /* Signup Form Styles */
+    .form-group {
       margin-bottom: 20px;
     }
 
-    .input-group label {
+    label {
       display: block;
-      font-size: 0.9em;
-      color: #a8a8c8;
-      margin-bottom: 8px;
-      font-weight: 500;
+      color: rgba(200, 150, 255, 0.8);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
     }
 
-    .input-group input,
-    .input-group select {
+    input {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid rgba(168, 85, 247, 0.3);
-      background: rgba(30, 20, 50, 0.9);
-      color: #e0e0e0;
+      background: rgba(60, 40, 100, 0.4);
+      border: 1px solid rgba(200, 150, 255, 0.3);
       border-radius: 6px;
-      font-size: 0.95em;
-      transition: all 0.2s ease;
-      font-family: inherit;
+      color: #e8dcc8;
+      font-size: 14px;
+      transition: all 0.3s ease;
     }
 
-    .input-group input:focus,
-    .input-group select:focus {
+    input:focus {
       outline: none;
-      border-color: rgba(168, 85, 247, 0.7);
-      background: rgba(30, 20, 50, 1);
-      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+      background: rgba(60, 40, 100, 0.6);
+      border-color: rgba(200, 150, 255, 0.6);
+      box-shadow: 0 0 12px rgba(200, 150, 255, 0.2);
     }
 
-    /* Preferences Screen */
-    .preferences-screen {
-      display: none;
+    input::placeholder {
+      color: rgba(200, 150, 255, 0.3);
     }
 
-    .preferences-screen.active {
-      display: block;
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    .preferences-screen h2 {
-      font-size: 1.4em;
-      margin-bottom: 20px;
-      color: #a855f7;
-    }
-
-    .pref-section {
-      margin-bottom: 30px;
-    }
-
-    .pref-label {
-      font-size: 0.9em;
-      color: #a8a8c8;
-      margin-bottom: 12px;
-      display: block;
-      font-weight: 500;
-    }
-
-    .checkbox-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border: 1px solid rgba(99, 102, 241, 0.2);
-      border-radius: 4px;
-      background: rgba(99, 102, 241, 0.05);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .checkbox-item:hover {
-      background: rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.4);
-    }
-
-    .checkbox-item input[type="checkbox"] {
-      cursor: pointer;
-      accent-color: #a855f7;
-    }
-
-    .checkbox-item label {
-      cursor: pointer;
-      font-size: 0.9em;
-      margin: 0;
-      flex: 1;
-    }
-
-    /* Recap Screen */
-    .recap-screen {
-      display: none;
-    }
-
-    .recap-screen.active {
-      display: block;
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    .recap-screen h2 {
-      font-size: 1.4em;
-      margin-bottom: 25px;
-      color: #a855f7;
-    }
-
-    .recap-item {
-      padding: 15px;
-      background: rgba(99, 102, 241, 0.08);
-      border-left: 3px solid rgba(99, 102, 241, 0.4);
-      margin-bottom: 12px;
-      border-radius: 4px;
-    }
-
-    .recap-item-label {
-      font-size: 0.8em;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-
-    .recap-item-value {
-      font-size: 1em;
-      color: #e0e0e0;
-      font-weight: 500;
-    }
-
-    /* Signup Form */
-    .signup-form {
-      display: none;
-    }
-
-    .signup-form.active {
-      display: block;
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    .signup-form h2 {
-      font-size: 1.4em;
-      margin-bottom: 20px;
-      color: #a855f7;
-    }
-
-    .form-group {
-      margin-bottom: 18px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.85em;
-      color: #a8a8c8;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 11px 13px;
-      border: 1px solid rgba(168, 85, 247, 0.3);
-      background: rgba(30, 20, 50, 0.9);
-      color: #e0e0e0;
-      border-radius: 6px;
-      font-size: 0.9em;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: rgba(168, 85, 247, 0.7);
-      background: rgba(30, 20, 50, 1);
-      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
-    }
-
-    /* Buttons */
     .button-group {
       display: flex;
-      gap: 12px;
-      margin-top: 28px;
+      gap: 10px;
+      margin-top: 20px;
     }
 
-    .btn {
+    .button-group button {
       flex: 1;
-      padding: 13px 20px;
-      font-size: 0.95em;
+      padding: 12px;
       border: none;
       border-radius: 6px;
-      cursor: pointer;
+      font-size: 14px;
       font-weight: 600;
+      cursor: pointer;
       transition: all 0.3s ease;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #a855f7, #6366f1);
+      background: linear-gradient(135deg, #8b6bb7 0%, #6b4fa8 100%);
       color: white;
-      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
     }
 
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
+      background: linear-gradient(135deg, #9b7bc7 0%, #7b5fb8 100%);
+      box-shadow: 0 4px 16px rgba(139, 107, 183, 0.4);
     }
 
     .btn-secondary {
-      background: rgba(99, 102, 241, 0.15);
-      color: #b0b0d0;
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      background: rgba(60, 40, 100, 0.4);
+      color: #d4af9a;
+      border: 1px solid rgba(200, 150, 255, 0.3);
     }
 
     .btn-secondary:hover {
-      background: rgba(99, 102, 241, 0.25);
-      border-color: rgba(99, 102, 241, 0.6);
+      background: rgba(60, 40, 100, 0.6);
+      border-color: rgba(200, 150, 255, 0.5);
     }
 
-    .btn-back {
-      padding: 10px 14px;
-      font-size: 0.85em;
-      background: transparent;
-      color: #888;
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #8b6bb7 0%, #6b4fa8 100%);
+      color: white;
       border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      transition: color 0.2s ease;
-      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      margin-top: 10px;
     }
 
-    .btn-back:hover {
-      color: #a8a8c8;
+    .submit-btn:hover {
+      background: linear-gradient(135deg, #9b7bc7 0%, #7b5fb8 100%);
+      box-shadow: 0 4px 16px rgba(139, 107, 183, 0.4);
     }
 
-    /* Animations */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .submit-btn:active {
+      transform: scale(0.98);
     }
 
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: rgba(200, 150, 255, 0.6);
     }
 
-    .scene-enter {
-      animation: slideIn 0.5s ease-out;
+    .login-link a {
+      color: #d4af9a;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
     }
 
-    /* Responsive */
-    @media (max-width: 600px) {
-      .container {
-        padding: 25px;
-      }
-
-      .choice-screen h1 {
-        font-size: 1.8em;
-      }
-
-      .checkbox-group {
-        grid-template-columns: 1fr;
-      }
-
-      .button-group {
-        flex-direction: column;
-      }
+    .login-link a:hover {
+      color: #e8dcc8;
     }
 
-    /* Loading state */
-    .loading {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #a855f7;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 1; }
-    }
-
-    .error-msg {
+    .error {
       color: #ff6b6b;
-      font-size: 0.85em;
-      margin-top: 6px;
+      font-size: 12px;
+      margin-top: 5px;
       display: none;
     }
 
-    .error-msg.show {
+    .error.show {
       display: block;
+    }
+
+    .subtext {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(200, 150, 255, 0.5);
+      margin-top: 20px;
+      line-height: 1.5;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      color: #d4af9a;
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 20px;
+      padding: 0;
+      transition: color 0.3s ease;
+    }
+
+    .btn-back:hover {
+      color: #e8dcc8;
+    }
+
+    /* Hidden by default */
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="logo">
+      <h1>HoldOff</h1>
+      <p>Pause. Understand. Respond Better.</p>
+    </div>
+
     <!-- Choice Screen -->
-    <div class="choice-screen active">
+    <div class="choice-screen" id="choiceScreen">
       <h1>What's Your Story?</h1>
       <p>HoldOff starts with understanding your spiral. Choose your path:</p>
       <div class="choice-buttons">
-        <button class="choice-btn" onclick="startStacyStory()">
-          <strong>Experience Stacy's Story</strong><br>
-          <span style="font-size: 0.85em; color: #888;">Walk through a real moment of realization with custom names</span>
+        <button class="choice-btn" onclick="goToStory()">
+          <strong>Experience Stacy's Story</strong>
+          <span>Walk through a real moment of realization with custom names</span>
         </button>
-        <button class="choice-btn" onclick="startCustomStory()">
-          <strong>Build Your Own Story</strong><br>
-          <span style="font-size: 0.85em; color: #888;">Answer questions to create your unique narrative</span>
+        <button class="choice-btn" onclick="goToSignup()">
+          <strong>Create Account</strong>
+          <span>Sign up to access full features and save your insights</span>
         </button>
-      </div>
-    </div>
-
-    <!-- Character Name Input (Stacy Story) -->
-    <div class="input-screen" id="nameInputScreen">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <h2>Let's Make This Personal</h2>
-      <p>What should we call you in this story?</p>
-      <div class="input-group">
-        <label for="yourName">Your Name</label>
-        <input type="text" id="yourName" placeholder="e.g., Alex" maxlength="30">
-      </div>
-      <p style="margin-top: 25px; margin-bottom: 15px;">And who is this story about?</p>
-      <div class="input-group">
-        <label for="theirName">Their Name (Person of Interest)</label>
-        <input type="text" id="theirName" placeholder="e.g., Jordan" maxlength="30">
-      </div>
-      <div class="button-group">
-        <button class="btn btn-secondary" onclick="goBack()">Back</button>
-        <button class="btn btn-primary" onclick="startStacyNarrative()">Continue</button>
-      </div>
-    </div>
-
-    <!-- Stacy's Story Narrative -->
-    <div class="story-screen" id="stacyStory">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <div class="story-header">
-        <div class="story-title" id="sceneTitle">Scene 1: The Spiral Begins</div>
-        <div class="story-subtitle">
-          <span id="sceneProgress">1 / 7</span>
-          <div class="progress">
-            <div class="progress-bar" id="progressBar" style="width: 14%;"></div>
-          </div>
-        </div>
-      </div>
-      <div class="story-scene">
-        <div class="story-text" id="storyText"></div>
-      </div>
-      <div class="story-choices" id="storyChoices"></div>
-    </div>
-
-    <!-- Custom Story Questions -->
-    <div class="input-screen" id="customStoryScreen">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <h2>Your Story</h2>
-      <div class="input-group">
-        <label for="customName">Your Name</label>
-        <input type="text" id="customName" placeholder="e.g., Alex" maxlength="30">
-      </div>
-      <div class="input-group">
-        <label for="customTheirName">Person You're Spiraling About</label>
-        <input type="text" id="customTheirName" placeholder="e.g., Jordan" maxlength="30">
-      </div>
-      <div class="input-group">
-        <label for="customRelationship">What's Your Relationship?</label>
-        <select id="customRelationship">
-          <option value="">Select...</option>
-          <option value="romantic">Romantic Partner</option>
-          <option value="friend">Friend</option>
-          <option value="family">Family Member</option>
-          <option value="crush">Crush/Someone I Like</option>
-          <option value="colleague">Colleague/Work</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <label for="customSpiral">What makes you spiral about them?</label>
-        <input type="text" id="customSpiral" placeholder="e.g., They don't text back, they seem distant..." maxlength="100">
-      </div>
-      <div class="button-group">
-        <button class="btn btn-secondary" onclick="goBack()">Back</button>
-        <button class="btn btn-primary" onclick="buildCustomNarrative()">Build My Story</button>
-      </div>
-    </div>
-
-    <!-- Custom Story Narrative -->
-    <div class="story-screen" id="customStoryNarrative">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <div class="story-header">
-        <div class="story-title" id="customSceneTitle">Your Moment</div>
-        <div class="story-subtitle">
-          <span id="customSceneProgress">1 / 5</span>
-          <div class="progress">
-            <div class="progress-bar" id="customProgressBar" style="width: 20%;"></div>
-          </div>
-        </div>
-      </div>
-      <div class="story-scene">
-        <div class="story-text" id="customStoryText"></div>
-      </div>
-      <div class="story-choices" id="customStoryChoices"></div>
-    </div>
-
-    <!-- Preferences Screen -->
-    <div class="preferences-screen" id="preferencesScreen">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <h2>How You Want to Feel</h2>
-      
-      <div class="pref-section">
-        <label class="pref-label">How should HoldOff talk to you?</label>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="radio" name="tone" value="direct" id="tone-direct">
-            <label for="tone-direct">Direct & Clinical</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="tone" value="warm" id="tone-warm" checked>
-            <label for="tone-warm">Warm & Supportive</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="tone" value="poetic" id="tone-poetic">
-            <label for="tone-poetic">Poetic & Thoughtful</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="tone" value="brief" id="tone-brief">
-            <label for="tone-brief">Brief & Matter-of-Fact</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="pref-section">
-        <label class="pref-label">What language style fits you?</label>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="radio" name="language" value="casual" id="lang-casual" checked>
-            <label for="lang-casual">Casual & Conversational</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="language" value="formal" id="lang-formal">
-            <label for="lang-formal">Formal & Professional</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="language" value="lyrical" id="lang-lyrical">
-            <label for="lang-lyrical">Lyrical & Metaphorical</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="language" value="analytical" id="lang-analytical">
-            <label for="lang-analytical">Analytical & Data-Driven</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="pref-section">
-        <label class="pref-label">What are you tracking? (select all that apply)</label>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="rsd" id="cond-rsd">
-            <label for="cond-rsd">RSD (Rejection Sensitivity)</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="anxiety" id="cond-anxiety">
-            <label for="cond-anxiety">Anxiety</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="depression" id="cond-depression">
-            <label for="cond-depression">Depression</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="adhd" id="cond-adhd">
-            <label for="cond-adhd">ADHD</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="addiction" id="cond-addiction">
-            <label for="cond-addiction">Addiction Patterns</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="attachment" id="cond-attachment">
-            <label for="cond-attachment">Attachment Styles</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="autism" id="cond-autism">
-            <label for="cond-autism">Autism</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" name="condition" value="other" id="cond-other">
-            <label for="cond-other">Other</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="pref-section">
-        <label class="pref-label">How deep should AI analysis go?</label>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="radio" name="depth" value="surface" id="depth-surface">
-            <label for="depth-surface">Surface Observations</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="depth" value="moderate" id="depth-moderate" checked>
-            <label for="depth-moderate">Pattern Recognition</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="radio" name="depth" value="deep" id="depth-deep">
-            <label for="depth-deep">Deep Psychological</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="button-group">
-        <button class="btn btn-secondary" onclick="goBack()">Back</button>
-        <button class="btn btn-primary" onclick="goToRecap()">Continue</button>
-      </div>
-    </div>
-
-    <!-- Recap Screen -->
-    <div class="recap-screen" id="recapScreen">
-      <button class="btn-back" onclick="goBack()">← Back</button>
-      <h2>Your HoldOff Profile</h2>
-      <div class="recap-item">
-        <div class="recap-item-label">Your Name</div>
-        <div class="recap-item-value" id="recapYourName">—</div>
-      </div>
-      <div class="recap-item">
-        <div class="recap-item-label">Person of Interest</div>
-        <div class="recap-item-value" id="recapTheirName">—</div>
-      </div>
-      <div class="recap-item">
-        <div class="recap-item-label">How We'll Talk</div>
-        <div class="recap-item-value" id="recapTone">—</div>
-      </div>
-      <div class="recap-item">
-        <div class="recap-item-label">Language Style</div>
-        <div class="recap-item-value" id="recapLanguage">—</div>
-      </div>
-      <div class="recap-item">
-        <div class="recap-item-label">What You're Tracking</div>
-        <div class="recap-item-value" id="recapConditions">—</div>
-      </div>
-      <div class="recap-item">
-        <div class="recap-item-label">Analysis Depth</div>
-        <div class="recap-item-value" id="recapDepth">—</div>
-      </div>
-      <div class="button-group">
-        <button class="btn btn-secondary" onclick="goBack()">Change Preferences</button>
-        <button class="btn btn-primary" onclick="goToSignup()">Create Account</button>
       </div>
     </div>
 
     <!-- Signup Form -->
-    <form class="signup-form" id="signupForm" onsubmit="handleSignup(event)">
-      <button type="button" class="btn-back" onclick="goBack()">← Back</button>
-      <h2>Create Your Account</h2>
+    <form id="signupForm" class="hidden">
+      <button type="button" class="btn-back" onclick="backToChoice()">← Back</button>
+
       <div class="form-group">
-        <label for="signupEmail">Email</label>
-        <input type="email" id="signupEmail" required placeholder="your@email.com">
-        <div class="error-msg" id="emailError"></div>
+        <label for="name">Your Name</label>
+        <input type="text" id="name" name="name" placeholder="What should we call you?" required>
+        <div class="error" id="nameError"></div>
       </div>
+
       <div class="form-group">
-        <label for="signupPassword">Password</label>
-        <input type="password" id="signupPassword" required placeholder="••••••••" minlength="6">
-        <div class="error-msg" id="passwordError"></div>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="your@email.com" required>
+        <div class="error" id="emailError"></div>
       </div>
+
       <div class="form-group">
-        <label for="signupConfirm">Confirm Password</label>
-        <input type="password" id="signupConfirm" required placeholder="••••••••" minlength="6">
-        <div class="error-msg" id="confirmError"></div>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+        <div class="error" id="passwordError"></div>
       </div>
-      <div class="button-group">
-        <button type="button" class="btn btn-secondary" onclick="goBack()">Back</button>
-        <button type="submit" class="btn btn-primary" id="signupBtn">Create Account</button>
+
+      <button type="submit" class="submit-btn">Create Account</button>
+
+      <div class="login-link">
+        Already have an account? <a href="/login">Sign In</a>
       </div>
-      <div class="error-msg" id="submitError"></div>
     </form>
+
+    <div class="subtext hidden" id="subtextForm">
+      By signing up, you agree to our Terms of Service and Privacy Policy.
+      <br><br>
+      <strong>New subscribers unlock the full story experience.</strong>
+    </div>
   </div>
 
   <script>
-    // State management
-    const state = {
-      storyType: null, // 'stacy' or 'custom'
-      yourName: '',
-      theirName: '',
-      customRelationship: '',
-      customSpiral: '',
-      tone: 'warm',
-      language: 'casual',
-      conditions: [],
-      depth: 'moderate',
-      currentScene: 0,
-      choices: []
-    };
-
-    const stacyScenes = [
-      {
-        title: "Scene 1: The Realization",
-        text: `It's 3 AM. [You]'re reading through old messages again.
-
-[Their Name] hasn't texted back in 6 hours. It's probably nothing. But your brain is already building the story:
-
-Maybe they're upset. Maybe they never actually liked you. Maybe they're busy with someone else. Maybe you said something wrong last week and they're finally done with your spiraling about everything.
-
-You can feel it in your chest—that tight, heavy thing that always comes first. Before the panic. Before the spiral.
-
-You know what this is. You've felt it a thousand times. But knowing doesn't make it stop.`,
-        choices: [
-          { text: "Reach out to [Their Name]", next: 1, branch: 'reach' },
-          { text: "Tell yourself to wait and see", next: 1, branch: 'wait' }
-        ]
-      },
-      {
-        title: "Scene 2: The Pattern",
-        text: `You've done this before. Many times.
-
-Each time, you swear you won't do it again. Each time, you mean it. But then 2 hours pass without a text, and suddenly your entire self-worth is tied to whether [Their Name] responded.
-
-[You] never used to be like this. You had friends, hobbies, a life. But somewhere along the way, checking your phone became a compulsion. Refreshing became a ritual. And the panic when there's nothing there became... familiar.
-
-You realize: this isn't about [Their Name] anymore. This is about you.`,
-        choices: [
-          { text: "Face that realization fully", next: 2, branch: 'face' },
-          { text: "Distract yourself instead", next: 2, branch: 'distract' }
-        ]
-      },
-      {
-        title: "Scene 3: The Honesty",
-        text: `Here's the truth [You] hasn't said out loud:
-
-You're spiraling. Constantly. Over [Their Name]. Over everyone. Over imagined conversations and potential rejections and the way they looked at someone else across the room.
-
-And it's exhausting. Not just for you—but for the people around you. How many times have you canceled plans to obsess over a text? How many times have you made [Their Name] the center of your entire emotional universe?
-
-[Their Name] probably doesn't even know how hard they've become to love—because of you.`,
-        choices: [
-          { text: "That's the moment it hits different", next: 3, branch: 'moment' },
-          { text: "Maybe I'm overthinking this", next: 3, branch: 'overthinking' }
-        ]
-      },
-      {
-        title: "Scene 4: The Shift",
-        text: `What if you could see the pattern?
-
-Not the message patterns. The *behavioral* patterns. The automatic spirals. The triggers. The moments when your brain hijacks your body and sends you down the familiar spiral again.
-
-What if you could name it? Pause it? Understand it—not to fix it, but to make space between you and the spiral itself?
-
-What if you could tell [Their Name]: "I'm spiraling right now, and it's not your fault. This is my pattern. I'm working on it."
-
-That would change everything.`,
-        choices: [
-          { text: "I want to try that", next: 4, branch: 'try' },
-          { text: "But I don't know how to do that", next: 4, branch: 'uncertain' }
-        ]
-      },
-      {
-        title: "Scene 5: The Tool",
-        text: `That's what HoldOff is.
-
-Not therapy. Not a solution. But a pause button. A mirror. A way to hold your patterns up to the light and see them clearly—without judgment.
-
-You log a conversation with [Their Name]. HoldOff looks at it and says: "I see the spiral. You're stuck in RSD. Your brain interpreted their silence as rejection. Here's what's actually happening."
-
-And suddenly, you can breathe again. Not because the feeling goes away, but because you're not drowning in it alone.
-
-You're not broken. You're just spiraling. And spirals can be tracked. Understood. Managed.`,
-        choices: [
-          { text: "Let me try this", next: 5, branch: 'try' },
-          { text: "But will it actually help?", next: 5, branch: 'doubt' }
-        ]
-      },
-      {
-        title: "Scene 6: The Choice",
-        text: `[You] looks at the clock. Still 3 AM. [Their Name] still hasn't texted.
-
-But something is different now. You're not spiraling about the message anymore. You're thinking about the spiral itself. You're curious about it instead of consumed by it.
-
-Maybe tomorrow morning you'll tell [Their Name] the truth: "I was spiraling about your silence. It wasn't about you. I'm learning to see that now."
-
-Maybe they'll understand. Maybe they won't. But either way, you'll know what's happening inside you.
-
-That's different. That's power you didn't have before.`,
-        choices: [
-          { text: "I'm ready to start", next: 6, branch: 'start' }
-        ]
-      },
-      {
-        title: "Scene 7: The Beginning",
-        text: `Welcome, [You].
-
-This is the beginning. Not of a fix. Not of a cure. But of understanding.
-
-Every spiral you track. Every pattern you see. Every moment you pause instead of react—that's you becoming aware of the spiral instead of being the spiral.
-
-[Their Name] doesn't have to be the center of your emotional universe. But your awareness of why you made them that? That's something powerful.
-
-Let's build it together.`,
-        choices: [
-          { text: "Let's go", next: 7, branch: 'done' }
-        ]
-      }
-    ];
-
-    function typewriterEffect(element, text, speed = 30) {
-      return new Promise(resolve => {
-        element.textContent = '';
-        let index = 0;
-        const timer = setInterval(() => {
-          if (index < text.length) {
-            element.textContent += text[index];
-            index++;
-          } else {
-            clearInterval(timer);
-            element.classList.remove('typing-effect');
-            resolve();
-          }
-        }, speed);
-      });
-    }
-
-    function interpolateNames(text) {
-      return text
-        .replace(/\[You\]/g, state.yourName || 'You')
-        .replace(/\[Their Name\]/g, state.theirName || 'them');
-    }
-
-    function showScreen(screenId) {
-      document.querySelectorAll('[class*="-screen"]').forEach(s => s.classList.remove('active'));
-      const screen = document.getElementById(screenId);
-      if (screen) screen.classList.add('active');
-      window.scrollTo(0, 0);
-    }
-
-    function goBack() {
-      history.back();
-    }
-
-    function startStacyStory() {
-      state.storyType = 'stacy';
-      showScreen('nameInputScreen');
-    }
-
-    function startCustomStory() {
-      state.storyType = 'custom';
-      showScreen('customStoryScreen');
-    }
-
-    function startStacyNarrative() {
-      const yourName = document.getElementById('yourName').value.trim();
-      const theirName = document.getElementById('theirName').value.trim();
-      
-      if (!yourName || !theirName) {
-        alert('Please fill in both names');
-        return;
-      }
-
-      state.yourName = yourName;
-      state.theirName = theirName;
-      state.currentScene = 0;
-      state.choices = [];
-
-      displayStacyScene();
-    }
-
-    function displayStacyScene() {
-      showScreen('stacyStory');
-      const scene = stacyScenes[state.currentScene];
-      if (!scene) {
-        goToPreferences();
-        return;
-      }
-
-      document.getElementById('sceneTitle').textContent = scene.title;
-      document.getElementById('sceneProgress').textContent = `${state.currentScene + 1} / ${stacyScenes.length}`;
-      document.getElementById('progressBar').style.width = `${((state.currentScene + 1) / stacyScenes.length) * 100}%`;
-
-      const storyText = document.getElementById('storyText');
-      const interpolated = interpolateNames(scene.text);
-      typewriterEffect(storyText, interpolated, 20).then(() => {
-        const choicesDiv = document.getElementById('storyChoices');
-        choicesDiv.innerHTML = '';
-        scene.choices.forEach(choice => {
-          const btn = document.createElement('button');
-          btn.className = 'story-choice-btn';
-          btn.textContent = interpolateNames(choice.text);
-          btn.onclick = () => {
-            state.currentScene = choice.next;
-            state.choices.push(choice.branch);
-            displayStacyScene();
-          };
-          choicesDiv.appendChild(btn);
-        });
-      });
-    }
-
-    function buildCustomNarrative() {
-      const customName = document.getElementById('customName').value.trim();
-      const customTheirName = document.getElementById('customTheirName').value.trim();
-      const customRelationship = document.getElementById('customRelationship').value;
-      const customSpiral = document.getElementById('customSpiral').value.trim();
-
-      if (!customName || !customTheirName || !customRelationship || !customSpiral) {
-        alert('Please fill in all fields');
-        return;
-      }
-
-      state.yourName = customName;
-      state.theirName = customTheirName;
-      state.customRelationship = customRelationship;
-      state.customSpiral = customSpiral;
-      state.currentScene = 0;
-
-      displayCustomScene();
-    }
-
-    function displayCustomScene() {
-      showScreen('customStoryNarrative');
-
-      const customScenes = [
-        {
-          title: "Your Moment",
-          text: `${state.yourName} is thinking about ${state.theirName} again.
-
-The feeling starts in your chest: that tight knot of uncertainty. ${state.theirName} ${state.customSpiral}.
-
-This is the moment it always starts. Your heart rate picks up. Your phone feels heavy in your hand. Your brain is already building stories about what it means.
-
-You know this feeling. You've felt it many times with ${state.theirName}. But each time feels new. Each time feels like it might be the end.`
-        },
-        {
-          title: "The Pattern",
-          text: `You realize: this isn't the first time.
-
-This ${state.customRelationship === 'romantic' ? 'romantic' : state.customRelationship} with ${state.theirName} has become the center of your whole emotional world.
-
-Every silence is a rejection. Every delayed response is a sign. Every moment they don't text is evidence of something you did wrong.
-
-And you're exhausted. They're probably exhausted too.`
-        },
-        {
-          title: "The Awareness",
-          text: `What if you could see the spiral clearly?
-
-What if instead of being trapped inside the spiral, you could step back and watch it happen? Name it. Understand it. See that it's your pattern—not proof of anything real.
-
-What if you could tell ${state.theirName}: "I'm spiraling right now. This isn't about you. I'm learning to recognize when I do this."
-
-That would change everything.`
-        },
-        {
-          title: "The Tool",
-          text: `HoldOff is that shift.
-
-You don't have to fix yourself. You don't have to stop loving ${state.theirName} or stop caring. But you can learn to see the spiral before it drowns you.
-
-You can track it. Understand it. Pause it. Maybe even laugh at it eventually.
-
-You're not broken. You're just spiraling. And that's something you can work with.`
-        },
-        {
-          title: "Your Beginning",
-          text: `This is where it starts, ${state.yourName}.
-
-Not when everything gets better. But when you start seeing clearly.
-
-Every spiral you notice. Every pattern you track. That's you becoming the observer instead of the victim.
-
-${state.theirName} might understand. They might not. But you will.
-
-Let's build that awareness together.`
-        }
-      ];
-
-      const scene = customScenes[state.currentScene];
-      if (!scene) {
-        goToPreferences();
-        return;
-      }
-
-      document.getElementById('customSceneTitle').textContent = scene.title;
-      document.getElementById('customSceneProgress').textContent = `${state.currentScene + 1} / ${customScenes.length}`;
-      document.getElementById('customProgressBar').style.width = `${((state.currentScene + 1) / customScenes.length) * 100}%`;
-
-      const storyText = document.getElementById('customStoryText');
-      typewriterEffect(storyText, scene.text, 20).then(() => {
-        const choicesDiv = document.getElementById('customStoryChoices');
-        choicesDiv.innerHTML = '';
-
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'story-choice-btn';
-        
-        if (state.currentScene < customScenes.length - 1) {
-          nextBtn.textContent = '→ Continue';
-          nextBtn.onclick = () => {
-            state.currentScene++;
-            displayCustomScene();
-          };
-        } else {
-          nextBtn.textContent = '→ Set My Preferences';
-          nextBtn.onclick = () => goToPreferences();
-        }
-        
-        choicesDiv.appendChild(nextBtn);
-      });
-    }
-
-    function goToPreferences() {
-      showScreen('preferencesScreen');
-    }
-
-    function goToRecap() {
-      // Validate at least one condition is selected
-      const checkedConditions = document.querySelectorAll('input[name="condition"]:checked');
-      if (checkedConditions.length === 0) {
-        alert('Please select at least one thing you\'re tracking');
-        return;
-      }
-
-      state.tone = document.querySelector('input[name="tone"]:checked').value;
-      state.language = document.querySelector('input[name="language"]:checked').value;
-      state.depth = document.querySelector('input[name="depth"]:checked').value;
-      state.conditions = Array.from(checkedConditions).map(el => el.value);
-
-      // Populate recap
-      document.getElementById('recapYourName').textContent = state.yourName;
-      document.getElementById('recapTheirName').textContent = state.theirName;
-      document.getElementById('recapTone').textContent = state.tone.charAt(0).toUpperCase() + state.tone.slice(1);
-      document.getElementById('recapLanguage').textContent = state.language.charAt(0).toUpperCase() + state.language.slice(1);
-      document.getElementById('recapConditions').textContent = state.conditions.join(', ');
-      document.getElementById('recapDepth').textContent = state.depth.charAt(0).toUpperCase() + state.depth.slice(1);
-
-      showScreen('recapScreen');
+    function goToStory() {
+      window.location.href = '/story';
     }
 
     function goToSignup() {
-      showScreen('signupForm');
-      document.getElementById('signupForm').reset();
+      document.getElementById('choiceScreen').classList.add('hidden');
+      document.getElementById('signupForm').classList.remove('hidden');
+      document.getElementById('subtextForm').classList.remove('hidden');
     }
 
-    function handleSignup(event) {
-      event.preventDefault();
+    function backToChoice() {
+      document.getElementById('choiceScreen').classList.remove('hidden');
+      document.getElementById('signupForm').classList.add('hidden');
+      document.getElementById('subtextForm').classList.add('hidden');
+    }
 
-      const email = document.getElementById('signupEmail').value.trim();
-      const password = document.getElementById('signupPassword').value;
-      const confirm = document.getElementById('signupConfirm').value;
+    const form = document.getElementById('signupForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
 
       // Clear errors
+      document.getElementById('nameError').classList.remove('show');
       document.getElementById('emailError').classList.remove('show');
       document.getElementById('passwordError').classList.remove('show');
-      document.getElementById('confirmError').classList.remove('show');
-      document.getElementById('submitError').classList.remove('show');
 
-      // Validate
       let hasError = false;
 
-      if (!email || !email.includes('@')) {
-        document.getElementById('emailError').textContent = 'Valid email required';
+      if (!name) {
+        document.getElementById('nameError').textContent = 'Name is required';
+        document.getElementById('nameError').classList.add('show');
+        hasError = true;
+      }
+
+      if (!email) {
+        document.getElementById('emailError').textContent = 'Email is required';
+        document.getElementById('emailError').classList.add('show');
+        hasError = true;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('emailError').textContent = 'Invalid email format';
         document.getElementById('emailError').classList.add('show');
         hasError = true;
       }
 
-      if (password.length < 6) {
-        document.getElementById('passwordError').textContent = 'Password must be at least 6 characters';
+      if (!password || password.length < 8) {
+        document.getElementById('passwordError').textContent = 'Password must be at least 8 characters';
         document.getElementById('passwordError').classList.add('show');
-        hasError = true;
-      }
-
-      if (password !== confirm) {
-        document.getElementById('confirmError').textContent = 'Passwords do not match';
-        document.getElementById('confirmError').classList.add('show');
         hasError = true;
       }
 
       if (hasError) return;
 
-      // Submit
-      const btn = document.getElementById('signupBtn');
-      btn.disabled = true;
-      btn.textContent = 'Creating Account...';
-
-      fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          yourName: state.yourName,
-          theirName: state.theirName,
-          tone: state.tone,
-          language: state.language,
-          conditions: state.conditions,
-          depth: state.depth
-        })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            window.location.href = '/inbox';
-          } else {
-            document.getElementById('submitError').textContent = data.error || 'Signup failed';
-            document.getElementById('submitError').classList.add('show');
-            btn.disabled = false;
-            btn.textContent = 'Create Account';
-          }
-        })
-        .catch(err => {
-          document.getElementById('submitError').textContent = 'Network error. Try again.';
-          document.getElementById('submitError').classList.add('show');
-          btn.disabled = false;
-          btn.textContent = 'Create Account';
+      try {
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
         });
-    }
 
-    // Browser back button handling
-    window.addEventListener('popstate', () => {
-      const choiceScreen = document.querySelector('.choice-screen.active');
-      if (choiceScreen) {
-        window.location.href = '/';
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (data.field === 'email') {
+            document.getElementById('emailError').textContent = data.message || 'Email already in use';
+            document.getElementById('emailError').classList.add('show');
+          } else {
+            alert(data.message || 'Signup failed');
+          }
+          return;
+        }
+
+        // Signup successful — redirect to dashboard
+        window.location.href = '/dashboard';
+      } catch (error) {
+        alert('Error during signup. Please try again.');
+        console.error(error);
       }
     });
   </script>
