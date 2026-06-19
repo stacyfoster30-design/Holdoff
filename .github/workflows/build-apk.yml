@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -62,4 +65,7 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: HoldOff v1.0.0 Build ${{ github.run_number }}
           files: android/app/build/outputs/apk/release/app-release.apk
-          generate_release_notes: true
+          generate_release_notes: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
