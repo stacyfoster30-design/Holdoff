@@ -56,6 +56,70 @@ async function runMigrations() {
 
     console.log('[migrations] user_conditions table created/verified');
 
+    // Ensure user_contacts table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_contacts (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        phone_number VARCHAR(20),
+        is_favorited BOOLEAN DEFAULT false,
+        last_messaged_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, phone_number)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_user_contacts_user_id 
+        ON user_contacts(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_contacts_phone 
+        ON user_contacts(phone_number);
+    `);
+
+    console.log('[migrations] user_contacts table created/verified');
+
+    // Ensure message_threads table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS message_threads (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        contact_id INT REFERENCES user_contacts(id) ON DELETE SET NULL,
+        contact_phone VARCHAR(20),
+        last_message_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_message_threads_user_id 
+        ON message_threads(user_id);
+      CREATE INDEX IF NOT EXISTS idx_message_threads_contact_id 
+        ON message_threads(contact_id);
+      CREATE INDEX IF NOT EXISTS idx_message_threads_last_message 
+        ON message_threads(last_message_at DESC);
+    `);
+
+    console.log('[migrations] message_threads table created/verified');
+
+    // Ensure messages table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        thread_id INT NOT NULL REFERENCES message_threads(id) ON DELETE CASCADE,
+        sender_type VARCHAR(20) NOT NULL,
+        body TEXT,
+        external_id VARCHAR(255),
+        timestamp TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_messages_thread_id 
+        ON messages(thread_id);
+      CREATE INDEX IF NOT EXISTS idx_messages_timestamp 
+        ON messages(timestamp DESC);
+    `);
+
+    console.log('[migrations] messages table created/verified');
+
     console.log('[migrations] All migrations completed successfully');
   } catch (err) {
     console.error('[migrations] Fatal error:', err.message);
