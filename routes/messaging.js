@@ -6,15 +6,9 @@ const router = express.Router();
 const { requireAuth } = require('../lib/auth');
 const msgDb = require('../db/messages');
 
-router.get('/threads', requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const threads = await msgDb.getThreadsByUser(userId) || [];
-    res.json({ threads });
-  } catch (err) {
-    console.error('[API] GET /threads error:', err.message);
-    res.status(500).json({ error: 'Failed to load threads', details: err.message });
-  }
+router.get('/threads', (req, res) => {
+  console.log('[DEBUG] /api/messaging/threads hit');
+  res.json({ threads: [{ id: 'test', contact_name: 'Test Contact' }] });
 });
 
 module.exports = router;
