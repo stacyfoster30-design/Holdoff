@@ -176,7 +176,7 @@ app.get('/robots.txt', (_req, res) => {
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
 app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
-app.get('/app', (_req, res) => res.redirect(302, '/inbox'));
+app.get("/inbox", (req, res) => { console.log("Serving inbox.ejs"); res.render("inbox"); });;
 app.get('/notifications', async (_req, res) => {
   res.render('notifications', { user: null });
 });
@@ -250,7 +250,7 @@ app.get('/referrals', async (req, res) => {
 
 
 // Inbox — messaging hub (replaces old dashboard as home screen)
-app.get('/inbox', async (req, res) => {
+app.get("/inbox", (req, res) => { console.log("Serving inbox.ejs"); res.render("inbox"); }); => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/inbox');
   res.render('inbox', { user });
