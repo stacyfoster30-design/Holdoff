@@ -87,11 +87,13 @@ router.delete('/contacts/:contactId', requireAuth, async (req, res) => {
 router.get('/threads', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('[API] GET /threads for user', userId);
     const threads = await msgDb.getThreadsByUser(userId);
-    res.json({ threads });
+    console.log('[API] GET /threads success, returning', threads?.length || 0, 'threads');
+    res.json({ threads: threads || [] });
   } catch (err) {
-    console.error('[API] GET /threads error:', err.message);
-    res.status(500).json({ error: 'Failed to load threads' });
+    console.error('[API] GET /threads error:', err.message, err.code, err.stack?.split('\n')[1]);
+    res.status(500).json({ error: 'Failed to load threads', details: err.message });
   }
 });
 
