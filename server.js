@@ -577,6 +577,10 @@ app.get('/signup', async (req, res) => {
   res.render('signup', buildLandingContext({ user: null }));
 });
 
+app.get('/signin', async (req, res) => {
+  return res.redirect('/login');
+});
+
 app.get('/dashboard', async (req, res) => {
   // Redirect to new inbox home screen
   return res.redirect('/inbox');
