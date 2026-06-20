@@ -106,9 +106,13 @@
 
     .pricing-cards {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 2rem;
       margin-bottom: 4rem;
+    }
+
+    @media (max-width: 1400px) {
+      .pricing-cards { grid-template-columns: 1fr 1fr 1fr; }
     }
 
     @media (max-width: 1024px) {
@@ -315,16 +319,16 @@
   <section class="pricing-container">
     <div class="pricing-intro">
       <h2>Choose Your Commitment</h2>
-      <p>Every plan gives you the same core tools: message analysis, AI verdicts, and pattern insights. The only difference is access to archive history and personalized coaching.</p>
+      <p>Every plan includes message analysis and AI verdicts. The difference is archive depth, coaching level, and support. Or lock in Lifetime and never think about it again.</p>
     </div>
 
     <div class="pricing-cards">
-      <!-- FREE PLAN -->
+      <!-- FREE TRIAL PLAN -->
       <div class="pricing-card">
         <div class="plan-name">Trial</div>
         <div class="plan-desc">Test the pause. See if it helps.</div>
         <div class="price">Free</div>
-        <div class="price-period">Forever</div>
+        <div class="price-period">7 days</div>
         <ul class="plan-features">
           <li>Unlimited message analysis</li>
           <li>AI Verdict feedback</li>
@@ -335,32 +339,50 @@
         <button class="plan-cta secondary" onclick="window.location.href='https://shouldiholdoff.live/signup'">Start Free</button>
       </div>
 
-      <!-- PLUS PLAN (POPULAR) -->
-      <div class="pricing-card popular">
-        <div class="badge">Most Popular</div>
-        <div class="plan-name">Plus</div>
-        <div class="plan-desc">The real commitment to yourself.</div>
-        <div class="price">$5</div>
+      <!-- BASIC PLAN -->
+      <div class="pricing-card">
+        <div class="plan-name">Basic</div>
+        <div class="plan-desc">Essential features at a fair price.</div>
+        <div class="price">$9.99</div>
         <div class="price-period">per month</div>
         <ul class="plan-features">
           <li>Everything in Trial</li>
-          <li>90-day message archive</li>
+          <li>30-day message archive</li>
           <li>Pattern insights & trends</li>
-          <li>AI coaching responses</li>
+          <li>Basic AI coaching</li>
           <li>Priority support</li>
           <li>Ad-free experience</li>
         </ul>
-        <button class="plan-cta" onclick="handlePricingCTA()">Get Started</button>
+        <button class="plan-cta secondary" onclick="handlePricingCTA()">Choose Basic</button>
+      </div>
+
+      <!-- PREMIUM PLAN (POPULAR) - EARLY ADOPTER -->
+      <div class="pricing-card popular">
+        <div class="badge">Early Adopter</div>
+        <div class="plan-name">Premium</div>
+        <div class="plan-desc">The real commitment to yourself.</div>
+        <div class="price">$4.99</div>
+        <div class="price-period">per month <span style="font-size: 12px; color: #cbd5e1;">for 6 months</span></div>
+        <div style="font-size: 12px; color: #10b981; margin-bottom: 1.5rem;"><strong>First 50 users only.</strong> Then $14.99/month.</div>
+        <ul class="plan-features">
+          <li>Everything in Basic</li>
+          <li>90-day message archive</li>
+          <li>Advanced pattern insights</li>
+          <li>AI coaching responses</li>
+          <li>VIP support</li>
+          <li>Custom profiles</li>
+        </ul>
+        <button class="plan-cta" onclick="handlePricingCTA()">Get Early Adopter</button>
       </div>
 
       <!-- LIFETIME PLAN -->
       <div class="pricing-card">
         <div class="plan-name">Lifetime</div>
         <div class="plan-desc">One-time investment, forever freedom.</div>
-        <div class="price">$49</div>
+        <div class="price">$199</div>
         <div class="price-period">one time</div>
         <ul class="plan-features">
-          <li>Everything in Plus</li>
+          <li>Everything in Premium</li>
           <li>Unlimited message archive</li>
           <li>Advanced AI coaching</li>
           <li>Custom condition profiles</li>
@@ -400,6 +422,11 @@
       <h3>What's included in "AI Coaching"?</h3>
       <p>Beyond the Verdict (safe/risky), Plus and Lifetime plans get personalized coaching: why you want to send this, what pattern this triggers, and what respecting yourself looks like right now.</p>
     </div>
+
+    <div class="faq-item">
+      <h3>What happens after the early adopter offer?</h3>
+      <p>If you join during the early adopter period, you'll lock in $4.99/month for 6 months. After that, your price updates to $14.99/month. The $4.99 offer applies to the first 50 paid users only. If you want to lock in Lifetime ($199 one-time) instead, you can upgrade anytime and only pay the difference.</p>
+    </div>
   </section>
 
   <!-- DISCLAIMER -->
@@ -413,7 +440,10 @@
     <p>
       <a href="/privacy">Privacy</a> &nbsp;|&nbsp;
       <a href="/terms">Terms</a> &nbsp;|&nbsp;
-      <a href="https://shouldiholdoff.live/contact">Contact</a>
+      <a href="https://shouldiholdoff.live/contact">Contact</a> &nbsp;|&nbsp;
+      <a href="https://shouldiholdoff.live/affiliate">Affiliate Program</a> &nbsp;|&nbsp;
+      <a href="https://shouldiholdoff.live/partnerships">Partnership Application</a> &nbsp;|&nbsp;
+      <a href="https://shouldiholdoff.live/suggest">Suggest a Feature</a>
     </p>
   </footer>
 

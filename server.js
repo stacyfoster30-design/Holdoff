@@ -552,6 +552,72 @@ app.get('/account', async (req, res) => {
   res.render('account', { user });
 });
 
+// Affiliate program page
+app.get('/affiliate', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliate', { user: user || null });
+});
+
+// Affiliate application submission
+app.post('/api/affiliate-apply', async (req, res) => {
+  try {
+    const { name, email, phone, platform, followers, about } = req.body;
+    if (!name || !email || !platform || !followers || !about) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    // TODO: Save to database or send email to partnerships team
+    console.log('[affiliate-apply]', { name, email, phone, platform, followers, about });
+    res.json({ ok: true, message: 'Application submitted successfully' });
+  } catch (err) {
+    console.error('[affiliate-apply] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong' });
+  }
+});
+
+// Partnerships application page
+app.get('/partnerships', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('partnerships', { user: user || null });
+});
+
+// Partnerships application submission
+app.post('/api/partnership-apply', async (req, res) => {
+  try {
+    const { name, email, phone, organization, type, details, website } = req.body;
+    if (!name || !email || !organization || !type || !details) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    // TODO: Save to database or send email to partnerships team
+    console.log('[partnership-apply]', { name, email, phone, organization, type, details, website });
+    res.json({ ok: true, message: 'Application submitted successfully' });
+  } catch (err) {
+    console.error('[partnership-apply] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong' });
+  }
+});
+
+// Feature suggestion box
+app.get('/suggest', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('suggest', { user: user || null });
+});
+
+// Feature suggestion submission
+app.post('/api/suggestion', async (req, res) => {
+  try {
+    const { type, title, description, impact, followup, email } = req.body;
+    if (!type || !title || !description || !impact) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    // TODO: Save to database or send email to product team
+    console.log('[suggestion]', { type, title, description, impact, followup, email });
+    res.json({ ok: true, message: 'Suggestion submitted successfully' });
+  } catch (err) {
+    console.error('[suggestion] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong' });
+  }
+});
+
 // Legal pages
 app.get('/privacy', (_req, res) => res.render('privacy'));
 app.get('/terms', (_req, res) => res.render('terms'));
