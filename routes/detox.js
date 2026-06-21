@@ -45,6 +45,30 @@ router.post('/signup', async (req, res) => {
   }
 });
 
+// POST /api/detox/subscribe — alias for /signup used by SEO static pages
+router.post('/subscribe', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email is required' });
+  }
+  try {
+    const row = await addDetoxSubscriber(email);
+    if (!row) return res.json({ ok: true, already_subscribed: true });
+    (async () => {
+      try {
+        const { subject, html, text } = day0({ email: row.email });
+        await sendEmail({ to: row.email, subject, html, text });
+      } catch (err) {
+        console.error(`[detox] subscribe day0 FAILED for ${row.email}: ${err.message}`);
+      }
+    })();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[detox] subscribe error:', err.message);
+    return res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+
 // GET /api/detox/unsubscribe — one-click unsubscribe from drip emails
 router.get('/unsubscribe', async (req, res) => {
   const { email } = req.query || {};

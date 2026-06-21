@@ -31,7 +31,7 @@ router.get('/', optionalAuth, (req, res) => {
  * Save the final quiz result to the database.
  * Requires authentication.
  */
-router.post('/api/quiz/save-result', requireAuth, async (req, res) => {
+router.post('/save-result', requireAuth, async (req, res) => {
   try {
     const { primaryStyle, secondaryStyle, scores, answerData } = req.body;
 
@@ -60,7 +60,7 @@ router.post('/api/quiz/save-result', requireAuth, async (req, res) => {
 /**
  * Get the saved quiz result for the logged-in user.
  */
-router.get('/api/quiz/result', requireAuth, async (req, res) => {
+router.get('/result', requireAuth, async (req, res) => {
   try {
     const result = await getQuizResult(req.user.id);
     if (!result) {
@@ -84,7 +84,7 @@ router.get('/api/quiz/result', requireAuth, async (req, res) => {
  * Save a single quiz answer. Called after each question.
  * Returns 200 with current cumulative scores.
  */
-router.post('/api/quiz/answer', requireAuth, async (req, res) => {
+router.post('/answer', requireAuth, async (req, res) => {
   try {
     const { question_number, selected_option } = req.body || {};
 
@@ -115,7 +115,7 @@ router.post('/api/quiz/answer', requireAuth, async (req, res) => {
  * Finalize the quiz: compute attachment profile, write to user_attachment_profiles.
  * Returns 200 with dominant_style, secondary_style, and raw profile scores.
  */
-router.post('/api/quiz/submit', requireAuth, async (req, res) => {
+router.post('/submit', requireAuth, async (req, res) => {
   try {
     const { answers } = req.body || {};
 
@@ -162,7 +162,7 @@ router.post('/api/quiz/submit', requireAuth, async (req, res) => {
 /**
  * Return the current user's attachment profile.
  */
-router.get('/api/quiz/profile', requireAuth, async (req, res) => {
+router.get('/profile', requireAuth, async (req, res) => {
   try {
     const profile = await getAttachmentProfile(req.user.id);
 
@@ -196,7 +196,7 @@ router.get('/api/quiz/profile', requireAuth, async (req, res) => {
 /**
  * Reset the quiz (for retake). Clears profile and responses.
  */
-router.delete('/api/quiz/reset', requireAuth, async (req, res) => {
+router.delete('/reset', requireAuth, async (req, res) => {
   try {
     await clearAttachmentProfile(req.user.id);
     res.json({ success: true });
@@ -210,7 +210,7 @@ router.delete('/api/quiz/reset', requireAuth, async (req, res) => {
  * Save mid-quiz progress to localStorage (client-side) and optionally to DB.
  * For logged-in users, also persists to the DB for later resume.
  */
-router.post('/api/quiz/progress', requireAuth, async (req, res) => {
+router.post('/progress', requireAuth, async (req, res) => {
   try {
     const { answerData } = req.body;
     // Persist mid-quiz state — save without marking completed_at

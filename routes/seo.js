@@ -27,6 +27,7 @@ const seoFiles = {
   '/why-does-he-take-hours-to-text-back': 'why-does-he-take-hours-to-text-back.html',
   '/left-on-read-anxiety': 'left-on-read-anxiety.html',
   '/avoidant-shutdown': 'avoidant-shutdown.html',
+  '/patterns/avoidant-shutdown': 'avoidant-shutdown.html',
   '/patterns/avoidant-deactivation': 'avoidant-deactivation.html',
 };
 
