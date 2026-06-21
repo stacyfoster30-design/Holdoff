@@ -1,62 +1,70 @@
 /**
- * Password reset email — HoldOff transactional email.
- * Calm, reassuring tone for anxious-attachment users.
- */
-const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
-
-/**
- * Build a password reset email.
- * @param {Object} opts
- * @param {string} opts.email   — recipient email
- * @param {string} opts.token  — raw reset token (64-char hex)
- * @param {string} [opts.name] — recipient first name
- * @returns {{ subject: string, text: string, html: string }}
+ * Reset password email builder.
  */
 function buildResetPasswordEmail({ email, token, name }) {
-  const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
-  const greeting = name ? `Hi ${name}` : 'Hi there';
+  const resetUrl = `https://shouldiholdoff.live/reset-password?token=${encodeURIComponent(token)}`;
+  
+  const subject = 'Reset Your HoldOff Password';
 
-  const html = `
-<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;color:#2A2522;line-height:1.7;">
-  <h2 style="font-size:1.5rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:1rem;">
-    Reset your HoldOff password
-  </h2>
-  <p style="margin-bottom:1rem;">${greeting},</p>
-  <p style="margin-bottom:1.5rem;">
-    You asked to reset your HoldOff password. Click the button below — it expires in 1 hour
-    and can only be used once.
-  </p>
-  <p style="margin-bottom:1.5rem;">
-    <a href="${resetUrl}"
-       style="display:inline-block;background:#C97B5D;color:#fff;padding:0.75rem 1.5rem;
-              text-decoration:none;border-radius:4px;font-weight:600;">
-      Reset my password →
-    </a>
-  </p>
-  <p style="color:#8A7F79;font-size:0.875rem;margin-bottom:1.5rem;">
-    If you didn't request this, you can ignore this email — your account is safe.
-    This link will expire in 1 hour.
-  </p>
-  <hr style="border:none;border-top:1px solid #E5DED4;margin:1.5rem 0;" />
-  <p style="font-size:0.75rem;color:#8A7F79;">
-    Don't send it yet. — HoldOff
-  </p>
-</div>`;
+  const text = `
+Hello${name ? ' ' + name : ''},
 
-  const text = `${greeting},
+We received a request to reset the password for your HoldOff account.
 
-Reset your HoldOff password:
+Click the link below to reset your password. This link expires in 1 hour.
+
 ${resetUrl}
 
-This link expires in 1 hour. If you didn't request this, ignore this email — your account is safe.
+If you didn't request a password reset, you can safely ignore this email.
 
-Don't send it yet. — HoldOff`;
+Respect yourself,
+The HoldOff Team
+  `.trim();
 
-  return {
-    subject: 'Reset your HoldOff password',
-    text,
-    html,
-  };
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #d946a6 0%, #a946d9 100%); color: white; padding: 40px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f8f4ff; padding: 40px; border-radius: 0 0 8px 8px; }
+    .button { display: inline-block; background: #d946a6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin: 20px 0; font-weight: 600; }
+    .footer { text-align: center; padding: 20px; color: #888; font-size: 12px; }
+    .warning { background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px; margin: 20px 0; border-radius: 4px; }
+    .timer { color: #d946a6; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0;">💜 Reset Your Password</h1>
+    </div>
+    <div class="content">
+      <p>Hello${name ? ' <strong>' + name + '</strong>' : ''},</p>
+      <p>We received a request to reset the password for your HoldOff account.</p>
+      <p style="margin: 30px 0;">Click the button below to reset your password:</p>
+      <p style="text-align: center;">
+        <a href="${resetUrl}" class="button">Reset My Password</a>
+      </p>
+      <p style="color: #888; font-size: 13px; text-align: center;">Or copy this link in your browser:<br><span style="word-break: break-all;">${resetUrl}</span></p>
+      <div class="warning">
+        <strong>⏱ This link expires in <span class="timer">1 hour</span>.</strong><br>
+        If you don't use it by then, you'll need to request a new password reset.
+      </div>
+      <p style="margin-top: 30px;">If you didn't request a password reset, you can safely ignore this email. Your account is secure.</p>
+    </div>
+    <div class="footer">
+      <p>&copy; HoldOff. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  return { subject, text, html };
 }
 
 module.exports = { buildResetPasswordEmail };

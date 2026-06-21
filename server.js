@@ -316,6 +316,20 @@ app.get('/login', async (req, res) => {
   res.render('login', buildLandingContext({ user: null }));
 });
 
+// Forgot password page
+app.get('/forgot-password', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('forgot-password', { user: null });
+});
+
+// Reset password page
+app.get('/reset-password', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('reset-password', { user: null });
+});
+
 app.get('/signup', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (user) return res.redirect('/inbox');
