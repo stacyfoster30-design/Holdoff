@@ -10,14 +10,14 @@
 }
 
 :root {
-  --bg: #FAF6F0;
-  --fg: #2A2522;
-  --accent: #C97B5D;
-  --accent-warm: #E8A87C;
-  --accent-deep: #9B4F32;
-  --muted: #8A7F79;
-  --border: #E5DED4;
-  --surface: #F2EDE5;
+  --bg: #0d0a1a;
+  --fg: #e8e4f0;
+  --accent: #7c5cbf;
+  --accent-warm: #5b8def;
+  --accent-deep: #6948b0;
+  --muted: #9b8fb8;
+  --border: #2d2450;
+  --surface: #1a1432;
 
   --font-display: 'Fraunces', Georgia, serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
@@ -1116,7 +1116,7 @@ em {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(42, 37, 34, 0.6);
+  background: rgba(13, 10, 26, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
@@ -1127,20 +1127,20 @@ em {
 }
 
 .contact-modal__card {
-  background: #FAF6F0;
+  background: var(--surface);
   border-radius: 12px;
   padding: 2.5rem;
   position: relative;
   max-width: 420px;
   width: 92%;
-  box-shadow: 0 8px 32px rgba(42, 37, 34, 0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 .contact-modal__title {
   font-family: 'Fraunces', Georgia, serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2A2522;
+  color: var(--fg);
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
 }
@@ -1152,7 +1152,7 @@ em {
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #8A7F79;
+  color: var(--muted);
   cursor: pointer;
   line-height: 1;
   padding: 0.25rem;
@@ -1160,7 +1160,7 @@ em {
 }
 
 .contact-modal__close:hover {
-  color: #2A2522;
+  color: var(--fg);
 }
 
 .contact-modal__field {
@@ -1171,7 +1171,7 @@ em {
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #8A7F79;
+  color: var(--muted);
   margin-bottom: 0.4rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1181,12 +1181,12 @@ em {
 .contact-modal__textarea {
   width: 100%;
   padding: 0.7rem 0.9rem;
-  border: 1.5px solid #E5DED4;
+  border: 1.5px solid var(--border);
   border-radius: 6px;
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.95rem;
-  color: #2A2522;
-  background: #fff;
+  color: var(--fg);
+  background: var(--bg);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -1194,7 +1194,7 @@ em {
 
 .contact-modal__input:focus,
 .contact-modal__textarea:focus {
-  border-color: #C97B5D;
+  border-color: var(--accent);
 }
 
 .contact-modal__textarea {
@@ -1205,7 +1205,7 @@ em {
 .contact-modal__submit {
   width: 100%;
   padding: 0.75rem;
-  background: #C97B5D;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -1218,7 +1218,7 @@ em {
 }
 
 .contact-modal__submit:hover {
-  background: #9B4F32;
+  background: var(--accent-deep);
 }
 
 .contact-modal__submit:disabled {
