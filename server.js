@@ -27,6 +27,7 @@ const googleAuthHandler = require(path.join(__dirname, 'routes', 'google-auth'))
 const checkoutRouter = require(path.join(__dirname, 'routes', 'checkout'));
 const messagingRouter = require(path.join(__dirname, 'routes', 'messaging'));
 const contactsRouter = require(path.join(__dirname, 'routes', 'contacts'));
+const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
 
 // Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
 if (process.env.BLAST_TRIGGER === '1') {
@@ -139,6 +140,28 @@ app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter'
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
 app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 
+// Previously-missing API route modules — added to match routes/index.js intent.
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
+// stripe-webhook defines POST /stripe-webhook internally; mount at /api so the
+// full URL becomes /api/stripe-webhook matching the rawBody capture above.
+app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+// meta: registers POST /api/signup (Meta Pixel Lead event proxy)
+app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
+
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
 if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
   app.use(Sentry.Handlers.errorHandler());
@@ -182,7 +205,6 @@ app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
 app.get('/notifications', async (_req, res) => {
   res.render('notifications', { user: null });
 });
-app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
 app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
 app.get('/questionnaire', (_req, res) => res.sendFile(path.join(__dirname, 'conditions-questionnaire.html')));
 app.get('/onboarding', (_req, res) => res.render('onboarding'));
@@ -579,8 +601,11 @@ app.post('/api/affiliate-apply', async (req, res) => {
     if (!name || !email || !platform || !followers || !about) {
       return res.status(400).json({ ok: false, error: 'Missing required fields' });
     }
-    // TODO: Save to database or send email to partnerships team
-    console.log('[affiliate-apply]', { name, email, phone, platform, followers, about });
+    const adminEmail = process.env.ADMIN_EMAIL || 'holdoff@shouldiholdoff.live';
+    const subject = `New affiliate application: ${name}`;
+    const text = `New affiliate application\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || '—'}\nPlatform: ${platform}\nFollowers: ${followers}\n\nAbout audience:\n${about}`;
+    const html = `<div style="font-family:Georgia,serif;max-width:520px;color:#2A2522;line-height:1.7;"><h2>New affiliate application</h2><table><tr><td><b>Name</b></td><td>${name}</td></tr><tr><td><b>Email</b></td><td>${email}</td></tr><tr><td><b>Phone</b></td><td>${phone || '—'}</td></tr><tr><td><b>Platform</b></td><td>${platform}</td></tr><tr><td><b>Followers</b></td><td>${followers}</td></tr></table><p><b>About audience:</b><br>${about}</p></div>`;
+    await sendEmail({ to: adminEmail, subject, text, html, replyTo: email });
     res.json({ ok: true, message: 'Application submitted successfully' });
   } catch (err) {
     console.error('[affiliate-apply] error:', err.message);
@@ -601,8 +626,11 @@ app.post('/api/partnership-apply', async (req, res) => {
     if (!name || !email || !organization || !type || !details) {
       return res.status(400).json({ ok: false, error: 'Missing required fields' });
     }
-    // TODO: Save to database or send email to partnerships team
-    console.log('[partnership-apply]', { name, email, phone, organization, type, details, website });
+    const adminEmail = process.env.ADMIN_EMAIL || 'holdoff@shouldiholdoff.live';
+    const subject = `New partnership application: ${organization}`;
+    const text = `New partnership application\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || '—'}\nOrganization: ${organization}\nType: ${type}\nWebsite: ${website || '—'}\n\nDetails:\n${details}`;
+    const html = `<div style="font-family:Georgia,serif;max-width:520px;color:#2A2522;line-height:1.7;"><h2>New partnership application</h2><table><tr><td><b>Name</b></td><td>${name}</td></tr><tr><td><b>Email</b></td><td>${email}</td></tr><tr><td><b>Phone</b></td><td>${phone || '—'}</td></tr><tr><td><b>Organization</b></td><td>${organization}</td></tr><tr><td><b>Type</b></td><td>${type}</td></tr><tr><td><b>Website</b></td><td>${website || '—'}</td></tr></table><p><b>Details:</b><br>${details}</p></div>`;
+    await sendEmail({ to: adminEmail, subject, text, html, replyTo: email });
     res.json({ ok: true, message: 'Application submitted successfully' });
   } catch (err) {
     console.error('[partnership-apply] error:', err.message);
@@ -623,8 +651,12 @@ app.post('/api/suggestion', async (req, res) => {
     if (!type || !title || !description || !impact) {
       return res.status(400).json({ ok: false, error: 'Missing required fields' });
     }
-    // TODO: Save to database or send email to product team
-    console.log('[suggestion]', { type, title, description, impact, followup, email });
+    const adminEmail = process.env.ADMIN_EMAIL || 'holdoff@shouldiholdoff.live';
+    const subject = `Feature suggestion [${type}]: ${title}`;
+    const text = `Feature suggestion\n\nType: ${type}\nTitle: ${title}\nImpact: ${impact}\nFrom: ${email || 'anonymous'}\n\nDescription:\n${description}`;
+    const html = `<div style="font-family:Georgia,serif;max-width:520px;color:#2A2522;line-height:1.7;"><h2>Feature suggestion</h2><table><tr><td><b>Type</b></td><td>${type}</td></tr><tr><td><b>Title</b></td><td>${title}</td></tr><tr><td><b>Impact</b></td><td>${impact}</td></tr><tr><td><b>From</b></td><td>${email || 'anonymous'}</td></tr></table><p><b>Description:</b><br>${description}</p></div>`;
+    const replyTo = email || undefined;
+    await sendEmail({ to: adminEmail, subject, text, html, replyTo });
     res.json({ ok: true, message: 'Suggestion submitted successfully' });
   } catch (err) {
     console.error('[suggestion] error:', err.message);
