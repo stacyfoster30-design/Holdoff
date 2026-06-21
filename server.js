@@ -28,6 +28,13 @@ const checkoutRouter = require(path.join(__dirname, 'routes', 'checkout'));
 const messagingRouter = require(path.join(__dirname, 'routes', 'messaging'));
 const contactsRouter = require(path.join(__dirname, 'routes', 'contacts'));
 
+// Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
+if (process.env.BLAST_TRIGGER === '1') {
+  require(path.join(__dirname, 'jobs', 'blast-on-start'))().catch(err => {
+    console.error('[blast] Fatal error:', err.message);
+  });
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -37,8 +44,15 @@ app.use((_req, res, next) => {
   res.locals.googleClientId = process.env.GOOGLE_CLIENT_ID || '251734222269-l5fn6rbfcmtmm161q3g7e7k840lavf3f.apps.googleusercontent.com';
   next();
 });
-
+// Sentry request handler — guarded for @sentry/node v8+ which removed Handlers API.
+// WHY guard: newer Sentry SDK drops Handlers.requestHandler(); graceful fallback prevents crash.
+if (Sentry.Handlers && typeof Sentry.Handlers.requestHandler === 'function') {
+  app.use(Sentry.Handlers.requestHandler());
+}
 // Capture raw body for Stripe webhook signature verification.
+// WHY verify callback: the old approach used a router.use() in stripe-webhook.js that
+// called req.on('end', next) — but express.json() had already consumed the stream,
+// so the 'end' event never re-fired and next() was never called, blocking ALL routes.
 app.use(express.json({
   verify: (req, _res, buf) => {
     if (req.originalUrl === '/api/stripe-webhook') {
@@ -48,12 +62,14 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware safety net for /api/filter/analyze
+// Middleware safety net for /api/filter/analyze — guarantees a response within 16s.
+// WHY: the handler has a 14s hard timeout; this fires 2s later as a last-ditch fallback.
 app.use('/api/filter', (req, res, next) => {
   const t0 = Date.now();
   console.log(`[mw] ${req.method} ${req.path} started`);
 
   if (req.method === 'POST' && req.path === '/analyze') {
+    // 16s safety net — handler should respond by 14s; this is the absolute backstop.
     const safetyTimer = setTimeout(() => {
       if (!res.headersSent) {
         console.log(`[mw] SAFETY TIMEOUT at ${Date.now() - t0}ms — returning static HOLD`);
@@ -81,7 +97,7 @@ app.use('/api/filter', (req, res, next) => {
   next();
 });
 
-// Mount API routes
+// Mount API routes — all /api/auth/* routes are rate-limited
 app.use('/api/auth', rateLimit({
   windowMs: 60 * 1000,
   max: 100,
@@ -97,13 +113,18 @@ app.use('/api/verdict', rateLimit({
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 }));
 
-// Additional API endpoints
+// Additional API endpoints — MUST be before app.use('/api', routes) to take priority
+// GET /api/health — health check for monitoring dashboards
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+// POST /api/interpret → aliased /api/filter/interpret (same AI logic)
+const interpretHandler = require(path.join(__dirname, 'routes', 'interpret'));
+app.post('/api/interpret', interpretHandler);
+app.post('/api/auth/google', googleAuthHandler);
 
 // Mount SEO routes at root
 app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 
-// Main API router
+// Main API router — catches all /api/* not already matched above
 app.use('/api/auth', authRouter);
 app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
 app.use('/api/checkout', checkoutRouter);
@@ -116,12 +137,30 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 
-// EJS view engine
+// Sentry error handler — guarded for @sentry/node v8+ compatibility.
+if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
+// Catch-all 500 for unhandled errors caught by Sentry.
+app.use((err, req, res, _next) => {
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// EJS view engine — templates live in ./views/ (entry point: layout.ejs)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Redirect aliases
+
+// Legacy/root conversion route aliases — keep old public links from 404ing.
+// WHY: SEO/Site Health found root-level links like /waitlist, /contact, /verdict,
+// /interpret, /referral, and /share returning 404 while their API or canonical
+// equivalents exist elsewhere. These redirects preserve the funnel without
+// changing API behavior.
 app.get('/waitlist', (_req, res) => res.redirect(301, '/filter'));
 app.get('/contact', (_req, res) => res.redirect(301, '/#contact'));
 app.get('/interpret', (_req, res) => res.redirect(301, '/filter'));
@@ -129,8 +168,11 @@ app.get('/verdict', (_req, res) => res.redirect(301, '/filter'));
 app.get('/referral', (_req, res) => res.redirect(301, '/referrals'));
 app.get('/share', (_req, res) => res.redirect(301, '/filter'));
 app.get('/checkout', (_req, res) => res.redirect(301, '/filter#pricing'));
+app.post('/checkout', (req, res) => res.redirect(307, '/api/checkout/session'));
+app.post('/signup', (req, res) => res.redirect(307, '/api/auth/signup'));
+app.post('/login', (req, res) => res.redirect(307, '/api/auth/login'));
 
-// Health check
+// Health check (Render requirement — no DB query so Neon can auto-suspend)
 app.get('/robots.txt', (_req, res) => {
   res.setHeader('Content-Type', 'text/plain');
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
@@ -140,12 +182,16 @@ app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
 app.get('/notifications', async (_req, res) => {
   res.render('notifications', { user: null });
 });
+app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
+app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
+app.get('/questionnaire', (_req, res) => res.sendFile(path.join(__dirname, 'conditions-questionnaire.html')));
 app.get('/onboarding', (_req, res) => res.render('onboarding'));
 
-// Static files
+// Static files — `index: false` so `/` hits the EJS render below, not index.html
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// Serve APK directly
+// Serve APK directly — bypasses dynamic router dispatcher entirely.
+// Render's static CDN blocks .apk by default (403), so we serve it here.
 app.get('/android-app.apk', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'holdoff.apk'), {
     headers: {
@@ -173,7 +219,7 @@ async function getUserFromCookies(req) {
   };
 }
 
-// Landing page
+// Landing page — sets a 90-day affiliate attribution cookie when ?aff=<code> is present.
 app.get('/', async (req, res) => {
   const user = await getUserFromCookies(req);
   const affCode = req.query.aff;
@@ -183,7 +229,7 @@ app.get('/', async (req, res) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
   if (affCode && /^[a-z0-9-]{4,32}$/.test(affCode)) {
@@ -191,49 +237,154 @@ app.get('/', async (req, res) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 90 * 24 * 60 * 60 * 1000,
+      maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
     });
   }
   res.render('index', { user });
 });
 
-// Inbox
+// Referral dashboard — tiered rewards + progress tracker
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/filter');
+  res.render('referrals', { user });
+});
+
+
+// Inbox — messaging hub (replaces old dashboard as home screen)
 app.get('/inbox', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/inbox');
   res.render('inbox', { user });
 });
 
-// Contacts
-app.get('/contacts', async (req, res) => {
+// Pattern journal — requires authentication
+app.get('/journal', async (req, res) => {
   const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/contacts');
-  res.render('contacts', { user });
+  if (!user) return res.redirect('/filter');
+  res.render('journal', { user });
 });
 
-// Filter page
-app.get('/filter', async (req, res) => {
+// Verdict history — requires authentication
+app.get('/history', async (req, res) => {
   const user = await getUserFromCookies(req);
-  const refCode = req.query.ref;
-  if (refCode && /^[a-z0-9]{8,32}$/.test(refCode)) {
-    res.cookie('ref', refCode, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+// Chronicle tips — requires authentication
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
+});
+
+// Attachment style quiz — public, no auth required
+app.get('/quiz', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('quiz', { user: user || null });
+});
+
+// Interactive story experience — paid users only (animated version)
+app.get('/story', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/signup');
   }
-  res.render('filter', buildLandingContext({ user }));
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  res.render('story-animated', { user });
 });
 
-// Pricing page
+// Story preview — public for testing (remove before production)
+app.get('/story-preview', async (req, res) => {
+  res.render('story-animated', { user: null });
+});
+
+// Personalized story experience
+app.get('/story-experience', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/login?returnTo=/story-experience');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  res.render('story-experience', { user });
+});
+
+// AI Companion hub — paid users only (redirect to default character)
+app.get('/companion', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/signup');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  // Redirect to default Stacy companion
+  res.redirect('/companion/stacy');
+});
+
+// AI Companion chat — paid users only
+app.get('/companion/:characterName', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/signup');
+  }
+  // Check if user has active subscription
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
+    return res.redirect('/');
+  }
+  
+  const { characterName } = req.params;
+  const { getCharacterDefinition } = require(path.join(__dirname, 'lib', 'companion-ai'));
+  const character = getCharacterDefinition(characterName);
+  
+  if (!character) {
+    return res.status(404).render('404');
+  }
+  
+  // Build user context for the view
+  const userContext = {
+    name: user.name || 'friend',
+    conditions: user.mental_health_conditions || [],
+    preferences: user.preferences || {},
+  };
+  
+  res.render('companion', {
+    user,
+    character,
+    userContext,
+  });
+});
+
+// Detox landing page — 5-day Anxious Texting Detox email course
+app.get('/detox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('detox', buildLandingContext({ user }));
+});
+
+
+// Affiliates partner program page
+app.get('/affiliates', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliates', buildLandingContext({ user }));
+});
+// Filter page
+
+// Pricing page — standalone route for campaigns and checkout CTAs.
 app.get('/pricing', async (req, res) => {
   const tokens = getCookieTokens(req);
   const user = tokens.accessPayload || tokens.refreshPayload || null;
   res.render('pricing', { user });
 });
 
-// Settings page
+// Settings page — authenticated users only
 app.get('/settings', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) {
@@ -242,14 +393,22 @@ app.get('/settings', async (req, res) => {
   res.render('settings', { user });
 });
 
-// Redeem page
+// ─── Free-access promo codes ─────────────────────────────────────────────────
+// Codes that grant full lifetime access when redeemed by a signed-in user.
+// Add new codes here (UPPERCASE keys). Matching is case-insensitive.
+const FREE_ACCESS_CODES = {
+  DNA: { membership: 'lifetime', label: 'Founder Free Access' },
+};
+
+// Redeem page — public. If not signed in, it routes them to log in / sign up
+// and returns them right back here to finish unlocking.
 app.get('/redeem', async (req, res) => {
   const user = await getUserFromCookies(req);
   const code = (req.query.code || '').toString().replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
   res.render('redeem', { user: user || null, code });
 });
 
-// Redeem endpoint
+// Redeem endpoint — grants lifetime access to the signed-in user for a valid code.
 app.post('/api/redeem', async (req, res) => {
   try {
     const user = await getUserFromCookies(req);
@@ -257,15 +416,13 @@ app.post('/api/redeem', async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Please sign in or create your account first, then redeem.' });
     }
     const raw = (req.body?.code || '').toString().trim().toUpperCase();
-    const FREE_ACCESS_CODES = {
-      DNA: { membership: 'lifetime', label: 'Founder Free Access' },
-    };
     const entry = FREE_ACCESS_CODES[raw];
     if (!entry) {
       return res.status(400).json({ ok: false, error: "That code isn't valid. Double-check it and try again." });
     }
     const { updateMembershipType } = require(path.join(__dirname, 'db', 'users'));
     await updateMembershipType(user.id, entry.membership);
+    // Best-effort mirror into subscriptions so paywall checks everywhere see active access.
     try {
       const { upsertSubscription } = require(path.join(__dirname, 'db', 'subscriptions'));
       await upsertSubscription({
@@ -287,33 +444,34 @@ app.post('/api/redeem', async (req, res) => {
   }
 });
 
-// Affiliate
-app.get('/affiliate', async (req, res) => {
+app.get('/filter', async (req, res) => {
   const user = await getUserFromCookies(req);
-  res.render('affiliate', { user: user || null });
+  const refCode = req.query.ref;
+  if (refCode && /^[a-z0-9]{8,32}$/.test(refCode)) {
+    res.cookie('ref', refCode, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+  res.render('filter', buildLandingContext({ user }));
 });
 
-// Partnerships
-app.get('/partnerships', async (req, res) => {
+// Compose messenger — AI-protected messaging with spiral lock + incoming decode
+app.get('/compose', async (req, res) => {
   const user = await getUserFromCookies(req);
-  res.render('partnerships', { user: user || null });
+  if (!user) return res.redirect('/login?returnTo=/compose');
+  res.render('compose', { user });
 });
 
-// Suggest
-app.get('/suggest', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('suggest', { user: user || null });
-});
+// Redirect old /holdoff.apk URL → static APK handler (CDN blocks raw .apk)
+app.get('/holdoff.apk', (_req, res) => res.redirect(301, '/android-app.apk'));
 
-// Legal pages
-app.get('/privacy', (_req, res) => res.render('privacy'));
-app.get('/terms', (_req, res) => res.render('terms'));
-
-// Auth pages
-app.get('/login', async (req, res) => {
+// Download page — Android APK and PWA install instructions
+app.get('/download', async (req, res) => {
   const user = await getUserFromCookies(req);
-  if (user) return res.redirect('/inbox');
-  res.render('login', buildLandingContext({ user: null }));
+  res.render('download', buildLandingContext({ user }));
 });
 
 // Forgot password page
@@ -323,11 +481,174 @@ app.get('/forgot-password', async (req, res) => {
   res.render('forgot-password', { user: null });
 });
 
-// Reset password page
+// Password reset page — token validated server-side on form submit
 app.get('/reset-password', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (user) return res.redirect('/inbox');
   res.render('reset-password', { user: null });
+});
+
+// Success page — verifies Stripe session server-side before confirming
+app.get('/success', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('success', { ...buildLandingContext({ user }), sessionId: req.query.session_id || null });
+});
+
+// Cancel page
+app.get('/cancel', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('cancel', buildLandingContext({ user }));
+});
+
+// Upgrade page — Pro paywall, auth-gated
+app.get('/upgrade', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/upgrade');
+  res.render('upgrade', buildLandingContext({ user }));
+});
+
+// SEO pages (spirals + 10 article pages) — handled by routes/seo.js (mounted at root)
+
+// /patterns/* pages — served directly (sub-path avoids /api prefix collision)
+app.get('/patterns/avoidant-deactivation', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'seo', 'avoidant-deactivation.html'), (err) => {
+    if (err) {
+      console.error('[/patterns/avoidant-deactivation] sendFile error:', err?.message);
+      res.status(500).send('Internal error');
+    }
+  });
+});
+
+// Compare pages — /compare (index + 3 sub-pages)
+app.get('/compare', (_req, res) => res.render('compare/index'));
+app.get('/compare/replika', (_req, res) => res.render('compare/replika'));
+app.get('/compare/character-ai', (_req, res) => res.render('compare/character-ai'));
+app.get('/compare/chatgpt', (_req, res) => res.render('compare/chatgpt'));
+
+
+// Insights — stats, contact analysis, forecast
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user });
+});
+
+
+// Account — profile, personality, settings
+// ─── Account Sub-Pages ──────────────────────────────────────
+app.get('/account/trusted-contacts', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account/trusted-contacts');
+  res.render('account/trusted-contacts', { user });
+});
+
+app.get('/account/personality', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account/personality');
+  res.render('account/personality', { user });
+});
+
+app.get('/account/attachment-research', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account/attachment-research');
+  res.render('account/attachment-research', { user });
+});
+
+app.get('/account/portrait', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account/portrait');
+  res.render('account/portrait', { user });
+});
+
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
+// Affiliate program page
+app.get('/affiliate', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliate', { user: user || null });
+});
+
+// Affiliate application submission
+app.post('/api/affiliate-apply', async (req, res) => {
+  try {
+    const { name, email, phone, platform, followers, about } = req.body;
+    if (!name || !email || !platform || !followers || !about) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    // TODO: Save to database or send email to partnerships team
+    console.log('[affiliate-apply]', { name, email, phone, platform, followers, about });
+    res.json({ ok: true, message: 'Application submitted successfully' });
+  } catch (err) {
+    console.error('[affiliate-apply] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong' });
+  }
+});
+
+// Partnerships application page
+app.get('/partnerships', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('partnerships', { user: user || null });
+});
+
+// Partnerships application submission
+app.post('/api/partnership-apply', async (req, res) => {
+  try {
+    const { name, email, phone, organization, type, details, website } = req.body;
+    if (!name || !email || !organization || !type || !details) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    // TODO: Save to database or send email to partnerships team
+    console.log('[partnership-apply]', { name, email, phone, organization, type, details, website });
+    res.json({ ok: true, message: 'Application submitted successfully' });
+  } catch (err) {
+    console.error('[partnership-apply] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong' });
+  }
+});
+
+// Feature suggestion box
+app.get('/suggest', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('suggest', { user: user || null });
+});
+
+// Feature suggestion submission
+app.post('/api/suggestion', async (req, res) => {
+  try {
+    const { type, title, description, impact, followup, email } = req.body;
+    if (!type || !title || !description || !impact) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    // TODO: Save to database or send email to product team
+    console.log('[suggestion]', { type, title, description, impact, followup, email });
+    res.json({ ok: true, message: 'Suggestion submitted successfully' });
+  } catch (err) {
+    console.error('[suggestion] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Something went wrong' });
+  }
+});
+
+// Legal pages
+app.get('/privacy', (_req, res) => res.render('privacy'));
+app.get('/terms', (_req, res) => res.render('terms'));
+
+// Examples gallery — public, no auth required
+app.get('/examples', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  const examples = require(path.join(__dirname, 'data', 'examples.json'));
+  res.render('examples', { ...buildLandingContext({ user }), examples });
+});
+
+
+// Auth pages — login, signup, dashboard, settings
+app.get('/login', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('login', buildLandingContext({ user: null }));
 });
 
 app.get('/signup', async (req, res) => {
@@ -336,20 +657,50 @@ app.get('/signup', async (req, res) => {
   res.render('signup', buildLandingContext({ user: null }));
 });
 
+app.get('/signin', async (req, res) => {
+  return res.redirect('/login');
+});
+
 app.get('/dashboard', async (req, res) => {
+  // Redirect to new inbox home screen
   return res.redirect('/inbox');
 });
 
-// Share pages
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  res.render('profile', buildLandingContext({ user }));
+});
+
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/community');
+  res.render('community', { user });
+});
+
+// Share page + OG image — routes extracted to routes/share.js
 mountSharePages(app);
 
-// Ensure tables exist
+// Startup validation — surface pre-flight config issues clearly rather than failing silently.
+if (!process.env.POSTMARK_API_KEY && !process.env.holdoff_EMAIL_PROXY_URL) {
+  console.warn('[startup] WARNING: No email provider configured — transactional emails will be logged only');
+}
+if (!process.env.STRIPE_WEBHOOK_SECRET) {
+  console.warn('[startup] WARNING: STRIPE_WEBHOOK_SECRET not set — webhook signature verification disabled');
+}
+
+// Ensure community tables exist (idempotent)
 ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e.message));
 
+// Ensure messaging tables exist (idempotent)
 const { initializeTables: initMessagingTables } = require(path.join(__dirname, 'db', 'messages'));
 initMessagingTables().catch(e => console.warn('[startup] messaging tables:', e.message));
 
+// Run database migrations (create user_preferences, user_conditions tables)
 const { runMigrations } = require(path.join(__dirname, 'db', 'migrations'));
 runMigrations().catch(e => console.warn('[startup] migrations:', e.message));
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
+
+// In-process cron jobs (Render compatibility) — extracted to jobs/in-process-crons.js
+require(path.join(__dirname, 'jobs', 'in-process-crons'));
