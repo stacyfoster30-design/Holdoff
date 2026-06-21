@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../lib/auth');
-const { buildCompanionPrompt } = require('../lib/companion-ai');
+const { buildCompanionPrompt, getCharacterDefinition } = require('../lib/companion-ai');
 
 // POST /api/companion/chat — chat with an AI character
 router.post('/chat', verifyToken, async (req, res) => {
@@ -20,9 +20,8 @@ router.post('/chat', verifyToken, async (req, res) => {
     return res.status(400).json({ error: 'Missing characterName or message' });
   }
 
-  // Validate character name
-  const validCharacters = ['Stacy', 'Danny'];
-  if (!validCharacters.includes(characterName)) {
+  const selectedCharacter = getCharacterDefinition(characterName);
+  if (!selectedCharacter) {
     return res.status(400).json({ error: 'Invalid character name' });
   }
 
