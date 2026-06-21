@@ -10,6 +10,7 @@
 }
 
 :root {
+  /* DEFAULT — Secure/Safe baseline (midnight velvet) */
   --bg: #0F0A1A;
   --fg: #F5F0FF;
   --accent: #7B5DBA;
@@ -29,6 +30,68 @@
   --space-xl: 4rem;
   --space-2xl: 6rem;
   --space-3xl: 10rem;
+}
+
+/* ── Verdict-Based Dynamic Theming ────────────────────────────────── */
+
+/* Anxious-Preoccupied: Bright lime green, vibrant & edgy */
+body[data-verdict="ANX"] {
+  --bg: #0A1408;
+  --fg: #C6FF00;
+  --accent: #A3E635;
+  --accent-warm: #BFFF00;
+  --accent-deep: #76B82A;
+  --muted: #7FB069;
+  --border: #2D4D00;
+  --surface: #1A2E0F;
+}
+
+/* Avoidant-Dismissive: Icy cyan, cold & withdrawn */
+body[data-verdict="AVO"] {
+  --bg: #0A1518;
+  --fg: #B0E9F0;
+  --accent: #4DD9E8;
+  --accent-warm: #6DD9E8;
+  --accent-deep: #2BA3B3;
+  --muted: #5BA8B8;
+  --border: #1A3F4A;
+  --surface: #0F2530;
+}
+
+/* Fearful-Avoidant: Deep magenta + electric purple, chaotic */
+body[data-verdict="FA"] {
+  --bg: #1A0A2E;
+  --fg: #FF88FF;
+  --accent: #E640FF;
+  --accent-warm: #FF66FF;
+  --accent-deep: #B400FF;
+  --muted: #B88FCC;
+  --border: #4A1A6A;
+  --surface: #2E1550;
+}
+
+/* Angry: Fire red with blue flames */
+body[data-verdict="ANGRY"] {
+  --bg: #1A0A08;
+  --fg: #FF6B5B;
+  --accent: #FF4433;
+  --accent-warm: #FF6B33;
+  --accent-deep: #CC2200;
+  --muted: #FF9966;
+  --border: #4A1810;
+  --surface: #2E1008;
+}
+
+/* Risky/Reckless: Golden amber, warning */
+body[data-verdict="RISKY"] {
+  --bg: #1A1408;
+  --fg: #FFD700;
+  --accent: #FFC700;
+  --accent-warm: #FFE44D;
+  --accent-deep: #CC9900;
+  --muted: #D4A017;
+  --border: #4A3A00;
+  --surface: #2E2400;
 }
 
 html {
