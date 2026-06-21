@@ -116,12 +116,21 @@ Return ONLY valid JSON.`;
 
     res.json(verdict);
   } catch (error) {
-    console.error('Verdict API error:', error);
-    res.status(500).json({
-      error: 'Could not analyze message',
-      safetyLevel: 'yellow',
-      analysis: 'Try rephrasing.',
-    });
+    console.error('Verdict API error:', error.message || error);
+    if (process.env.NODE_ENV === 'development') {
+      res.status(500).json({
+        error: 'Could not analyze message',
+        details: error.message,
+        safetyLevel: 'yellow',
+        analysis: 'Try rephrasing.',
+      });
+    } else {
+      res.status(500).json({
+        error: 'Could not analyze message',
+        safetyLevel: 'yellow',
+        analysis: 'Try rephrasing.',
+      });
+    }
   }
 });
 
