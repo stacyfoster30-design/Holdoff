@@ -22,7 +22,7 @@
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       padding: 20px;
@@ -31,25 +31,119 @@
     .companion-header {
       display: flex;
       align-items: center;
-      gap: 15px;
-      padding: 20px;
+      gap: 18px;
+      padding: 22px;
       background: rgba(45, 27, 78, 0.4);
       border-radius: 12px;
       margin-bottom: 20px;
       backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .character-avatar {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #6b4b9f 0%, #8b5cf6 100%);
+      position: relative;
+      width: 148px;
+      min-width: 148px;
+      height: 180px;
+      border-radius: 22px;
+      overflow: hidden;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      font-size: 28px;
-      font-weight: bold;
-      color: #fff;
+      background:
+        radial-gradient(circle at top, var(--character-accent-soft) 0%, rgba(26, 26, 62, 0) 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(26, 26, 62, 0.92) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 18px 40px rgba(11, 5, 24, 0.38);
+      isolation: isolate;
+    }
+
+    .character-avatar::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      pointer-events: none;
+    }
+
+    .character-avatar::after {
+      content: '';
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 12px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(10, 7, 22, 0.5);
+      filter: blur(10px);
+      transform-origin: center;
+      animation: shadowPulse 4s ease-in-out infinite;
+    }
+
+    .character-avatar[data-state="thinking"] .character-portrait {
+      animation: characterFloat 1.8s ease-in-out infinite, characterThink 1s ease-in-out infinite;
+    }
+
+    .character-avatar[data-state="thinking"]::after {
+      animation-duration: 1.8s;
+      transform: scaleX(0.92);
+    }
+
+    .character-avatar[data-state="speaking"] .character-portrait {
+      animation: characterFloat 2.6s ease-in-out infinite, characterSpeak 0.45s ease-in-out infinite;
+    }
+
+    .character-portrait {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+      padding: 10px 8px 0;
+      filter: drop-shadow(0 20px 22px rgba(0, 0, 0, 0.32));
+      animation: characterFloat 4s ease-in-out infinite;
+    }
+
+    @keyframes characterFloat {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-7px);
+      }
+    }
+
+    @keyframes characterThink {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      35% {
+        transform: translateY(-6px) rotate(-1.5deg);
+      }
+      70% {
+        transform: translateY(-2px) rotate(1.5deg);
+      }
+    }
+
+    @keyframes characterSpeak {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        transform: translateY(-5px) scale(1.02);
+      }
+    }
+
+    @keyframes shadowPulse {
+      0%, 100% {
+        opacity: 0.55;
+        transform: scaleX(1);
+      }
+      50% {
+        opacity: 0.82;
+        transform: scaleX(0.88);
+      }
     }
 
     .character-info h2 {
@@ -62,6 +156,25 @@
       font-size: 14px;
       color: #b8a89f;
       font-style: italic;
+    }
+
+    .character-status {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #dcd1ff;
+      font-style: normal;
+    }
+
+    .character-status::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--character-accent);
+      box-shadow: 0 0 16px var(--character-accent-soft);
     }
 
     .chat-history {
@@ -113,7 +226,7 @@
       background: rgba(45, 27, 78, 0.6);
       color: #e8dcc8;
       border-radius: 4px 12px 12px 12px;
-      border-left: 3px solid #8b5cf6;
+      border-left: 3px solid var(--character-accent);
     }
 
     .typing-indicator {
@@ -127,7 +240,7 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #8b5cf6;
+      background: var(--character-accent);
       animation: typing 1.4s infinite;
     }
 
@@ -218,6 +331,32 @@
       background: rgba(139, 92, 246, 0.3);
     }
 
+    @media (max-width: 640px) {
+      .companion-container {
+        padding: 16px;
+      }
+
+      .companion-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .character-avatar {
+        width: 100%;
+        min-width: 0;
+        height: 220px;
+      }
+
+      .message-bubble {
+        max-width: 100%;
+      }
+
+      .chat-input-area {
+        position: sticky;
+        bottom: 0;
+      }
+    }
+
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -237,14 +376,24 @@
   </style>
 </head>
 <body>
-  <div class="companion-container">
+  <div
+    class="companion-container"
+    style="--character-accent: <%= character.accentColor %>; --character-accent-soft: <%= character.accentSoft %>;"
+  >
     <a href="/story" class="back-btn">← Back to story</a>
 
     <div class="companion-header">
-      <div class="character-avatar"><%= character.emoji %></div>
+      <div class="character-avatar" id="characterAvatar" data-state="idle">
+        <img
+          src="<%= character.portrait %>"
+          alt="<%= character.name %>"
+          class="character-portrait"
+        >
+      </div>
       <div class="character-info">
         <h2><%= character.name %></h2>
         <p><%= character.tagline %></p>
+        <p class="character-status" id="characterStatus">Ready to listen</p>
       </div>
     </div>
 
@@ -271,8 +420,29 @@
   <script>
     const character = <%- JSON.stringify(character) %>;
     const userContext = <%- JSON.stringify(userContext) %>;
+    const characterAvatar = document.getElementById('characterAvatar');
+    const characterStatus = document.getElementById('characterStatus');
 
     let conversationHistory = [];
+    let speakingTimer = null;
+
+    function setCharacterState(state, statusText) {
+      if (characterAvatar) {
+        characterAvatar.dataset.state = state;
+      }
+
+      if (characterStatus && statusText) {
+        characterStatus.textContent = statusText;
+      }
+    }
+
+    function showSpeakingState() {
+      window.clearTimeout(speakingTimer);
+      setCharacterState('speaking', `${character.name} is here with you`);
+      speakingTimer = window.setTimeout(() => {
+        setCharacterState('idle', 'Ready to listen');
+      }, 1800);
+    }
 
     function scrollToBottom() {
       const chatHistory = document.getElementById('chatHistory');
@@ -294,6 +464,7 @@
     }
 
     function showTyping() {
+      setCharacterState('thinking', `${character.name} is thinking...`);
       const chatHistory = document.getElementById('chatHistory');
       const typingDiv = document.createElement('div');
       typingDiv.className = 'message assistant';
@@ -314,6 +485,7 @@
       if (typingIndicator) {
         typingIndicator.remove();
       }
+      setCharacterState('idle', 'Ready to listen');
     }
 
     function escapeHtml(text) {
@@ -330,6 +502,7 @@
 
       input.value = '';
       document.getElementById('sendBtn').disabled = true;
+      setCharacterState('thinking', 'Listening to you...');
 
       addMessage('user', message);
       showTyping();
@@ -356,9 +529,11 @@
         const data = await response.json();
         addMessage('assistant', data.reply);
         conversationHistory.push({ role: 'assistant', content: data.reply });
+        showSpeakingState();
       } catch (error) {
         removeTyping();
         addMessage('assistant', `Sorry, I couldn't respond right now. Try again in a moment.`);
+        setCharacterState('idle', 'Ready to listen');
         console.error('Chat error:', error);
       } finally {
         document.getElementById('sendBtn').disabled = false;

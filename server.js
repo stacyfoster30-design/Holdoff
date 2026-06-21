@@ -334,8 +334,8 @@ app.get('/companion/:characterName', async (req, res) => {
   }
   
   const { characterName } = req.params;
-  const { CHARACTER_DEFINITIONS } = require(path.join(__dirname, 'lib', 'companion-ai'));
-  const character = CHARACTER_DEFINITIONS[characterName];
+  const { getCharacterDefinition } = require(path.join(__dirname, 'lib', 'companion-ai'));
+  const character = getCharacterDefinition(characterName);
   
   if (!character) {
     return res.status(404).render('404');
@@ -350,10 +350,7 @@ app.get('/companion/:characterName', async (req, res) => {
   
   res.render('companion', {
     user,
-    character: {
-      ...character,
-      name: characterName,
-    },
+    character,
     userContext,
   });
 });
