@@ -137,6 +137,7 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 
 // Sentry error handler — guarded for @sentry/node v8+ compatibility.
 if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
@@ -269,6 +270,13 @@ app.get('/history', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/history');
   res.render('history', { user });
+});
+
+// Chronicle tips — requires authentication
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
 });
 
 // Attachment style quiz — public, no auth required
