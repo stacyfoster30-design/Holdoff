@@ -190,7 +190,10 @@ app.get('/interpret', (_req, res) => res.redirect(301, '/filter'));
 app.get('/verdict', (_req, res) => res.redirect(301, '/filter'));
 app.get('/referral', (_req, res) => res.redirect(301, '/referrals'));
 app.get('/share', (_req, res) => res.redirect(301, '/filter'));
-app.get('/checkout', (_req, res) => res.redirect(301, '/filter#pricing'));
+app.get('/checkout', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('checkout', { user: user || null });
+});
 app.post('/checkout', (req, res) => res.redirect(307, '/api/checkout/session'));
 app.post('/signup', (req, res) => res.redirect(307, '/api/auth/signup'));
 app.post('/login', (req, res) => res.redirect(307, '/api/auth/login'));
@@ -494,6 +497,13 @@ app.get('/holdoff.apk', (_req, res) => res.redirect(301, '/android-app.apk'));
 app.get('/download', async (req, res) => {
   const user = await getUserFromCookies(req);
   res.render('download', buildLandingContext({ user }));
+});
+
+// Forgot email / account recovery page
+app.get('/forgot-email', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('forgot-email', { user: null });
 });
 
 // Forgot password page

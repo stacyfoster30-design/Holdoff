@@ -27,12 +27,15 @@
       border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px;
       color:var(--danger); font-size:0.9rem;
     }
-    .forgot-link {
-      display:block; text-align:right; margin-top:-8px; margin-bottom:12px;
-      font-size:0.85rem;
+    .forgot-links {
+      display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;
+      margin-top:4px; margin-bottom:16px;
     }
-    .forgot-link a { color:var(--rose); text-decoration:none; }
-    .forgot-link a:hover { color:var(--primary); text-decoration:underline; }
+    .forgot-links a {
+      color:var(--rose); text-decoration:none; font-size:0.875rem;
+      padding:6px 0; min-height:44px; display:flex; align-items:center;
+    }
+    .forgot-links a:hover { color:var(--primary); text-decoration:underline; }
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -69,7 +72,8 @@
           <label class="form-label">Password</label>
           <input type="password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
         </div>
-        <div class="forgot-link">
+        <div class="forgot-links">
+          <a href="/forgot-email">Forgot your email?</a>
           <a href="/forgot-password">Forgot password?</a>
         </div>
         <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px;">Sign In</button>

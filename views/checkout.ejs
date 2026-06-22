@@ -26,8 +26,16 @@
     .plan-card .desc { color: #9ca3af; font-size: .875rem; margin-top: .4rem; }
     .checkout-btn { width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
     .checkout-btn:hover { opacity: .9; }
-    .checkout-btn:disabled { opacity: .5; cursor: not-allowed; }
     .checkout-note { color: #6b7280; font-size: .8rem; margin-top: .75rem; }
+    .promo-row { margin-bottom: 1.5rem; }
+    .promo-row label { display: block; font-size: .8rem; color: #9ca3af; margin-bottom: .4rem; text-align: left; }
+    .promo-input-wrap { display: flex; gap: .5rem; }
+    .promo-input { flex: 1; padding: .65rem .9rem; background: #111827; border: 1px solid #374151; border-radius: 8px; color: #fff; font-size: .9rem; text-transform: uppercase; letter-spacing: .05em; }
+    .promo-input:focus { outline: none; border-color: var(--accent); }
+    .promo-input::placeholder { text-transform: none; letter-spacing: normal; color: #6b7280; }
+    .promo-note { font-size: .78rem; color: #6b7280; margin-top: .35rem; text-align: left; }
+    .promo-note a { color: var(--accent); text-decoration: none; }
+    .promo-note a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -60,6 +68,14 @@
       </div>
     </div>
 
+    <div class="promo-row">
+      <label for="promoCode">Promo / discount code (optional)</label>
+      <div class="promo-input-wrap">
+        <input type="text" id="promoCode" class="promo-input" placeholder="Enter code" maxlength="32" autocomplete="off" spellcheck="false">
+      </div>
+      <p class="promo-note">Have a free-access code? <a href="/redeem">Redeem it here instead →</a></p>
+    </div>
+
     <button class="checkout-btn" id="checkoutBtn" onclick="startCheckout()">Continue to payment</button>
     <p class="checkout-note">Powered by Stripe · Secure · Cancel anytime</p>
   </div>
@@ -76,6 +92,7 @@
     async function startCheckout() {
       const btn = document.getElementById("checkoutBtn");
       btn.textContent = "Loading..."; btn.disabled = true;
+      const promoCode = (document.getElementById("promoCode").value || "").trim().toUpperCase();
       try {
         const res = await fetch("/api/checkout/start", {
           method: "POST",
@@ -83,7 +100,15 @@
           body: JSON.stringify({ tier: selectedPlan })
         });
         const d = await res.json();
-        if (d.url) { window.location = d.url; }
+        if (d.url) {
+          let url = d.url;
+          if (promoCode) {
+            const u = new URL(url);
+            u.searchParams.set("prefilled_promotion_code", promoCode);
+            url = u.toString();
+          }
+          window.location = url;
+        }
         else { alert(d.error || "Something went wrong — try again"); btn.textContent = "Continue to payment"; btn.disabled = false; }
       } catch(e) { alert("Network error — try again"); btn.textContent = "Continue to payment"; btn.disabled = false; }
     }
