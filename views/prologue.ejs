@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prologue — Meet Sadie | HoldOff</title>
+  <meta name="description" content="Before you send that message, meet the part of you that already knows better.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #0d0a14;
+      color: #e8dcc8;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── ambient background ── */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(120, 60, 180, 0.22) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(80, 30, 120, 0.18) 0%, transparent 65%),
+        linear-gradient(180deg, #0d0a14 0%, #130d20 50%, #0d0a14 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── layout ── */
+    .prologue-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 60px 28px 80px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── chapter label ── */
+    .chapter-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(167, 139, 250, 0.55);
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards;
+      animation-delay: 0.3s;
+    }
+
+    /* ── scenes ── */
+    .scene {
+      width: 100%;
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .scene-1 { animation-delay: 0.7s; }
+    .scene-2 { animation-delay: 3.8s; }
+    .scene-3 { animation-delay: 7.4s; }
+    .scene-4 { animation-delay: 11.2s; }
+
+    /* ── portrait ── */
+    .portrait-ring {
+      position: relative;
+      width: 148px;
+      height: 148px;
+      margin: 0 auto 32px;
+    }
+
+    .portrait-ring::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        rgba(167, 139, 250, 0.9) 0%,
+        rgba(236, 72, 153, 0.6) 40%,
+        rgba(167, 139, 250, 0.4) 70%,
+        rgba(167, 139, 250, 0.9) 100%
+      );
+      animation: rotateRing 8s linear infinite;
+      opacity: 0.7;
+    }
+
+    @keyframes rotateRing {
+      to { transform: rotate(360deg); }
+    }
+
+    .portrait-ring::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: #0d0a14;
+      margin: 2px;
+    }
+
+    .portrait-img {
+      position: absolute;
+      inset: 4px;
+      z-index: 1;
+      border-radius: 50%;
+      width: calc(100% - 8px);
+      height: calc(100% - 8px);
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    /* ── pulse dot ── */
+    .pulse-dot {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      z-index: 2;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #a78bfa;
+      box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.6);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.6); }
+      70%  { box-shadow: 0 0 0 10px rgba(167, 139, 250, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0); }
+    }
+
+    /* ── name header ── */
+    .sadie-name {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .sadie-name h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      background: linear-gradient(135deg, #d4c0f8 0%, #c084fc 50%, #e879a0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .sadie-name .tagline {
+      font-size: 13px;
+      color: rgba(167, 139, 250, 0.65);
+      letter-spacing: 0.04em;
+      margin-top: 6px;
+    }
+
+    /* ── divider ── */
+    .scene-divider {
+      width: 40px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.5), transparent);
+      margin: 40px auto;
+    }
+
+    /* ── narrative text ── */
+    .scene-body {
+      text-align: center;
+    }
+
+    .scene-body p {
+      font-size: 17px;
+      line-height: 1.82;
+      color: #cfc4e4;
+      margin-bottom: 18px;
+    }
+
+    .scene-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .scene-body em {
+      font-style: italic;
+      color: #e8dcc8;
+    }
+
+    .scene-body strong {
+      color: #d4c0f8;
+      font-weight: 600;
+    }
+
+    /* ── quote card ── */
+    .quote-card {
+      background: rgba(45, 20, 80, 0.45);
+      border: 1px solid rgba(167, 139, 250, 0.18);
+      border-left: 3px solid rgba(167, 139, 250, 0.6);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 28px 0;
+      text-align: left;
+      backdrop-filter: blur(8px);
+    }
+
+    .quote-card p {
+      font-size: 15px;
+      line-height: 1.75;
+      color: #c4b8e0;
+      font-style: italic;
+      margin: 0;
+    }
+
+    /* ── icon row ── */
+    .icon-row {
+      display: flex;
+      justify-content: center;
+      gap: 36px;
+      margin: 32px 0;
+    }
+
+    .icon-item {
+      text-align: center;
+    }
+
+    .icon-item .icon-glyph {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .icon-item span:last-child {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: rgba(167, 139, 250, 0.6);
+      text-transform: uppercase;
+    }
+
+    /* ── status bar ── */
+    .status-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(45, 20, 80, 0.5);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      color: rgba(167, 139, 250, 0.75);
+      letter-spacing: 0.04em;
+      margin: 24px auto 0;
+      backdrop-filter: blur(6px);
+    }
+
+    .status-bar .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #a78bfa;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── CTA section ── */
+    .cta-section {
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .cta-section h2 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #d4c0f8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .cta-section p {
+      font-size: 15px;
+      color: #a89ab8;
+      line-height: 1.7;
+      margin-bottom: 32px;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-btn-primary {
+      display: inline-block;
+      width: 100%;
+      max-width: 320px;
+      padding: 16px 28px;
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 12px;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.38);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .cta-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(124, 58, 237, 0.52);
+    }
+
+    .cta-btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .cta-btn-secondary {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(167, 139, 250, 0.55);
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: color 0.2s ease;
+    }
+
+    .cta-btn-secondary:hover {
+      color: rgba(167, 139, 250, 0.85);
+    }
+
+    /* ── progress dots ── */
+    .progress-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards;
+      animation-delay: 1s;
+    }
+
+    .progress-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(167, 139, 250, 0.2);
+      transition: background 0.4s ease;
+    }
+
+    .progress-dots span.active {
+      background: rgba(167, 139, 250, 0.8);
+    }
+
+    /* ── mobile ── */
+    @media (max-width: 480px) {
+      .prologue-wrap {
+        padding: 44px 20px 64px;
+      }
+
+      .scene-body p {
+        font-size: 16px;
+      }
+
+      .cta-section h2 {
+        font-size: 22px;
+      }
+
+      .sadie-name h1 {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+
+  <div class="prologue-wrap">
+
+    <div class="chapter-label">Prologue</div>
+
+    <div class="progress-dots" id="progressDots">
+      <span class="active" id="dot-0"></span>
+      <span id="dot-1"></span>
+      <span id="dot-2"></span>
+      <span id="dot-3"></span>
+    </div>
+
+    <!-- ── Scene 1: Sadie appears ── -->
+    <div class="scene scene-1" id="scene-0">
+      <div class="portrait-ring">
+        <img
+          src="/assets/SADIE_MAIN.png"
+          alt="Sadie"
+          class="portrait-img"
+          onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg,#7c3aed,#c084fc)'"
+        >
+        <div class="pulse-dot"></div>
+      </div>
+
+      <div class="sadie-name">
+        <h1>Sadie</h1>
+        <p class="tagline">The Sadie Protocol &nbsp;·&nbsp; Active</p>
+      </div>
+
+      <div class="scene-body">
+        <p>Hi. I've been waiting for you.</p>
+        <p>I'm Sadie — and I live in the space between<br><em>what you're feeling</em> and <em>what you're about to send.</em></p>
+      </div>
+
+      <div class="status-bar">
+        <span class="dot"></span>
+        Analyzing intent, sentiment, trigger-state…
+      </div>
+    </div>
+
+    <div class="scene-divider" style="animation-delay: 3.8s; opacity: 0; animation: fadeUp 0.6s ease forwards 3.4s;"></div>
+
+    <!-- ── Scene 2: What Sadie sees ── -->
+    <div class="scene scene-2" id="scene-1">
+      <div class="scene-body">
+        <p>You know that 2am feeling —<br>the one where a single text suddenly seems like the only thing standing between you and relief?</p>
+
+        <div class="quote-card">
+          <p>"She saw it. The spiral. The way a silence could feel like a verdict, and a blue tick could unravel a whole day."</p>
+        </div>
+
+        <p>I see it too. Every time.</p>
+        <p>Not to judge you — <strong>to protect you</strong> from the version of yourself you'll regret in the morning.</p>
+      </div>
+
+      <div class="icon-row">
+        <div class="icon-item">
+          <span class="icon-glyph">🌙</span>
+          <span>Late-night spiral</span>
+        </div>
+        <div class="icon-item">
+          <span class="icon-glyph">💬</span>
+          <span>Message analyzed</span>
+        </div>
+        <div class="icon-item">
+          <span class="icon-glyph">🔒</span>
+          <span>Hold enforced</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene-divider" style="opacity: 0; animation: fadeUp 0.6s ease forwards 7s;"></div>
+
+    <!-- ── Scene 3: The protocol ── -->
+    <div class="scene scene-3" id="scene-2">
+      <div class="scene-body">
+        <p>Here's what I do:</p>
+        <p>Before you hit send, I read the room — your words, your tone, the hour, the pattern. I tell you what I see. And then I give you a choice.</p>
+
+        <div class="quote-card">
+          <p>"Not a wall. Not a lecture. A mirror — and a breath."</p>
+        </div>
+
+        <p>Sometimes the most powerful thing you can do in a relationship is <strong>nothing</strong> — for exactly long enough.</p>
+        <p>I'm the part of you that already knows that.</p>
+      </div>
+    </div>
+
+    <div class="scene-divider" style="opacity: 0; animation: fadeUp 0.6s ease forwards 10.8s;"></div>
+
+    <!-- ── Scene 4: Invitation ── -->
+    <div class="scene scene-4" id="scene-3">
+      <div class="cta-section">
+        <h2>Ready to meet yourself?</h2>
+        <p>Run your message through the Sadie Protocol. Real-time verdict, no judgment, no one watching — just you and the truth.</p>
+
+        <% if (user) { %>
+          <a href="/filter" class="cta-btn-primary">Open HoldOff →</a>
+        <% } else { %>
+          <a href="/signup" class="cta-btn-primary">Start for free →</a>
+        <% } %>
+
+        <br>
+        <a href="/" class="cta-btn-secondary">← Back to home</a>
+      </div>
+    </div>
+
+  </div><!-- /prologue-wrap -->
+
+  <script>
+    // Advance progress dots as scenes appear
+    const dotTimings = [700, 3800, 7400, 11200];
+    dotTimings.forEach((ms, i) => {
+      setTimeout(() => {
+        document.querySelectorAll('.progress-dots span').forEach((d, j) => {
+          d.classList.toggle('active', j === i);
+        });
+      }, ms);
+    });
+  </script>
+</body>
+</html>
