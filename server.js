@@ -307,6 +307,12 @@ app.get('/quiz', async (req, res) => {
   res.render('quiz', { user: user || null });
 });
 
+// Prologue — Sadie Protocol intro (public)
+app.get('/prologue', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('prologue', { user });
+});
+
 // Interactive story experience — paid users only (animated version)
 app.get('/story', async (req, res) => {
   const user = await getUserFromCookies(req);
