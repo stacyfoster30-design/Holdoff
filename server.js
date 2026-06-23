@@ -142,6 +142,24 @@ app.get('/notifications', async (_req, res) => {
 });
 app.get('/onboarding', (_req, res) => res.render('onboarding'));
 
+// Digital Asset Links — verifies the Android app (TWA) owns this domain.
+// Served explicitly because express.static ignores dot-folders like /.well-known.
+app.get('/.well-known/assetlinks.json', (_req, res) => {
+  res.type('application/json').send(JSON.stringify([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.stacymartin.holdoff',
+        sha256_cert_fingerprints: [
+          '7B:C2:57:02:73:AB:25:A5:52:B6:73:1B:F6:AF:2D:2E:FF:BF:02:D7:AF:2E:33:CC:92:D3:FA:74:EB:61:2D:95',
+          '5C:01:7D:6E:E0:E5:5C:B1:9E:DF:7C:26:39:32:8C:62:04:71:12:A6:10:CE:40:D6:36:D2:E1:5D:D6:02:2F:D1',
+        ],
+      },
+    },
+  ], null, 2));
+});
+
 // Static files
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
