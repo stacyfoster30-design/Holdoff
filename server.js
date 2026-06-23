@@ -374,7 +374,12 @@ app.get('/companion', async (req, res) => {
     }
   };
   const user = await getUserFromCookies(req).catch(() => null);
-  res.render('companion', { character: CHARACTERS[soul], user });
+  const userContext = {
+    name: (user && (user.name || user.firstName)) || null,
+    isPremium: !!(user && (user.isPremium || user.premium)),
+    soul
+  };
+  res.render('companion', { character: CHARACTERS[soul], user, userContext });
 });
 
 // Auth pages
