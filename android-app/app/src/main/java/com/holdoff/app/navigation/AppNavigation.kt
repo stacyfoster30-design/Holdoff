@@ -1,0 +1,130 @@
+package com.holdoff.app.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.holdoff.app.ui.screens.CompanionScreen
+import com.holdoff.app.ui.screens.HomeScreen
+import com.holdoff.app.ui.screens.LoginScreen
+import com.holdoff.app.ui.screens.OnboardingScreen
+import com.holdoff.app.ui.screens.PaywallScreen
+import com.holdoff.app.ui.screens.PremiumStoryScreen
+import com.holdoff.app.ui.screens.ProfileScreen
+import com.holdoff.app.ui.screens.SettingsScreen
+import com.holdoff.app.ui.screens.ThreadDetailScreen
+import com.holdoff.app.ui.screens.VerdictScreen
+
+/**
+ * All screen routes live here. One place to find and edit navigation.
+ */
+object Routes {
+    const val ONBOARDING     = "onboarding"
+    const val LOGIN          = "login"
+    const val HOME           = "home"
+    const val THREAD_DETAIL  = "thread/{threadId}"
+    const val VERDICT        = "verdict/{threadId}"
+    const val COMPANION      = "companion"
+    const val PREMIUM_STORY  = "story"
+    const val PAYWALL        = "paywall"
+    const val PROFILE        = "profile"
+    const val SETTINGS       = "settings"
+
+    fun threadDetail(id: String) = "thread/$id"
+    fun verdict(id: String) = "verdict/$id"
+}
+
+@Composable
+fun AppNavigation(
+    navController: NavHostController,
+    startDestination: String,
+    isPremium: Boolean
+) {
+    NavHost(navController = navController, startDestination = startDestination) {
+
+        composable(Routes.ONBOARDING) {
+            OnboardingScreen(onFinish = {
+                navController.navigate(Routes.LOGIN) {
+                    popUpTo(Routes.ONBOARDING) { inclusive = true }
+                }
+            })
+        }
+
+        composable(Routes.LOGIN) {
+            LoginScreen(onLoginSuccess = {
+                navController.navigate(Routes.HOME) {
+                    popUpTo(Routes.LOGIN) { inclusive = true }
+                }
+            })
+        }
+
+        composable(Routes.HOME) {
+            HomeScreen(
+                onThreadClick = { id -> navController.navigate(Routes.threadDetail(id)) },
+                onCompanionClick = { navController.navigate(Routes.COMPANION) },
+                onStoryClick = {
+                    if (isPremium) navController.navigate(Routes.PREMIUM_STORY)
+                    else navController.navigate(Routes.PAYWALL)
+                },
+                onProfileClick = { navController.navigate(Routes.PROFILE) }
+            )
+        }
+
+        composable(
+            route = Routes.THREAD_DETAIL,
+            arguments = listOf(navArgument("threadId") { type = NavType.StringType })
+        ) { backStack ->
+            val id = backStack.arguments?.getString("threadId") ?: return@composable
+            ThreadDetailScreen(
+                threadId = id,
+                onVerdictClick = { navController.navigate(Routes.verdict(id)) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.VERDICT,
+            arguments = listOf(navArgument("threadId") { type = NavType.StringType })
+        ) { backStack ->
+            val id = backStack.arguments?.getString("threadId") ?: return@composable
+            VerdictScreen(
+                threadId = id,
+                onBack = { navController.popBackStack() },
+                onUpgradeClick = { navController.navigate(Routes.PAYWALL) }
+            )
+        }
+
+        composable(Routes.COMPANION) {
+            CompanionScreen(
+                onBack = { navController.popBackStack() },
+                onUpgradeClick = { navController.navigate(Routes.PAYWALL) },
+                isPremium = isPremium
+            )
+        }
+
+        composable(Routes.PREMIUM_STORY) {
+            PremiumStoryScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PAYWALL) {
+            PaywallScreen(
+                onSubscribed = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.PROFILE) {
+            ProfileScreen(
+                onBack = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
+                onSubscribeClick = { navController.navigate(Routes.PAYWALL) }
+            )
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onBack = { navController.popBackStack() })
+        }
+    }
+}
