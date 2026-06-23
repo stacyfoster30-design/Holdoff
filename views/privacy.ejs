@@ -4,127 +4,176 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy — HoldOff</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css">
   <style>
-    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); }
-    .legal-wrap { max-width: 680px; margin: 0 auto; padding: 8rem 2rem 4rem; }
-    .legal-wrap h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
-    .legal-wrap .updated { font-size: 0.8rem; color: var(--muted); margin-bottom: 2.5rem; }
-    .legal-wrap h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--fg); }
-    .legal-wrap p, .legal-wrap li { font-size: 0.95rem; line-height: 1.7; color: var(--muted); margin-bottom: 1rem; }
-    .legal-wrap ul { padding-left: 1.5rem; }
-    .legal-wrap a { color: var(--accent); }
-    .legal-wrap a:hover { opacity: 0.8; }
-    .back-link { font-size: 0.85rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 2rem; }
-    .back-link:hover { color: var(--fg); }
-    .nav { position: fixed; top: 0; left: 0; right: 0; padding: 1.25rem 2rem; display: flex; align-items: center; background: var(--bg); border-bottom: 1px solid var(--border, #e5e5e5); }
-    .nav__wordmark { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--fg); text-decoration: none; letter-spacing: -0.02em; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0F172A 0%, #1a1f3a 50%, #2d1b4e 100%);
+      color: #e0e7ff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 2rem; max-width: 900px; margin: 0 auto;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: #c4b5fd; text-decoration: none; }
+    nav a { color: #94a3b8; text-decoration: none; font-size: 14px; margin-left: 1.2rem; }
+    nav a:hover { color: #a78bfa; }
+    .content {
+      max-width: 780px; margin: 0 auto; padding: 2rem 2rem 6rem;
+    }
+    h1 { font-size: 32px; font-weight: 800; color: #c4b5fd; margin-bottom: 0.5rem; }
+    .meta { font-size: 13px; color: #64748b; margin-bottom: 3rem; }
+    h2 { font-size: 20px; font-weight: 700; color: #a78bfa; margin: 2.5rem 0 0.75rem; }
+    h3 { font-size: 16px; font-weight: 600; color: #c4b5fd; margin: 1.5rem 0 0.5rem; }
+    p { color: #cbd5e1; margin-bottom: 1rem; }
+    ul { color: #cbd5e1; padding-left: 1.5rem; margin-bottom: 1rem; }
+    li { margin-bottom: 0.35rem; }
+    strong { color: #e0e7ff; }
+    a { color: #a78bfa; }
+    hr { border: none; border-top: 1px solid rgba(139,92,246,.2); margin: 2rem 0; }
+    footer {
+      text-align: center; padding: 2rem; font-size: 13px; color: #475569;
+      border-top: 1px solid rgba(139,92,246,.1);
+    }
+    footer a { color: #64748b; text-decoration: none; margin: 0 0.75rem; }
+    footer a:hover { color: #a78bfa; }
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <a href="/" class="nav__wordmark">HoldOff</a>
-  </nav>
-  <div class="legal-wrap">
-    <a href="/" class="back-link">← Back to HoldOff</a>
+  <header>
+    <a href="/" class="logo">HoldOff</a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/terms">Terms</a>
+      <a href="/login">Sign In</a>
+    </nav>
+  </header>
+
+  <div class="content">
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: June 8, 2026</p>
+    <p class="meta">Effective Date: June 18, 2026 &nbsp;·&nbsp; Last Updated: June 18, 2026</p>
 
-    <p>HoldOff helps you pause before sending texts you'll regret. This policy explains what data we collect, how we use it, and your rights regarding your information. We keep things simple and straightforward — no dense legalese.</p>
+    <p>HoldOff ("we," "us," "our," or "Company") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service at shouldiholdoff.live and our mobile applications.</p>
 
-    <h2>What we collect</h2>
-    <p>HoldOff collects the following information:</p>
+    <hr>
+
+    <h2>1. Information We Collect</h2>
+
+    <h3>1.1 Information You Provide Directly</h3>
+    <p><strong>Account Registration:</strong></p>
     <ul>
-      <li><strong>Account information:</strong> Your email address, name, and password (hashed and salted — we never store plaintext passwords).</li>
-      <li><strong>Message text:</strong> The text you paste into HoldOff for analysis is temporarily processed by our AI to generate a verdict. Message content is <em>not</em> stored after analysis — it is discarded immediately once the verdict is returned.</li>
-      <li><strong>Quiz responses:</strong> Your answers to the attachment style quiz are stored to personalize your experience and track patterns over time.</li>
-      <li><strong>Pattern journal entries:</strong> If you use the pattern journal feature, we store your triggers, outcomes, and the verdicts you've received — tied to your account so you can review your history.</li>
-      <li><strong>Verdict logs:</strong> We log each verdict event (timestamp, verdict outcome, pattern identified, message length) to power the streak tracker and pattern insights. These logs do not include your message text.</li>
-      <li><strong>Payment information:</strong> All payment processing is handled by Stripe. HoldOff never sees or stores your card details, bank account, or billing address beyond the last four digits and your subscription status.</li>
-      <li><strong>Usage data:</strong> We track page views and sign-up events via the Meta Pixel for analytics and attribution. No advertising trackers are used.</li>
+      <li>Name, email address, phone number (for SMS/contacts sync)</li>
+      <li>Password (hashed and encrypted — never stored in plaintext)</li>
+      <li>Mental health condition selections (optional, used for personalized insights)</li>
+    </ul>
+    <p><strong>Communication Data:</strong></p>
+    <ul>
+      <li>SMS messages and their content</li>
+      <li>Contact names and phone numbers</li>
+      <li>Message timestamps, metadata, and conversation history</li>
+    </ul>
+    <p><strong>Subscription &amp; Payment:</strong></p>
+    <ul>
+      <li>Payment method information (processed via Stripe — we do not store full card details)</li>
+      <li>Billing address, purchase history, and subscription status</li>
     </ul>
 
-    <h2>How we use your data</h2>
-    <p>Your data is used only to provide the HoldOff service:</p>
+    <h3>1.2 Information Collected Automatically</h3>
     <ul>
-      <li><strong>Verdict generation:</strong> Your message text is sent to our AI providers (currently OpenAI and/or Anthropic) to analyze tone and attachment patterns. No message content is shared with third parties beyond these providers, who process data under their own privacy policies.</li>
-      <li><strong>Pattern tracking:</strong> Journal entries and verdict logs help HoldOff surface your personal patterns (e.g., "you tend to spiral after 10pm") so you can build self-awareness over time.</li>
-      <li><strong>Subscription management:</strong> Stripe processes your recurring billing. We store your subscription tier and billing renewal date to manage your account access.</li>
-      <li><strong>Email communication:</strong> We send transactional emails (sign-up confirmation, verdict streaks, payment receipts) from <a href="mailto:hello@shouldiholdoff.live">hello@shouldiholdoff.live</a>. You can unsubscribe from marketing emails at any time.</li>
+      <li>Device type, OS, browser type and version</li>
+      <li>IP address and approximate location</li>
+      <li>App usage analytics and interaction patterns</li>
+      <li>Session cookies and authentication tokens</li>
     </ul>
 
-    <h2>Data storage and security</h2>
-    <p>HoldOff stores data on servers in the United States. Data is retained for as long as your account is active:</p>
-    <ul>
-      <li><strong>Account data:</strong> Stored until you delete your account or request data deletion (see "Your rights" below).</li>
-      <li><strong>Verdict logs:</strong> Retained for up to 3 years from the date of the verdict to support long-term pattern tracking and streak history.</li>
-      <li><strong>Payment records:</strong> Retained for 7 years as required by financial regulations.</li>
-      <li><strong>Message text:</strong> Never stored. Discards immediately after AI processing.</li>
-    </ul>
-    <p>We use industry-standard encryption (TLS/HTTPS) for all data in transit and encryption at rest for all stored data. Access to our servers is restricted to authorized personnel only.</p>
+    <hr>
 
-    <h2>Message interception (Android app)</h2>
-    <p>The HoldOff Android app uses Android's <strong>Accessibility Service</strong> to monitor outgoing text messages on your device. This is the only way Android allows apps to intercept messages before they are sent.</p>
-    <p><strong>What this means in practice:</strong></p>
+    <h2>2. How We Use Your Information</h2>
     <ul>
-      <li>Messages are read <em>only at the moment you tap "send"</em> — HoldOff does not passively monitor your messages.</li>
-      <li>Message content is <em>never transmitted to our servers</em>. All interception and verdict display happens locally on your device.</li>
-      <li>The Accessibility Service permission is used <em>solely</em> for the verdict overlay. It is not used to log, store, or transmit your text messages anywhere.</li>
-      <li>HoldOff does not read received messages — only messages you are actively sending.</li>
-      <li>If you uninstall the app or revoke the Accessibility Service permission, HoldOff can no longer intercept messages.</li>
+      <li>Deliver core messaging and conversation features</li>
+      <li>Provide AI-powered insights and coaching responses</li>
+      <li>Process subscription payments and manage your account</li>
+      <li>Send transactional emails (confirmations, password resets, billing)</li>
+      <li>Debug, improve, and secure the Service</li>
+      <li>Comply with legal obligations</li>
     </ul>
 
-    <h2>We do not sell your data</h2>
-    <p><strong>HoldOff does not sell, rent, or share your personal data with advertisers, data brokers, or any third party for advertising purposes.</strong> This is a firm commitment — not fine print. Your data exists to run the service, nothing else.</p>
+    <hr>
 
-    <h2>Third-party services</h2>
+    <h2>3. How We Share Your Information</h2>
+    <p><strong>We do NOT sell your personal information.</strong></p>
+    <p>We share limited information with trusted service providers:</p>
     <ul>
-      <li><strong>OpenAI:</strong> Processes message text for verdict generation. <a href="https://openai.com/privacy" target="_blank" rel="noopener">OpenAI's Privacy Policy</a></li>
-      <li><strong>Anthropic:</strong> Processes message text for verdict generation. <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">Anthropic's Privacy Policy</a></li>
-      <li><strong>Stripe:</strong> Processes subscription payments. <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a></li>
-      <li><strong>Resend:</strong> Sends transactional and marketing emails. <a href="https://resend.com/privacy" target="_blank" rel="noopener">Resend's Privacy Policy</a></li>
+      <li><strong>Anthropic (Claude AI):</strong> Message content is sent to their API for AI analysis. Anthropic processes this per their own privacy policy. We do not use your data to train AI models.</li>
+      <li><strong>Stripe:</strong> Payment data for subscription processing (PCI-DSS compliant).</li>
+      <li><strong>Render / Cloud Infrastructure:</strong> Hosting and storage (encrypted in transit and at rest).</li>
+    </ul>
+    <p>We may also disclose information if required by law, subpoena, or court order, or to protect the safety and rights of our users.</p>
+
+    <hr>
+
+    <h2>4. Data Security</h2>
+    <ul>
+      <li>All data transmitted is encrypted via HTTPS/TLS</li>
+      <li>Sensitive data encrypted at rest using AES-256</li>
+      <li>Passwords stored as salted bcrypt hashes — never in plaintext</li>
+      <li>Access controls and administrative logging in place</li>
+    </ul>
+    <p>While we implement industry-standard security, no system is completely secure. You use HoldOff at your own risk.</p>
+
+    <hr>
+
+    <h2>5. Your Privacy Rights &amp; Choices</h2>
+    <ul>
+      <li><strong>Access &amp; Portability:</strong> Request a copy of your data anytime via privacy@shouldiholdoff.live</li>
+      <li><strong>Correction:</strong> Update account info in Settings</li>
+      <li><strong>Deletion:</strong> Delete your account in Settings or email us — most data removed within 90 days</li>
+      <li><strong>Marketing Opt-Out:</strong> Unsubscribe from any email or update preferences in Settings</li>
+      <li><strong>CCPA / GDPR:</strong> If you are a California or EU resident, you have additional rights including access, portability, erasure, and the right to object to processing</li>
     </ul>
 
-    <h2>Cookies</h2>
-    <p>HoldOff uses minimal cookies to keep you logged in (session management) and for anonymous usage analytics. We do not use advertising trackers or cross-site tracking cookies. You can disable cookies in your browser — but you will need to log in more frequently.</p>
+    <hr>
 
-    <h2>Children's privacy</h2>
-    <p>HoldOff is not intended for use by anyone under 18 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us with personal data, please contact us at <a href="mailto:hello@shouldiholdoff.live">hello@shouldiholdoff.live</a> and we will delete it promptly.</p>
-
-    <h2>Your rights</h2>
-    <p>You have full control over your data:</p>
+    <h2>6. Data Retention</h2>
     <ul>
-      <li><strong>Access your data:</strong> Log in to your account at any time to view your profile, journal entries, and verdict history.</li>
-      <li><strong>Delete your account:</strong> Contact us at <a href="mailto:hello@shouldiholdoff.live">hello@shouldiholdoff.live</a> with the subject "Data Deletion Request" and we will delete your account and all associated personal data within 30 days. Verdict logs may be anonymized and retained for up to 90 days after deletion for service improvement purposes.</li>
-      <li><strong>Export your data:</strong> Request a export of your journal entries and verdict history at any time.</li>
-      <li><strong>Unsubscribe:</strong> Every marketing email includes an unsubscribe link. Transactional emails (verdicts, receipts) cannot be unsubscribed from as they are part of the service.</li>
-      <li><strong>Withdraw consent:</strong> Uninstalling the app and revoking the Accessibility Service permission fully removes HoldOff's ability to intercept your messages.</li>
+      <li>Active account: data retained while account is active</li>
+      <li>Deleted account: most data deleted within 90 days</li>
+      <li>Payment records: retained up to 7 years for legal/tax compliance</li>
+      <li>Anonymized analytics: retained up to 24 months</li>
     </ul>
 
-    <h2>International data transfers</h2>
-    <p>If you are located outside the United States, your data may be transferred to and processed in the United States. By using HoldOff, you consent to such transfers in accordance with this policy.</p>
+    <hr>
 
-    <h2>Changes to this policy</h2>
-    <p>If we make meaningful changes to this privacy policy — such as collecting new types of data, adding new third-party services, or changing how we use your information — we will:</p>
-    <ul>
-      <li>Update the "Last updated" date at the top of this page</li>
-      <li>Notify you via email to your registered address at least <strong>30 days before</strong> the changes take effect</li>
-    </ul>
-    <p>Minor changes (e.g., fixing typos or updating links) will be updated without notice.</p>
+    <h2>7. Children's Privacy</h2>
+    <p>HoldOff is not intended for users under 18. We do not knowingly collect data from minors. If we become aware of such collection, we will delete the information immediately.</p>
 
-    <h2>Contact</h2>
-    <p>Questions, concerns, or requests about your data? We're here.</p>
-    <ul>
-      <li>Email: <a href="mailto:hello@shouldiholdoff.live">hello@shouldiholdoff.live</a></li>
-      <li>Subject line "Privacy" for priority handling</li>
-    </ul>
-    <p>We will respond to privacy-related requests within <strong>30 days</strong>.</p>
+    <hr>
 
-    <h2>Company details</h2>
-    <p><strong>HoldOff</strong> is independently operated. Registered address available upon request.</p>
+    <h2>8. Changes to This Policy</h2>
+    <p>We may update this policy as our practices or legal requirements change. We will notify you of material changes by email and by posting the updated policy on this page with a new "Last Updated" date.</p>
+
+    <hr>
+
+    <h2>9. Contact Us</h2>
+    <p><strong>Email:</strong> <a href="mailto:privacy@shouldiholdoff.live">privacy@shouldiholdoff.live</a></p>
+    <p>We respond to privacy requests within 30 days or as required by law.</p>
+
+    <div style="margin-top:3rem; padding:1.25rem; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:12px;">
+      <p style="font-size:13px; color:#94a3b8; margin:0;"><strong style="color:#c4b5fd;">Mental Health Note:</strong> HoldOff is not therapy, not a diagnosis, and not a substitute for professional mental health care. If you are in crisis, contact the 988 Suicide &amp; Crisis Lifeline.</p>
+    </div>
   </div>
+
+  <footer>
+    <p>&copy; 2026 HoldOff. Made for people who deserve better.</p>
+    <div style="margin-top:.75rem;">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/suggest">Suggest a Feature</a>
+    </div>
+  </footer>
 </body>
 </html>
