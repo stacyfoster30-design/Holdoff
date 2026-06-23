@@ -327,11 +327,104 @@ app.get('/suggest', async (req, res) => {
 app.get('/privacy', (_req, res) => res.render('privacy'));
 app.get('/terms', (_req, res) => res.render('terms'));
 
+// ─── Premium interactive story ───────────────────────────────────────────────
+// /story-preview = Stacy's real story (free, served as the preview).
+// /story-experience = "put on my shoes" personalized version (premium only).
+// /story = legacy alias → preview.
+app.get('/story', (_req, res) => res.redirect('/story-preview'));
+
+app.get('/story-preview', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('story-animated', {
+    user,
+    isPremium: !!(user && ['premium', 'lifetime', 'founder'].includes((user.membership_type || '').toLowerCase())),
+  });
+});
+
+app.get('/story-experience', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/login?returnTo=' + encodeURIComponent('/story-experience'));
+  }
+  const tier = (user.membership_type || '').toLowerCase();
+  const isPremium = ['premium', 'lifetime', 'founder'].includes(tier);
+  if (!isPremium) {
+    return res.redirect('/pricing?reason=story');
+  }
+  res.render('story-experience', { user, isPremium: true });
+});
+
 // Auth pages
 app.get('/login', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (user) return res.redirect('/inbox');
   res.render('login', buildLandingContext({ user: null }));
+});
+
+// POST /login safety net — handles form submits (e.g. JS disabled, JS error, or
+// browsers that bypass onsubmit handlers). Keeps the page from ever returning
+// "Cannot POST /login". Mirrors POST /api/auth/login but supports both
+// application/json (xhr) and application/x-www-form-urlencoded (plain form).
+app.post('/login', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const { findUserByEmail } = require(path.join(__dirname, 'db', 'users'));
+    const {
+      signAccessToken,
+      signRefreshToken,
+      holdoffTokenCookieOpts,
+      refreshCookieOpts,
+    } = require(path.join(__dirname, 'lib', 'auth'));
+
+    const wantsJson =
+      req.is('application/json') ||
+      (req.headers.accept || '').includes('application/json') ||
+      req.xhr === true;
+
+    const { email, password } = req.body || {};
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    const returnTo = (req.query.returnTo || req.body.returnTo || '/filter').toString();
+
+    const fail = (status, message) => {
+      if (wantsJson) return res.status(status).json({ error: message });
+      return res.redirect(`/login?error=${encodeURIComponent(message)}&returnTo=${encodeURIComponent(returnTo)}`);
+    };
+
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      return fail(400, 'Email is required.');
+    }
+    if (!password) {
+      return fail(400, 'Password is required.');
+    }
+
+    const user = await findUserByEmail(normalizedEmail);
+    if (!user || !user.password_hash) {
+      return fail(401, 'Invalid email or password.');
+    }
+    const valid = await bcrypt.compare(password, user.password_hash).catch(() => false);
+    if (!valid) {
+      return fail(401, 'Invalid email or password.');
+    }
+
+    const accessToken = signAccessToken({ id: user.id, email: normalizedEmail });
+    const rawRefreshToken = await signRefreshToken(user.id, normalizedEmail, req.headers['user-agent']);
+    res.cookie('holdoff_token', accessToken, holdoffTokenCookieOpts());
+    res.cookie('refresh_token', rawRefreshToken, refreshCookieOpts());
+
+    if (wantsJson) {
+      return res.json({
+        ok: true,
+        user: { id: user.id, email: normalizedEmail, name: user.name, subscription_tier: user.membership_type },
+      });
+    }
+    return res.redirect(returnTo);
+  } catch (err) {
+    console.error('[POST /login] error:', err);
+    if ((req.headers.accept || '').includes('application/json')) {
+      return res.status(500).json({ error: 'Login failed. Please try again.' });
+    }
+    return res.redirect('/login?error=' + encodeURIComponent('Login failed. Please try again.'));
+  }
 });
 
 // Forgot password page
