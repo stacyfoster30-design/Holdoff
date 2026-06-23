@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HoldOff</string>
+    <string name="disclaimer_text">Sadie is not a therapist, not a diagnosis tool, and not a substitute for professional mental health care. If you\'re in crisis, please reach out to a professional.</string>
+</resources>
