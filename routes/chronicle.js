@@ -126,8 +126,8 @@ async function generateTips(userId) {
           priority: 'medium',
           icon: '🌅',
           title: 'Morning Checker',
-          message: `You check messages early in the morning (around ${hour}am). That's a grounded time to reflect.`,
-          action: 'Use this clarity to review yesterday's drafts.',
+          message: `You check messages early in the morning (around ${hour}am). That is a grounded time to reflect.`,
+          action: 'Use this clarity to review yesterday drafts.',
         });
       }
     }
@@ -147,8 +147,8 @@ async function generateTips(userId) {
           priority: 'medium',
           icon: '🛑',
           title: 'You Hold A Lot',
-          message: `${holdRate}% of your recent messages were held. That's great impulse control, but make sure you're not avoiding communication.`,
-          action: 'Check if you're using holding as avoidance.',
+          message: `${holdRate}% of your recent messages were held. That is great impulse control, but make sure you are not avoiding communication.`,
+          action: 'Check if you are using holding as avoidance.',
         });
       } else if (holdRate < 30) {
         tips.push({
@@ -165,7 +165,7 @@ async function generateTips(userId) {
           priority: 'low',
           icon: '⚖️',
           title: 'Balanced Approach',
-          message: `Your hold rate is ${holdRate}%. You're finding balance between caution and authenticity.`,
+          message: `Your hold rate is ${holdRate}%. You are finding balance between caution and authenticity.`,
           action: 'Keep trusting your judgment.',
         });
       }
@@ -189,7 +189,7 @@ async function generateTips(userId) {
           priority: 'medium',
           icon: '🚪',
           title: 'Avoidant Attachment Insight',
-          message: 'Avoidant texters might hold back too much. Vulnerability isn't weakness—it's connection.',
+          message: 'Avoidant texters might hold back too much. Vulnerability is not weakness--it is connection.',
           action: 'Practice sending one emotionally honest message this week.',
         });
       } else if (style.includes('secure')) {
@@ -222,7 +222,7 @@ async function generateTips(userId) {
           priority: 'medium',
           icon: '📔',
           title: 'Journal Again',
-          message: `You've journaled ${streak.total_entries} times before. Reconnect with your patterns.`,
+          message: `You have journaled ${streak.total_entries} times before. Reconnect with your patterns.`,
           action: 'Write one entry this week.',
         });
       }
@@ -237,7 +237,7 @@ async function generateTips(userId) {
           icon: '🎉',
           title: 'First Verdict!',
           message: 'You just took your first step toward mindful communication.',
-          action: 'Keep checking in—it gets easier.',
+          action: 'Keep checking in--it gets easier.',
         });
       } else if (verdictStats.totalVerdicts === 10) {
         tips.push({
@@ -245,8 +245,8 @@ async function generateTips(userId) {
           priority: 'high',
           icon: '🎉',
           title: '10 Verdicts Milestone',
-          message: 'Ten check-ins! You're building real self-awareness.',
-          action: 'Reflect on what's changed since you started.',
+          message: 'Ten check-ins! You are building real self-awareness.',
+          action: 'Reflect on what has changed since you started.',
         });
       } else if (verdictStats.totalVerdicts === 50) {
         tips.push({
@@ -254,8 +254,8 @@ async function generateTips(userId) {
           priority: 'high',
           icon: '🏆',
           title: '50 Verdicts!',
-          message: 'Fifty verdicts is serious commitment. You've rewired your texting habits.',
-          action: 'Share your progress—it might inspire someone.',
+          message: 'Fifty verdicts is serious commitment. You have rewired your texting habits.',
+          action: 'Share your progress--it might inspire someone.',
         });
       } else if (verdictStats.totalVerdicts % 100 === 0) {
         tips.push({
@@ -263,8 +263,8 @@ async function generateTips(userId) {
           priority: 'high',
           icon: '🌟',
           title: `${verdictStats.totalVerdicts} Verdicts!`,
-          message: 'You're a mindful communication champion.',
-          action: 'Look back at your first verdict—see how far you've come.',
+          message: 'You are a mindful communication champion.',
+          action: 'Look back at your first verdict--see how far you have come.',
         });
       }
     }
@@ -278,7 +278,7 @@ async function generateTips(userId) {
           priority: 'medium',
           icon: '👋',
           title: 'We Miss You',
-          message: `It's been ${daysSince} days since your last check-in. Your patterns don't disappear—they just hide.`,
+          message: `It has been ${daysSince} days since your last check-in. Your patterns do not disappear--they just hide.`,
           action: 'Submit one verdict today to reconnect.',
         });
       } else if (daysSince >= 30) {
@@ -288,7 +288,7 @@ async function generateTips(userId) {
           icon: '🔄',
           title: 'Come Back',
           message: `${daysSince} days is a long time. The work you did before still matters.`,
-          action: 'Start fresh—one message at a time.',
+          action: 'Start fresh--one message at a time.',
         });
       }
     }
