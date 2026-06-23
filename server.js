@@ -354,6 +354,29 @@ app.get('/story-experience', async (req, res) => {
   res.render('story-experience', { user, isPremium: true });
 });
 
+// Companion chat page — Sadie or Dan
+app.get('/companion', async (req, res) => {
+  const soul = req.query.soul === 'Dan' ? 'Dan' : 'Sadie';
+  const CHARACTERS = {
+    Sadie: {
+      name: 'Sadie',
+      tagline: 'Your soft-spoken pattern spotter',
+      emoji: '🌙',
+      image: '/assets/SADIE_COMPANION.png',
+      greeting: "Hey… I noticed something. Want to talk about it?"
+    },
+    Dan: {
+      name: 'Dan',
+      tagline: "The mirror you didn't ask for",
+      emoji: '🔥',
+      image: '/assets/DAN_COMPANION.png',
+      greeting: "Okay. What's actually going on here?"
+    }
+  };
+  const user = await getUserFromCookies(req).catch(() => null);
+  res.render('companion', { character: CHARACTERS[soul], user });
+});
+
 // Auth pages
 app.get('/login', async (req, res) => {
   const user = await getUserFromCookies(req);
