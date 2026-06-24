@@ -51,6 +51,16 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
 
+      - name: Build Release AAB
+        working-directory: android
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/android/app/holdoff-release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          ./gradlew bundleRelease --no-daemon
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -58,13 +68,23 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
+      - name: Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: holdoff-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          retention-days: 30
+          if-no-files-found: warn
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: build-${{ github.run_number }}
           name: HoldOff v1.0.0 Build ${{ github.run_number }}
-          files: android/app/build/outputs/apk/release/app-release.apk
+          files: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/*.aab
           generate_release_notes: false
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
