@@ -55,12 +55,14 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          mkdir -p keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > keystore/holdoff-release.jks
+          mkdir -p app/keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > app/keystore/holdoff-release.jks
+          echo "Keystore decoded to app/keystore/holdoff-release.jks"
+          ls -la app/keystore/
 
       - name: Build release AAB
         env:
-          KEYSTORE_PATH: keystore/holdoff-release.jks
+          KEYSTORE_PATH: ${{ github.workspace }}/app/keystore/holdoff-release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
