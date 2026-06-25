@@ -33,12 +33,28 @@ private val STYLE_LABELS = mapOf(
     "fearful_avoidant" to "Fearful-avoidant"
 )
 
+private val QUIZ_TO_COMPANION_STYLE = mapOf(
+    "ANX" to "anxious",
+    "AVO" to "dismissive_avoidant",
+    "FA"  to "fearful_avoidant",
+    "SEC" to "secure"
+)
+
 class CompanionViewModel(application: Application) : AndroidViewModel(application) {
 
     private val ctx = application.applicationContext
 
+    private val savedStyle: String = run {
+        val quizResult = HoldOffApi.getAttachmentStyle(ctx)
+        QUIZ_TO_COMPANION_STYLE[quizResult] ?: "fearful_avoidant"
+    }
+
     private val _state = MutableStateFlow(
         CompanionUiState(
+            activeStyle = savedStyle,
+            activeStyleLabel = STYLE_LABELS[savedStyle]?.let {
+                if (savedStyle == "fearful_avoidant") "$it · core" else it
+            } ?: "fearful avoidant · core",
             messages = listOf(
                 ChatMessage(
                     text = "Hey love. I\u2019m Sadie. \uD83D\uDC9C  I see patterns in your conversations that you might be missing. What\u2019s going on?",

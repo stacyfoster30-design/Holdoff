@@ -1,11 +1,13 @@
 package com.holdoff.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.holdoff.app.data.network.HoldOffApi
 import com.holdoff.app.ui.screens.CompanionScreen
 import com.holdoff.app.ui.screens.HomeScreen
 import com.holdoff.app.ui.screens.LoginScreen
@@ -103,6 +105,9 @@ fun AppNavigation(
                 threadId = id,
                 onBack = { navController.popBackStack() },
                 onUpgradeClick = { navController.navigate(Routes.PAYWALL) },
+                onTrustedContactsClick = {
+                    navController.navigate(Routes.TRUSTED) { launchSingleTop = true }
+                },
                 isPremium = isPremium
             )
         }
@@ -129,11 +134,11 @@ fun AppNavigation(
         composable(Routes.PROFILE) {
             ProfileScreen(
                 onBack = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
-                onSubscribeClick = { navController.navigate(Routes.PAYWALL) },
-                onInsightsClick = { navController.navigate(Routes.INSIGHTS) },
-                onQuizClick = { navController.navigate(Routes.QUIZ) },
-                onTrustedContactsClick = { navController.navigate(Routes.TRUSTED) },
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                onSubscribeClick = { navController.navigate(Routes.PAYWALL) { launchSingleTop = true } },
+                onInsightsClick = { navController.navigate(Routes.INSIGHTS) { launchSingleTop = true } },
+                onQuizClick = { navController.navigate(Routes.QUIZ) { launchSingleTop = true } },
+                onTrustedContactsClick = { navController.navigate(Routes.TRUSTED) { launchSingleTop = true } },
                 isPremium = isPremium
             )
         }
@@ -146,10 +151,11 @@ fun AppNavigation(
         }
 
         composable(Routes.QUIZ) {
+            val context = LocalContext.current
             QuizScreen(
                 onBack = { navController.popBackStack() },
                 onComplete = { style ->
-                    // TODO: save to backend
+                    HoldOffApi.saveAttachmentStyle(context, style)
                     navController.popBackStack()
                 }
             )
