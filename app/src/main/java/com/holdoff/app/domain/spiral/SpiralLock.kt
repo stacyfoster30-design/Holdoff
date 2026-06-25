@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 class SpiralLock {
 
-    private val _state = MutableStateFlow(SpiralState.Idle)
+    private val _state = MutableStateFlow<SpiralState>(SpiralState.Idle)
     val state: StateFlow<SpiralState> = _state
 
     private var lockUntil: Long = 0
