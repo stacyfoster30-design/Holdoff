@@ -28,13 +28,6 @@ const checkoutRouter = require(path.join(__dirname, 'routes', 'checkout'));
 const messagingRouter = require(path.join(__dirname, 'routes', 'messaging'));
 const contactsRouter = require(path.join(__dirname, 'routes', 'contacts'));
 
-// Kick off the one-shot waitlist blast on startup if BLAST_TRIGGER=1
-if (process.env.BLAST_TRIGGER === '1') {
-  require(path.join(__dirname, 'jobs', 'blast-on-start'))().catch(err => {
-    console.error('[blast] Fatal error:', err.message);
-  });
-}
-
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -44,15 +37,8 @@ app.use((_req, res, next) => {
   res.locals.googleClientId = process.env.GOOGLE_CLIENT_ID || '251734222269-l5fn6rbfcmtmm161q3g7e7k840lavf3f.apps.googleusercontent.com';
   next();
 });
-// Sentry request handler — guarded for @sentry/node v8+ which removed Handlers API.
-// WHY guard: newer Sentry SDK drops Handlers.requestHandler(); graceful fallback prevents crash.
-if (Sentry.Handlers && typeof Sentry.Handlers.requestHandler === 'function') {
-  app.use(Sentry.Handlers.requestHandler());
-}
+
 // Capture raw body for Stripe webhook signature verification.
-// WHY verify callback: the old approach used a router.use() in stripe-webhook.js that
-// called req.on('end', next) — but express.json() had already consumed the stream,
-// so the 'end' event never re-fired and next() was never called, blocking ALL routes.
 app.use(express.json({
   verify: (req, _res, buf) => {
     if (req.originalUrl === '/api/stripe-webhook') {
@@ -62,14 +48,12 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware safety net for /api/filter/analyze — guarantees a response within 16s.
-// WHY: the handler has a 14s hard timeout; this fires 2s later as a last-ditch fallback.
+// Middleware safety net for /api/filter/analyze
 app.use('/api/filter', (req, res, next) => {
   const t0 = Date.now();
   console.log(`[mw] ${req.method} ${req.path} started`);
 
   if (req.method === 'POST' && req.path === '/analyze') {
-    // 16s safety net — handler should respond by 14s; this is the absolute backstop.
     const safetyTimer = setTimeout(() => {
       if (!res.headersSent) {
         console.log(`[mw] SAFETY TIMEOUT at ${Date.now() - t0}ms — returning static HOLD`);
@@ -97,7 +81,7 @@ app.use('/api/filter', (req, res, next) => {
   next();
 });
 
-// Mount API routes — all /api/auth/* routes are rate-limited
+// Mount API routes
 app.use('/api/auth', rateLimit({
   windowMs: 60 * 1000,
   max: 100,
@@ -113,18 +97,13 @@ app.use('/api/verdict', rateLimit({
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 }));
 
-// Additional API endpoints — MUST be before app.use('/api', routes) to take priority
-// GET /api/health — health check for monitoring dashboards
+// Additional API endpoints
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
-// POST /api/interpret → aliased /api/filter/interpret (same AI logic)
-const interpretHandler = require(path.join(__dirname, 'routes', 'interpret'));
-app.post('/api/interpret', interpretHandler);
-app.post('/api/auth/google', googleAuthHandler);
 
 // Mount SEO routes at root
 app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 
-// Main API router — catches all /api/* not already matched above
+// Main API router
 app.use('/api/auth', authRouter);
 app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
 app.use('/api/checkout', checkoutRouter);
@@ -137,30 +116,12 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
-app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 
-// Sentry error handler — guarded for @sentry/node v8+ compatibility.
-if (Sentry.Handlers && typeof Sentry.Handlers.errorHandler === 'function') {
-  app.use(Sentry.Handlers.errorHandler());
-}
-
-// Catch-all 500 for unhandled errors caught by Sentry.
-app.use((err, req, res, _next) => {
-  if (!res.headersSent) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// EJS view engine — templates live in ./views/ (entry point: layout.ejs)
+// EJS view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-
-// Legacy/root conversion route aliases — keep old public links from 404ing.
-// WHY: SEO/Site Health found root-level links like /waitlist, /contact, /verdict,
-// /interpret, /referral, and /share returning 404 while their API or canonical
-// equivalents exist elsewhere. These redirects preserve the funnel without
-// changing API behavior.
+// Redirect aliases
 app.get('/waitlist', (_req, res) => res.redirect(301, '/filter'));
 app.get('/contact', (_req, res) => res.redirect(301, '/#contact'));
 app.get('/interpret', (_req, res) => res.redirect(301, '/filter'));
@@ -168,11 +129,8 @@ app.get('/verdict', (_req, res) => res.redirect(301, '/filter'));
 app.get('/referral', (_req, res) => res.redirect(301, '/referrals'));
 app.get('/share', (_req, res) => res.redirect(301, '/filter'));
 app.get('/checkout', (_req, res) => res.redirect(301, '/filter#pricing'));
-app.post('/checkout', (req, res) => res.redirect(307, '/api/checkout/session'));
-app.post('/signup', (req, res) => res.redirect(307, '/api/auth/signup'));
-app.post('/login', (req, res) => res.redirect(307, '/api/auth/login'));
 
-// Health check (Render requirement — no DB query so Neon can auto-suspend)
+// Health check
 app.get('/robots.txt', (_req, res) => {
   res.setHeader('Content-Type', 'text/plain');
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
@@ -182,16 +140,30 @@ app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
 app.get('/notifications', async (_req, res) => {
   res.render('notifications', { user: null });
 });
-app.get('/quiz', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'quiz.html')));
-app.get('/legal', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal.html')));
-app.get('/questionnaire', (_req, res) => res.sendFile(path.join(__dirname, 'conditions-questionnaire.html')));
 app.get('/onboarding', (_req, res) => res.render('onboarding'));
 
-// Static files — `index: false` so `/` hits the EJS render below, not index.html
+// Digital Asset Links — verifies the Android app (TWA) owns this domain.
+// Served explicitly because express.static ignores dot-folders like /.well-known.
+app.get('/.well-known/assetlinks.json', (_req, res) => {
+  res.type('application/json').send(JSON.stringify([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.stacymartin.holdoff',
+        sha256_cert_fingerprints: [
+          '7B:C2:57:02:73:AB:25:A5:52:B6:73:1B:F6:AF:2D:2E:FF:BF:02:D7:AF:2E:33:CC:92:D3:FA:74:EB:61:2D:95',
+          '5C:01:7D:6E:E0:E5:5C:B1:9E:DF:7C:26:39:32:8C:62:04:71:12:A6:10:CE:40:D6:36:D2:E1:5D:D6:02:2F:D1',
+        ],
+      },
+    },
+  ], null, 2));
+});
+
+// Static files
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// Serve APK directly — bypasses dynamic router dispatcher entirely.
-// Render's static CDN blocks .apk by default (403), so we serve it here.
+// Serve APK directly
 app.get('/android-app.apk', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'holdoff.apk'), {
     headers: {
@@ -219,7 +191,7 @@ async function getUserFromCookies(req) {
   };
 }
 
-// Landing page — sets a 90-day affiliate attribution cookie when ?aff=<code> is present.
+// Landing page
 app.get('/', async (req, res) => {
   const user = await getUserFromCookies(req);
   const affCode = req.query.aff;
@@ -229,7 +201,7 @@ app.get('/', async (req, res) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
   if (affCode && /^[a-z0-9-]{4,32}$/.test(affCode)) {
@@ -237,154 +209,49 @@ app.get('/', async (req, res) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+      maxAge: 90 * 24 * 60 * 60 * 1000,
     });
   }
   res.render('index', { user });
 });
 
-// Referral dashboard — tiered rewards + progress tracker
-app.get('/referrals', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/filter');
-  res.render('referrals', { user });
-});
-
-
-// Inbox — messaging hub (replaces old dashboard as home screen)
+// Inbox
 app.get('/inbox', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) return res.redirect('/login?returnTo=/inbox');
   res.render('inbox', { user });
 });
 
-// Pattern journal — requires authentication
-app.get('/journal', async (req, res) => {
+// Contacts
+app.get('/contacts', async (req, res) => {
   const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/filter');
-  res.render('journal', { user });
+  if (!user) return res.redirect('/login?returnTo=/contacts');
+  res.render('contacts', { user });
 });
 
-// Verdict history — requires authentication
-app.get('/history', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/history');
-  res.render('history', { user });
-});
-
-// Chronicle tips — requires authentication
-app.get('/chronicle', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/chronicle');
-  res.render('chronicle', { user });
-});
-
-// Attachment style quiz — public, no auth required
-app.get('/quiz', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('quiz', { user: user || null });
-});
-
-// Interactive story experience — paid users only (animated version)
-app.get('/story', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) {
-    return res.redirect('/signup');
-  }
-  // Check if user has active subscription
-  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
-    return res.redirect('/');
-  }
-  res.render('story-animated', { user });
-});
-
-// Story preview — public for testing (remove before production)
-app.get('/story-preview', async (req, res) => {
-  res.render('story-animated', { user: null });
-});
-
-// Personalized story experience
-app.get('/story-experience', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) {
-    return res.redirect('/login?returnTo=/story-experience');
-  }
-  // Check if user has active subscription
-  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
-    return res.redirect('/');
-  }
-  res.render('story-experience', { user });
-});
-
-// AI Companion hub — paid users only (redirect to default character)
-app.get('/companion', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) {
-    return res.redirect('/signup');
-  }
-  // Check if user has active subscription
-  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
-    return res.redirect('/');
-  }
-  // Redirect to default Stacy companion
-  res.redirect('/companion/stacy');
-});
-
-// AI Companion chat — paid users only
-app.get('/companion/:characterName', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) {
-    return res.redirect('/signup');
-  }
-  // Check if user has active subscription
-  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'canceled') {
-    return res.redirect('/');
-  }
-  
-  const { characterName } = req.params;
-  const { getCharacterDefinition } = require(path.join(__dirname, 'lib', 'companion-ai'));
-  const character = getCharacterDefinition(characterName);
-  
-  if (!character) {
-    return res.status(404).render('404');
-  }
-  
-  // Build user context for the view
-  const userContext = {
-    name: user.name || 'friend',
-    conditions: user.mental_health_conditions || [],
-    preferences: user.preferences || {},
-  };
-  
-  res.render('companion', {
-    user,
-    character,
-    userContext,
-  });
-});
-
-// Detox landing page — 5-day Anxious Texting Detox email course
-app.get('/detox', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('detox', buildLandingContext({ user }));
-});
-
-
-// Affiliates partner program page
-app.get('/affiliates', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('affiliates', buildLandingContext({ user }));
-});
 // Filter page
+app.get('/filter', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  const refCode = req.query.ref;
+  if (refCode && /^[a-z0-9]{8,32}$/.test(refCode)) {
+    res.cookie('ref', refCode, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+  res.render('filter', buildLandingContext({ user }));
+});
 
-// Pricing page — standalone route for campaigns and checkout CTAs.
+// Pricing page
 app.get('/pricing', async (req, res) => {
   const tokens = getCookieTokens(req);
   const user = tokens.accessPayload || tokens.refreshPayload || null;
   res.render('pricing', { user });
 });
 
-// Settings page — authenticated users only
+// Settings page
 app.get('/settings', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) {
@@ -393,22 +260,14 @@ app.get('/settings', async (req, res) => {
   res.render('settings', { user });
 });
 
-// ─── Free-access promo codes ─────────────────────────────────────────────────
-// Codes that grant full lifetime access when redeemed by a signed-in user.
-// Add new codes here (UPPERCASE keys). Matching is case-insensitive.
-const FREE_ACCESS_CODES = {
-  DNA: { membership: 'lifetime', label: 'Founder Free Access' },
-};
-
-// Redeem page — public. If not signed in, it routes them to log in / sign up
-// and returns them right back here to finish unlocking.
+// Redeem page
 app.get('/redeem', async (req, res) => {
   const user = await getUserFromCookies(req);
   const code = (req.query.code || '').toString().replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
   res.render('redeem', { user: user || null, code });
 });
 
-// Redeem endpoint — grants lifetime access to the signed-in user for a valid code.
+// Redeem endpoint
 app.post('/api/redeem', async (req, res) => {
   try {
     const user = await getUserFromCookies(req);
@@ -416,13 +275,15 @@ app.post('/api/redeem', async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Please sign in or create your account first, then redeem.' });
     }
     const raw = (req.body?.code || '').toString().trim().toUpperCase();
+    const FREE_ACCESS_CODES = {
+      DNA: { membership: 'lifetime', label: 'Founder Free Access' },
+    };
     const entry = FREE_ACCESS_CODES[raw];
     if (!entry) {
       return res.status(400).json({ ok: false, error: "That code isn't valid. Double-check it and try again." });
     }
     const { updateMembershipType } = require(path.join(__dirname, 'db', 'users'));
     await updateMembershipType(user.id, entry.membership);
-    // Best-effort mirror into subscriptions so paywall checks everywhere see active access.
     try {
       const { upsertSubscription } = require(path.join(__dirname, 'db', 'subscriptions'));
       await upsertSubscription({
@@ -444,34 +305,154 @@ app.post('/api/redeem', async (req, res) => {
   }
 });
 
-app.get('/filter', async (req, res) => {
+// Affiliate
+app.get('/affiliate', async (req, res) => {
   const user = await getUserFromCookies(req);
-  const refCode = req.query.ref;
-  if (refCode && /^[a-z0-9]{8,32}$/.test(refCode)) {
-    res.cookie('ref', refCode, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+  res.render('affiliate', { user: user || null });
+});
+
+// Partnerships
+app.get('/partnerships', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('partnerships', { user: user || null });
+});
+
+// Suggest
+app.get('/suggest', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('suggest', { user: user || null });
+});
+
+// Legal pages
+app.get('/privacy', (_req, res) => res.render('privacy'));
+app.get('/terms', (_req, res) => res.render('terms'));
+
+// ─── Premium interactive story ───────────────────────────────────────────────
+// /story-preview = Stacy's real story (free, served as the preview).
+// /story-experience = "put on my shoes" personalized version (premium only).
+// /story = legacy alias → preview.
+app.get('/story', (_req, res) => res.redirect('/story-preview'));
+
+app.get('/story-preview', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('story-animated', {
+    user,
+    isPremium: !!(user && ['premium', 'lifetime', 'founder'].includes((user.membership_type || '').toLowerCase())),
+  });
+});
+
+app.get('/story-experience', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) {
+    return res.redirect('/login?returnTo=' + encodeURIComponent('/story-experience'));
   }
-  res.render('filter', buildLandingContext({ user }));
+  const tier = (user.membership_type || '').toLowerCase();
+  const isPremium = ['premium', 'lifetime', 'founder'].includes(tier);
+  if (!isPremium) {
+    return res.redirect('/pricing?reason=story');
+  }
+  res.render('story-experience', { user, isPremium: true });
 });
 
-// Compose messenger — AI-protected messaging with spiral lock + incoming decode
-app.get('/compose', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/compose');
-  res.render('compose', { user });
+// Companion chat page — Sadie or Dan
+app.get('/companion', async (req, res) => {
+  const soul = req.query.soul === 'Dan' ? 'Dan' : 'Sadie';
+  const CHARACTERS = {
+    Sadie: {
+      name: 'Sadie',
+      tagline: 'Your soft-spoken pattern spotter',
+      emoji: '🌙',
+      image: '/assets/SADIE_COMPANION.png',
+      greeting: "Hey… I noticed something. Want to talk about it?"
+    },
+    Dan: {
+      name: 'Dan',
+      tagline: "The mirror you didn't ask for",
+      emoji: '🔥',
+      image: '/assets/DAN_COMPANION.png',
+      greeting: "Okay. What's actually going on here?"
+    }
+  };
+  const user = await getUserFromCookies(req).catch(() => null);
+  const userContext = {
+    name: (user && (user.name || user.firstName)) || null,
+    isPremium: !!(user && (user.isPremium || user.premium)),
+    soul
+  };
+  res.render('companion', { character: CHARACTERS[soul], user, userContext });
 });
 
-// Redirect old /holdoff.apk URL → static APK handler (CDN blocks raw .apk)
-app.get('/holdoff.apk', (_req, res) => res.redirect(301, '/android-app.apk'));
-
-// Download page — Android APK and PWA install instructions
-app.get('/download', async (req, res) => {
+// Auth pages
+app.get('/login', async (req, res) => {
   const user = await getUserFromCookies(req);
-  res.render('download', buildLandingContext({ user }));
+  if (user) return res.redirect('/inbox');
+  res.render('login', buildLandingContext({ user: null }));
+});
+
+// POST /login safety net — handles form submits (e.g. JS disabled, JS error, or
+// browsers that bypass onsubmit handlers). Keeps the page from ever returning
+// "Cannot POST /login". Mirrors POST /api/auth/login but supports both
+// application/json (xhr) and application/x-www-form-urlencoded (plain form).
+app.post('/login', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const { findUserByEmail } = require(path.join(__dirname, 'db', 'users'));
+    const {
+      signAccessToken,
+      signRefreshToken,
+      holdoffTokenCookieOpts,
+      refreshCookieOpts,
+    } = require(path.join(__dirname, 'lib', 'auth'));
+
+    const wantsJson =
+      req.is('application/json') ||
+      (req.headers.accept || '').includes('application/json') ||
+      req.xhr === true;
+
+    const { email, password } = req.body || {};
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    const returnTo = (req.query.returnTo || req.body.returnTo || '/filter').toString();
+
+    const fail = (status, message) => {
+      if (wantsJson) return res.status(status).json({ error: message });
+      return res.redirect(`/login?error=${encodeURIComponent(message)}&returnTo=${encodeURIComponent(returnTo)}`);
+    };
+
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      return fail(400, 'Email is required.');
+    }
+    if (!password) {
+      return fail(400, 'Password is required.');
+    }
+
+    const user = await findUserByEmail(normalizedEmail);
+    if (!user || !user.password_hash) {
+      return fail(401, 'Invalid email or password.');
+    }
+    const valid = await bcrypt.compare(password, user.password_hash).catch(() => false);
+    if (!valid) {
+      return fail(401, 'Invalid email or password.');
+    }
+
+    const accessToken = signAccessToken({ id: user.id, email: normalizedEmail });
+    const rawRefreshToken = await signRefreshToken(user.id, normalizedEmail, req.headers['user-agent']);
+    res.cookie('holdoff_token', accessToken, holdoffTokenCookieOpts());
+    res.cookie('refresh_token', rawRefreshToken, refreshCookieOpts());
+
+    if (wantsJson) {
+      return res.json({
+        ok: true,
+        user: { id: user.id, email: normalizedEmail, name: user.name, subscription_tier: user.membership_type },
+      });
+    }
+    return res.redirect(returnTo);
+  } catch (err) {
+    console.error('[POST /login] error:', err);
+    if ((req.headers.accept || '').includes('application/json')) {
+      return res.status(500).json({ error: 'Login failed. Please try again.' });
+    }
+    return res.redirect('/login?error=' + encodeURIComponent('Login failed. Please try again.'));
+  }
 });
 
 // Forgot password page
@@ -481,174 +462,11 @@ app.get('/forgot-password', async (req, res) => {
   res.render('forgot-password', { user: null });
 });
 
-// Password reset page — token validated server-side on form submit
+// Reset password page
 app.get('/reset-password', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (user) return res.redirect('/inbox');
   res.render('reset-password', { user: null });
-});
-
-// Success page — verifies Stripe session server-side before confirming
-app.get('/success', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('success', { ...buildLandingContext({ user }), sessionId: req.query.session_id || null });
-});
-
-// Cancel page
-app.get('/cancel', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('cancel', buildLandingContext({ user }));
-});
-
-// Upgrade page — Pro paywall, auth-gated
-app.get('/upgrade', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/upgrade');
-  res.render('upgrade', buildLandingContext({ user }));
-});
-
-// SEO pages (spirals + 10 article pages) — handled by routes/seo.js (mounted at root)
-
-// /patterns/* pages — served directly (sub-path avoids /api prefix collision)
-app.get('/patterns/avoidant-deactivation', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'seo', 'avoidant-deactivation.html'), (err) => {
-    if (err) {
-      console.error('[/patterns/avoidant-deactivation] sendFile error:', err?.message);
-      res.status(500).send('Internal error');
-    }
-  });
-});
-
-// Compare pages — /compare (index + 3 sub-pages)
-app.get('/compare', (_req, res) => res.render('compare/index'));
-app.get('/compare/replika', (_req, res) => res.render('compare/replika'));
-app.get('/compare/character-ai', (_req, res) => res.render('compare/character-ai'));
-app.get('/compare/chatgpt', (_req, res) => res.render('compare/chatgpt'));
-
-
-// Insights — stats, contact analysis, forecast
-app.get('/insights', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/insights');
-  res.render('insights', { user });
-});
-
-
-// Account — profile, personality, settings
-// ─── Account Sub-Pages ──────────────────────────────────────
-app.get('/account/trusted-contacts', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/account/trusted-contacts');
-  res.render('account/trusted-contacts', { user });
-});
-
-app.get('/account/personality', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/account/personality');
-  res.render('account/personality', { user });
-});
-
-app.get('/account/attachment-research', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/account/attachment-research');
-  res.render('account/attachment-research', { user });
-});
-
-app.get('/account/portrait', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/account/portrait');
-  res.render('account/portrait', { user });
-});
-
-app.get('/account', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/account');
-  res.render('account', { user });
-});
-
-// Affiliate program page
-app.get('/affiliate', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('affiliate', { user: user || null });
-});
-
-// Affiliate application submission
-app.post('/api/affiliate-apply', async (req, res) => {
-  try {
-    const { name, email, phone, platform, followers, about } = req.body;
-    if (!name || !email || !platform || !followers || !about) {
-      return res.status(400).json({ ok: false, error: 'Missing required fields' });
-    }
-    // TODO: Save to database or send email to partnerships team
-    console.log('[affiliate-apply]', { name, email, phone, platform, followers, about });
-    res.json({ ok: true, message: 'Application submitted successfully' });
-  } catch (err) {
-    console.error('[affiliate-apply] error:', err.message);
-    res.status(500).json({ ok: false, error: 'Something went wrong' });
-  }
-});
-
-// Partnerships application page
-app.get('/partnerships', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('partnerships', { user: user || null });
-});
-
-// Partnerships application submission
-app.post('/api/partnership-apply', async (req, res) => {
-  try {
-    const { name, email, phone, organization, type, details, website } = req.body;
-    if (!name || !email || !organization || !type || !details) {
-      return res.status(400).json({ ok: false, error: 'Missing required fields' });
-    }
-    // TODO: Save to database or send email to partnerships team
-    console.log('[partnership-apply]', { name, email, phone, organization, type, details, website });
-    res.json({ ok: true, message: 'Application submitted successfully' });
-  } catch (err) {
-    console.error('[partnership-apply] error:', err.message);
-    res.status(500).json({ ok: false, error: 'Something went wrong' });
-  }
-});
-
-// Feature suggestion box
-app.get('/suggest', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  res.render('suggest', { user: user || null });
-});
-
-// Feature suggestion submission
-app.post('/api/suggestion', async (req, res) => {
-  try {
-    const { type, title, description, impact, followup, email } = req.body;
-    if (!type || !title || !description || !impact) {
-      return res.status(400).json({ ok: false, error: 'Missing required fields' });
-    }
-    // TODO: Save to database or send email to product team
-    console.log('[suggestion]', { type, title, description, impact, followup, email });
-    res.json({ ok: true, message: 'Suggestion submitted successfully' });
-  } catch (err) {
-    console.error('[suggestion] error:', err.message);
-    res.status(500).json({ ok: false, error: 'Something went wrong' });
-  }
-});
-
-// Legal pages
-app.get('/privacy', (_req, res) => res.render('privacy'));
-app.get('/terms', (_req, res) => res.render('terms'));
-
-// Examples gallery — public, no auth required
-app.get('/examples', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  const examples = require(path.join(__dirname, 'data', 'examples.json'));
-  res.render('examples', { ...buildLandingContext({ user }), examples });
-});
-
-
-// Auth pages — login, signup, dashboard, settings
-app.get('/login', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (user) return res.redirect('/inbox');
-  res.render('login', buildLandingContext({ user: null }));
 });
 
 app.get('/signup', async (req, res) => {
@@ -657,50 +475,50 @@ app.get('/signup', async (req, res) => {
   res.render('signup', buildLandingContext({ user: null }));
 });
 
-app.get('/signin', async (req, res) => {
-  return res.redirect('/login');
-});
-
 app.get('/dashboard', async (req, res) => {
-  // Redirect to new inbox home screen
   return res.redirect('/inbox');
 });
 
-app.get('/profile', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/profile');
-  res.render('profile', buildLandingContext({ user }));
-});
-
-app.get('/community', async (req, res) => {
-  const user = await getUserFromCookies(req);
-  if (!user) return res.redirect('/login?returnTo=/community');
-  res.render('community', { user });
-});
-
-// Share page + OG image — routes extracted to routes/share.js
+// Share pages
 mountSharePages(app);
 
-// Startup validation — surface pre-flight config issues clearly rather than failing silently.
-if (!process.env.POSTMARK_API_KEY && !process.env.holdoff_EMAIL_PROXY_URL) {
-  console.warn('[startup] WARNING: No email provider configured — transactional emails will be logged only');
-}
-if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  console.warn('[startup] WARNING: STRIPE_WEBHOOK_SECRET not set — webhook signature verification disabled');
-}
+// Beta tester signup page
+app.get('/beta', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('beta', { user: user || null });
+});
 
-// Ensure community tables exist (idempotent)
+// Beta tester signup API
+app.post('/api/beta-signup', async (req, res) => {
+  try {
+    const { name, email, device, why } = req.body || {};
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ ok: false, error: 'Please enter a valid email address.' });
+    }
+    const { addBetaTester } = require(path.join(__dirname, 'db', 'beta-testers'));
+    const row = await addBetaTester({ name, email, device, why });
+    if (!row) {
+      // Already signed up — still show success so they're not blocked
+      return res.json({ ok: true, already: true });
+    }
+    console.log(`[beta-signup] new tester: ${email}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[beta-signup] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Ensure tables exist
 ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e.message));
 
-// Ensure messaging tables exist (idempotent)
 const { initializeTables: initMessagingTables } = require(path.join(__dirname, 'db', 'messages'));
 initMessagingTables().catch(e => console.warn('[startup] messaging tables:', e.message));
 
-// Run database migrations (create user_preferences, user_conditions tables)
 const { runMigrations } = require(path.join(__dirname, 'db', 'migrations'));
 runMigrations().catch(e => console.warn('[startup] migrations:', e.message));
 
-app.listen(port, () => console.log(`HoldOff running on port ${port}`));
+const { ensureBetaTestersTable } = require(path.join(__dirname, 'db', 'beta-testers'));
+ensureBetaTestersTable().catch(e => console.warn('[startup] beta_testers table:', e.message));
 
-// In-process cron jobs (Render compatibility) — extracted to jobs/in-process-crons.js
-require(path.join(__dirname, 'jobs', 'in-process-crons'));
+app.listen(port, () => console.log(`HoldOff running on port ${port}`));

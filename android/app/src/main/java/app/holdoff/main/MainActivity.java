@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.core.splashscreen.SplashScreen;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SmsManager;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
 
         handler = new Handler(Looper.getMainLooper());
@@ -77,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://holdoff.main.app/filter");
+        webView.loadUrl("https://shouldiholdoff.live/filter");
 
         // Handle deep link from widget
         handleWidgetIntent(getIntent());

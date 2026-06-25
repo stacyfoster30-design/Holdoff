@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-client-id" content="<%= typeof googleClientId !== 'undefined' ? googleClientId : '' %>">
   <title>HoldOff — Your Story</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * {
       margin: 0;
@@ -393,17 +395,14 @@
           return;
         }
 
-        // Signup successful — store user id and send to required onboarding
-        try {
-          const newId = (data.user && data.user.id) || data.id;
-          if (newId) localStorage.setItem('user_id', newId);
-        } catch (e) {}
-        window.location.href = '/onboarding';
+        // Signup successful — redirect to dashboard
+        window.location.href = '/dashboard';
       } catch (error) {
         alert('Error during signup. Please try again.');
         console.error(error);
       }
     });
   </script>
+  <script src="/js/floating-companions.js" defer></script>
 </body>
 </html>
