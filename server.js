@@ -268,6 +268,15 @@ app.get('/settings', async (req, res) => {
   res.render('settings', { user });
 });
 
+// Profile page
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  const { findUserById } = require(path.join(__dirname, 'db', 'users'));
+  const fullUser = await findUserById(user.id).catch(() => null);
+  res.render('profile', { user, fullUser });
+});
+
 // Redeem page
 app.get('/redeem', async (req, res) => {
   const user = await getUserFromCookies(req);
