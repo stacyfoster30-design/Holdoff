@@ -6,10 +6,10 @@
 
 const express = require('express');
 const router = express.Router();
-const { Anthropic } = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const db = require('../db/messages');
 
-const client = new Anthropic();
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 router.post('/', async (req, res) => {
   try {
@@ -63,19 +63,16 @@ SPIRAL DETECTION: If user sent 3+ messages to same contact in <2 min OR message 
 
 Return ONLY valid JSON.`;
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 500,
-      system: systemPrompt,
       messages: [
-        {
-          role: 'user',
-          content: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}`,
-        },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}` },
       ],
     });
 
-    const content = response.content[0].type === 'text' ? response.content[0].text : '{}';
+    const content = response.choices[0].message.content || '{}';
 
     // Parse JSON from response
     let verdict;
