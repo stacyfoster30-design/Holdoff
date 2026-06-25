@@ -44,6 +44,7 @@ const {
 const { buildWelcomeEmail } = require('../services/welcome-email');
 const { buildResetPasswordEmail } = require('../services/reset-password-email');
 const { logExitIntentEvent } = require('../db/exit-intent');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
 const SALT_ROUNDS = 12;
@@ -675,8 +676,8 @@ router.post('/google', async (req, res) => {
   }
 
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-  if (!GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ error: 'Google sign-in is not configured.', code: 'CONFIG_ERROR' });
+  if (!GOOGLE_CLIENT_ID || !isCapabilityAvailable('auth.google')) {
+    return res.status(503).json({ error: 'Google sign-in is temporarily unavailable. Use email sign-in.', code: 'GOOGLE_AUTH_UNAVAILABLE' });
   }
 
   // Verify the ID token with Google's tokeninfo endpoint

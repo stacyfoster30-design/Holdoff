@@ -8,8 +8,12 @@ const express = require('express');
 const router = express.Router();
 const OpenAI = require('openai');
 const db = require('../db/messages');
+const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 router.post('/', async (req, res) => {
   try {
@@ -63,6 +67,13 @@ SPIRAL DETECTION: If user sent 3+ messages to same contact in <2 min OR message 
 
 Return ONLY valid JSON.`;
 
+    if (!client || !isCapabilityAvailable('ai.openai')) {
+      const verdict = buildOutgoingVerdictFallback(outgoingMessage);
+      verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+      verdict.themeCode = verdict.attachmentPattern || 'SEC';
+      return res.json(verdict);
+    }
+
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 500,
@@ -114,20 +125,10 @@ Return ONLY valid JSON.`;
     res.json(verdict);
   } catch (error) {
     console.error('Verdict API error:', error.message || error);
-    if (process.env.NODE_ENV === 'development') {
-      res.status(500).json({
-        error: 'Could not analyze message',
-        details: error.message,
-        safetyLevel: 'yellow',
-        analysis: 'Try rephrasing.',
-      });
-    } else {
-      res.status(500).json({
-        error: 'Could not analyze message',
-        safetyLevel: 'yellow',
-        analysis: 'Try rephrasing.',
-      });
-    }
+    const verdict = buildOutgoingVerdictFallback(req.body?.outgoingMessage || '');
+    verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+    verdict.themeCode = verdict.attachmentPattern || 'SEC';
+    res.status(200).json(verdict);
   }
 });
 
