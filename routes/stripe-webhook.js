@@ -36,7 +36,7 @@ const {
 // express.json() had already consumed the stream — 'end' never re-fired, blocking
 // every route that passed through routes/index.js.
 
-router.post('/stripe-webhook', async (req, res) => {
+router.post('/', async (req, res) => {
   const sig = req.get('Stripe-Signature') || '';
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

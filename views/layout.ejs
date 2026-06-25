@@ -8,7 +8,7 @@
   <!-- PWA -->
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="apple-mobile-web-app-title" content="HoldOff">
-  <meta name="theme-color" content="#FAF6F0">
+  <meta name="theme-color" content="#0E0C0B">
   <meta property="og:image" content="https://pub-629428d185ca4960a0a73c850d32294b.r2.dev/generated-images/company_180424/8cf974dd-39c8-4bcc-a93e-463e450ce1cf.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -166,7 +166,7 @@
     // Global error boundary — prevents blank screen on any uncaught JS error.
     (function () {
       var fallbackDiv = document.createElement('div');
-      fallbackDiv.style.cssText = 'position:fixed;inset:0;background:#FAF6F0;color:#3A2E28;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:sans-serif;text-align:center;padding:2rem;';
+      fallbackDiv.style.cssText = 'position:fixed;inset:0;background:#0E0C0B;color:#F2EDE5;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:sans-serif;text-align:center;padding:2rem;';
       fallbackDiv.innerHTML = '<div style="font-size:2rem;margin-bottom:0.5rem;">⚠</div><div style="font-size:1.2rem;font-weight:600;margin-bottom:0.5rem;">HoldOff</div><div style="font-size:0.9rem;color:#6B5E55;">Something went wrong. <a href="/" style="color:#C97B5D;">Refresh</a> to try again.</div>';
       document.body.appendChild(fallbackDiv);
       window.addEventListener('error', function (e) {

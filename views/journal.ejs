@@ -108,10 +108,10 @@
       const content = document.getElementById('journal-text').value.trim();
       if (!content) return;
       try {
-        await fetch('/api/journal', {
+        await fetch('/api/journal/entries', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, mood: journalMood })
+          body: JSON.stringify({ trigger_text: content, outcome: journalMood || null })
         });
         location.reload();
       } catch(e) {

@@ -253,17 +253,33 @@ async function sendScheduledReminder() {
   }
 }
 
-// SW registration script storage helpers
+// SW registration script storage helpers — use IndexedDB (sw-meta store)
 function getLastReminderSent() {
-  return self.registration.active
-    .then(function (reg) { return reg.get('last_reminder_sent'); })
-    .catch(function () { return null; });
+  return openDB().then(function (db) {
+    return new Promise(function (resolve) {
+      try {
+        var tx = db.transaction('verdicts', 'readonly');
+        var req = tx.objectStore('verdicts').get('__last_reminder_sent__');
+        req.onsuccess = function () {
+          resolve(req.result ? req.result.val : null);
+        };
+        req.onerror = function () { resolve(null); };
+      } catch (_) { resolve(null); }
+    });
+  }).catch(function () { return null; });
 }
 
 function setLastReminderSent(val) {
-  return self.registration.active
-    .then(function (reg) { return reg.set('last_reminder_sent', val); })
-    .catch(function () {});
+  return openDB().then(function (db) {
+    return new Promise(function (resolve) {
+      try {
+        var tx = db.transaction('verdicts', 'readwrite');
+        tx.objectStore('verdicts').put({ id: '__last_reminder_sent__', val: val });
+        tx.oncomplete = resolve;
+        tx.onerror = resolve;
+      } catch (_) { resolve(); }
+    });
+  }).catch(function () {});
 }
 
 // ── Message handler — receive verdict data from page for offline caching ──────

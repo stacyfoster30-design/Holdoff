@@ -27,6 +27,15 @@ const googleAuthHandler = require(path.join(__dirname, 'routes', 'google-auth'))
 const checkoutRouter = require(path.join(__dirname, 'routes', 'checkout'));
 const messagingRouter = require(path.join(__dirname, 'routes', 'messaging'));
 const contactsRouter = require(path.join(__dirname, 'routes', 'contacts'));
+const filterRouter = require(path.join(__dirname, 'routes', 'filter'));
+const journalRouter = require(path.join(__dirname, 'routes', 'journal'));
+const pushRouter = require(path.join(__dirname, 'routes', 'push'));
+const referralRouter = require(path.join(__dirname, 'routes', 'referral'));
+const stripeWebhookRouter = require(path.join(__dirname, 'routes', 'stripe-webhook'));
+const abandonedCheckoutRouter = require(path.join(__dirname, 'routes', 'abandoned-checkout'));
+const detoxRouter = require(path.join(__dirname, 'routes', 'detox'));
+const waitlistRouter = require(path.join(__dirname, 'routes', 'waitlist'));
+const adminRouter = require(path.join(__dirname, 'routes', 'admin'));
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -116,6 +125,15 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
+app.use('/api/filter', filterRouter);
+app.use('/api/journal', journalRouter);
+app.use('/api/push', pushRouter);
+app.use('/api/referral', referralRouter);
+app.use('/api/stripe-webhook', stripeWebhookRouter);
+app.use('/api/abandoned-checkout', abandonedCheckoutRouter);
+app.use('/api/detox', detoxRouter);
+app.use('/api/waitlist', waitlistRouter);
+app.use('/api/admin', adminRouter);
 
 // EJS view engine
 app.set('view engine', 'ejs');
@@ -477,6 +495,19 @@ app.get('/signup', async (req, res) => {
 
 app.get('/dashboard', async (req, res) => {
   return res.redirect('/inbox');
+});
+
+// Journal page (auth required — handled inside journalRouter at GET /)
+app.get('/journal', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/journal');
+  res.render('journal', { user });
+});
+
+// Referrals page
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('referrals', { user: user || null });
 });
 
 // Share pages
