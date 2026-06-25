@@ -15,6 +15,8 @@ const {
   listCompanionVariants,
   STYLE_ORDER,
 } = require('../lib/companion-ai');
+const { buildCompanionFallback } = require('../services/resilient-ai');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 // Legacy → canonical
 function canonicalSoul(name) {
@@ -77,6 +79,16 @@ router.post('/chat', verifyToken, async (req, res) => {
     const OpenAI = require('openai');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+    if (!isCapabilityAvailable('ai.openai')) {
+      const fallback = buildCompanionFallback({ soul: prompt.soul.key, style: prompt.style.key, message });
+      return res.json({
+        ...fallback,
+        soul: prompt.soul.key,
+        style: prompt.style.key,
+        styleLabel: prompt.style.label,
+      });
+    }
+
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 1024,
@@ -97,9 +109,12 @@ router.post('/chat', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('[companion] Error:', error.message);
-    return res.status(500).json({
-      error: 'Failed to generate response',
-      message: error.message,
+    const fallback = buildCompanionFallback({ soul, style, message });
+    return res.status(200).json({
+      ...fallback,
+      soul: soul || 'Sadie',
+      style: style || null,
+      styleLabel: style || null,
     });
   }
 });

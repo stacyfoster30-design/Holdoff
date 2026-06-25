@@ -21,6 +21,7 @@ const {
   deleteSubscription,
   hasActiveSubscription,
 } = require('../db/notifications');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 // VAPID keys — generate with: node -e "const {generateVAPIDKeys}=require('web-push');console.log(JSON.stringify(generateVAPIDKeys()))"
 const VAPID_PUBLIC_KEY  = process.env.VAPID_PUBLIC_KEY  || '';
@@ -35,6 +36,14 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
 }
 
 const VALID_REMINDER_TIMES = ['9am', '8pm', '10pm'];
+
+function ensurePushConfigured(res) {
+  if (!isCapabilityAvailable('notifications.push')) {
+    res.status(503).json({ error: 'Push notifications are temporarily unavailable' });
+    return false;
+  }
+  return true;
+}
 
 // Rotating reminder copy — terse HoldOff voice
 const REMINDER_COPY = [
@@ -79,6 +88,7 @@ router.get('/preferences', requireAuth, async (req, res) => {
 // ---- POST /api/push/subscribe ----
 // Body: { subscription: PushSubscription JSON }
 router.post('/subscribe', requireAuth, async (req, res) => {
+  if (!ensurePushConfigured(res)) return;
   try {
     const { subscription } = req.body;
     if (!subscription || !subscription.endpoint) {
@@ -95,6 +105,7 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 // ---- POST /api/push/preferences ----
 // Body: { reminder_time?: string, enabled?: boolean, quiet_hours?: object }
 router.post('/preferences', requireAuth, async (req, res) => {
+  if (!ensurePushConfigured(res)) return;
   try {
     const { reminder_time, enabled, quiet_hours } = req.body || {};
 
@@ -134,6 +145,7 @@ router.post('/preferences', requireAuth, async (req, res) => {
 
 // ---- DELETE /api/push/unsubscribe ----
 router.delete('/unsubscribe', requireAuth, async (req, res) => {
+  if (!ensurePushConfigured(res)) return;
   try {
     await deleteSubscription(req.user.id);
     res.json({ ok: true });
@@ -148,6 +160,7 @@ router.delete('/unsubscribe', requireAuth, async (req, res) => {
 // cookies are passed automatically via credentials: 'include').
 // The requireAuth middleware reads the JWT from the cookie.
 router.get('/my-preferences', requireAuth, async (req, res) => {
+  if (!ensurePushConfigured(res)) return;
   try {
     const prefs = await getPreferences(req.user.id);
     res.json({
@@ -164,7 +177,7 @@ router.get('/my-preferences', requireAuth, async (req, res) => {
 // ---- POST /api/push/send-test ----
 // Sends a test notification to the user's saved subscription.
 router.post('/send-test', requireAuth, async (req, res) => {
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !isCapabilityAvailable('notifications.push')) {
     return res.status(503).json({ error: 'Push not configured' });
   }
   try {

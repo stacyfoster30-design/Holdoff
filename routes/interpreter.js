@@ -14,6 +14,8 @@ const router = express.Router();
 const { requireAuth } = require('../lib/auth');
 const OpenAI = require('openai');
 const db = require('../db/messages');
+const { buildInterpretFallback } = require('../services/resilient-ai');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -134,6 +136,14 @@ Format as JSON with these keys:
   ]
 }`;
 
+    if (!isCapabilityAvailable('ai.openai')) {
+      return res.json({
+        message,
+        senderName,
+        analysis: buildInterpretFallback(message),
+      });
+    }
+
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 2000,
@@ -162,7 +172,11 @@ Format as JSON with these keys:
     });
   } catch (err) {
     console.error('[API /interpreter] Error:', err.message);
-    res.status(500).json({ error: 'Failed to analyze message', details: err.message });
+    res.status(200).json({
+      message: req.body?.message || '',
+      senderName: req.body?.senderName || '',
+      analysis: buildInterpretFallback(req.body?.message || ''),
+    });
   }
 });
 
