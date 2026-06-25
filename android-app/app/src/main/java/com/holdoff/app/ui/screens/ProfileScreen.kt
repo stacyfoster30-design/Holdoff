@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
@@ -35,6 +36,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onSettingsClick: () -> Unit,
     onSubscribeClick: () -> Unit,
+    onInsightsClick: () -> Unit = {},
     isPremium: Boolean = false
 ) {
     // TODO: load from auth/DataStore
@@ -132,7 +134,7 @@ fun ProfileScreen(
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "\u201CI gave her this because I knew she needed it. Truth is, I needed it too \u2014 to save me from her spiral.\u201D",
+                        "\u201CIt was my idea \u2014 to make something so people like me could gift it to the person they can\u2019t stop thinking about. Because I knew she needed it. And honestly\u2026 I needed her to have it, too.\u201D",
                         color = SoftLavender,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
@@ -168,6 +170,7 @@ fun ProfileScreen(
 
             val menu = listOf(
                 Triple(Icons.Default.Settings, "Settings", onSettingsClick),
+                Triple(Icons.Default.Description, "Insights", onInsightsClick),
                 Triple(Icons.AutoMirrored.Filled.Send, "Suggestion Box") { /* TODO: open form */ },
                 Triple(Icons.Default.CardGiftcard, "Gift HoldOff", onSubscribeClick),
                 Triple(Icons.Default.People, "Affiliate Program") { /* TODO */ },
@@ -209,3 +212,4 @@ private fun MenuRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         Icon(Icons.Default.ChevronRight, null, tint = OnDarkTextMuted)
     }
 }
+
