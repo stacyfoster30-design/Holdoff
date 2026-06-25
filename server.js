@@ -114,7 +114,13 @@ app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 // Main API router
 app.use('/api/auth', authRouter);
 // Google auth handler — POST /api/google-auth (standalone, complements /api/auth/google in authRouter)
-app.post('/api/google-auth', googleAuthHandler);
+app.post('/api/google-auth', rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}), googleAuthHandler);
 app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/community', require(path.join(__dirname, 'routes', 'community')));
