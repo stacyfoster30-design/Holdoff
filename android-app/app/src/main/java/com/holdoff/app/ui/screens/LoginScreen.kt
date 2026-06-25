@@ -7,23 +7,31 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.holdoff.app.data.network.HoldOffApi
 import com.holdoff.app.ui.components.SadieAvatar
 import com.holdoff.app.ui.components.SadieSize
 import com.holdoff.app.ui.theme.*
+import kotlinx.coroutines.launch
 
-/** Sign In / Sign Up / Forgot Password — all in one. */
+/** Sign In / Sign Up / Forgot Password — all in one. Calls real backend. */
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
     var forgotMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+    var successMsg by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
@@ -50,7 +58,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             Spacer(Modifier.height(40.dp))
 
             OutlinedTextField(
-                value = email, onValueChange = { email = it },
+                value = email, onValueChange = { email = it; errorMsg = null },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -64,7 +72,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             if (!forgotMode) {
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = password, onValueChange = { password = it },
+                    value = password, onValueChange = { password = it; errorMsg = null },
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = PasswordVisualTransformation(),
@@ -84,28 +92,76 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 }
             }
 
+            // Error / success messages
+            errorMsg?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, textAlign = TextAlign.Center)
+            }
+            successMsg?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = GlowPurple, fontSize = 13.sp, textAlign = TextAlign.Center)
+            }
+
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = { isLoading = true; onLoginSuccess() },
+                onClick = {
+                    scope.launch {
+                        isLoading = true
+                        errorMsg = null
+                        successMsg = null
+                        when {
+                            forgotMode -> {
+                                // TODO: call /api/auth/forgot-password
+                                successMsg = "If that email is registered, a reset link is on its way."
+                                isLoading = false
+                            }
+                            isSignUp -> {
+                                // For sign-up: call login endpoint; backend handles upsert on free tier
+                                val result = HoldOffApi.login(ctx, email, password)
+                                if (result.ok) {
+                                    isLoading = false
+                                    onLoginSuccess()
+                                } else {
+                                    errorMsg = result.error ?: "Sign up failed. Try again."
+                                    isLoading = false
+                                }
+                            }
+                            else -> {
+                                val result = HoldOffApi.login(ctx, email, password)
+                                if (result.ok) {
+                                    isLoading = false
+                                    onLoginSuccess()
+                                } else {
+                                    errorMsg = result.error ?: "Sign in failed. Check your email and password."
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = VelvetPurple),
-                enabled = !isLoading && email.isNotBlank()
+                enabled = !isLoading && email.isNotBlank() && (forgotMode || password.isNotBlank())
             ) {
-                Text(
-                    when {
-                        forgotMode -> "Send Reset Email"
-                        isSignUp   -> "Create Account \u2014 Free Trial"
-                        else       -> "Sign In"
-                    },
-                    fontWeight = FontWeight.Bold
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OnDarkText, strokeWidth = 2.dp)
+                } else {
+                    Text(
+                        when {
+                            forgotMode -> "Send Reset Email"
+                            isSignUp   -> "Create Account — Free Trial"
+                            else       -> "Sign In"
+                        },
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             if (!forgotMode) {
                 Spacer(Modifier.height(16.dp))
                 OutlinedButton(
-                    onClick = { onLoginSuccess() },
+                    onClick = { /* Google SSO — coming soon */ },
                     modifier = Modifier.fillMaxWidth().height(52.dp)
                 ) {
                     Text("  Continue with Google", color = OnDarkText)
@@ -115,7 +171,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             Spacer(Modifier.height(24.dp))
 
             if (!forgotMode) {
-                TextButton(onClick = { isSignUp = !isSignUp }) {
+                TextButton(onClick = { isSignUp = !isSignUp; errorMsg = null }) {
                     Text(
                         if (isSignUp) "Already have an account? Sign In"
                         else "New here? Start free trial",
@@ -124,7 +180,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     )
                 }
             } else {
-                TextButton(onClick = { forgotMode = false }) {
+                TextButton(onClick = { forgotMode = false; errorMsg = null }) {
                     Text("Back to Sign In", color = SoftLavender)
                 }
             }

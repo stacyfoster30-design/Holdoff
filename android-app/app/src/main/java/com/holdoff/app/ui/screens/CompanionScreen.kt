@@ -154,10 +154,10 @@ fun CompanionScreen(
 private fun CompanionChatBubble(m: ChatMessage) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (m.isFromSadie) Arrangement.Start else Arrangement.End,
+        horizontalArrangement = if (m.isFromCompanion) Arrangement.Start else Arrangement.End,
         verticalAlignment = Alignment.Bottom
     ) {
-        if (m.isFromSadie) {
+        if (m.isFromCompanion) {
             SadieAvatar(size = SadieSize.SMALL)
             Spacer(Modifier.width(8.dp))
         }
@@ -166,11 +166,11 @@ private fun CompanionChatBubble(m: ChatMessage) {
                 .widthIn(max = 280.dp)
                 .clip(RoundedCornerShape(
                     topStart = 16.dp, topEnd = 16.dp,
-                    bottomStart = if (m.isFromSadie) 4.dp else 16.dp,
-                    bottomEnd = if (m.isFromSadie) 16.dp else 4.dp
+                    bottomStart = if (m.isFromCompanion) 4.dp else 16.dp,
+                    bottomEnd = if (m.isFromCompanion) 16.dp else 4.dp
                 ))
                 .background(
-                    if (m.isFromSadie) Brush.horizontalGradient(listOf(SurfaceVariant, RoyalPurple))
+                    if (m.isFromCompanion) Brush.horizontalGradient(listOf(SurfaceVariant, RoyalPurple))
                     else Brush.horizontalGradient(listOf(VelvetPurple, GlowPurple))
                 )
                 .padding(14.dp)
