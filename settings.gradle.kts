@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "HoldOff"
 include(":app")
+project(":app").projectDir = File("android-app/app")
+
