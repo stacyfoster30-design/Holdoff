@@ -134,6 +134,14 @@ app.use('/api/abandoned-checkout', abandonedCheckoutRouter);
 app.use('/api/detox', detoxRouter);
 app.use('/api/waitlist', waitlistRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
 
 // EJS view engine
 app.set('view engine', 'ejs');
@@ -510,6 +518,40 @@ app.get('/referrals', async (req, res) => {
   res.render('referrals', { user: user || null });
 });
 
+// Quiz page
+app.get('/quiz', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('quiz', { user: user || null });
+});
+
+// Chronicle (personalized tips) page
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
+});
+
+// Insights page
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user });
+});
+
+// Verdict history page
+app.get('/history', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+// Profile page
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  res.render('profile', { user });
+});
+
 // Share pages
 mountSharePages(app);
 
@@ -537,6 +579,162 @@ app.post('/api/beta-signup', async (req, res) => {
   } catch (err) {
     console.error('[beta-signup] error:', err.message);
     return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Insights stats — returns held/rewritten/intercepted/holdRate for logged-in user
+app.get('/api/insights/stats', rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}), async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ error: 'Not authenticated' });
+    const { pool } = require(path.join(__dirname, 'db', 'index'));
+    const { rows } = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE verdict = 'HOLD') AS held,
+         COUNT(*) FILTER (WHERE verdict = 'REWRITE') AS rewritten,
+         COUNT(*) AS intercepted
+       FROM verdict_history WHERE user_id = $1`,
+      [user.id]
+    );
+    const row = rows[0] || { held: 0, rewritten: 0, intercepted: 0 };
+    const held = parseInt(row.held || 0, 10);
+    const rewritten = parseInt(row.rewritten || 0, 10);
+    const intercepted = parseInt(row.intercepted || 0, 10);
+    const holdRate = intercepted > 0 ? Math.round((held / intercepted) * 100) : 0;
+    res.json({ held, rewritten, intercepted, holdRate });
+  } catch (err) {
+    console.error('[insights/stats] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Preferences save — stores story-experience onboarding preferences
+app.post('/api/preferences/save', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ error: 'Not authenticated' });
+    const { storeUserPreferences, addUserConditions } = require(path.join(__dirname, 'db', 'preferences'));
+    const { personOfInterest, relationshipType, spiralTrigger, values, tone, depth, conditions } = req.body || {};
+    await storeUserPreferences(user.id, {
+      tone: tone || 'direct',
+      tracking_depth: depth || 'moderate',
+    });
+    if (Array.isArray(conditions) && conditions.length > 0) {
+      await addUserConditions(user.id, conditions).catch(() => {});
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[preferences/save] error:', err.message);
+    res.status(500).json({ error: 'Failed to save preferences' });
+  }
+});
+
+// Affiliate application form (from /affiliate page)
+app.post('/api/affiliate-apply', async (req, res) => {
+  try {
+    const { name, email, phone, platform, followers, about } = req.body || {};
+    if (!name || !name.trim()) return res.status(400).json({ ok: false, error: 'Name is required.' });
+    if (!email || !email.includes('@')) return res.status(400).json({ ok: false, error: 'Valid email is required.' });
+    const { addAffiliate } = require(path.join(__dirname, 'db', 'affiliates'));
+    const row = await addAffiliate({
+      name: name.trim(),
+      practiceHandle: platform || '',
+      email: email.trim(),
+      audienceSize: followers || about || '',
+    });
+    if (!row) return res.json({ ok: true, already: true });
+    console.log(`[affiliate-apply] new application: ${email}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[affiliate-apply] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Partnership application form (from /partnerships page)
+app.post('/api/partnership-apply', async (req, res) => {
+  try {
+    const { name, email, phone, organization, details, website } = req.body || {};
+    if (!name || !name.trim()) return res.status(400).json({ ok: false, error: 'Name is required.' });
+    if (!email || !email.includes('@')) return res.status(400).json({ ok: false, error: 'Email is required.' });
+    if (!organization || !organization.trim()) return res.status(400).json({ ok: false, error: 'Organization is required.' });
+    console.log(`[partnership-apply] ${name} <${email}> from ${organization}`);
+    // Fire notification email async — non-blocking
+    const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
+    const adminEmail = process.env.ADMIN_EMAIL || 'holdoff@shouldiholdoff.live';
+    sendEmail({
+      to: adminEmail,
+      subject: `Partnership inquiry: ${organization}`,
+      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || '—'}\nOrganization: ${organization}\nWebsite: ${website || '—'}\n\n${details || ''}`,
+      html: `<p><strong>Name:</strong> ${name}<br><strong>Email:</strong> ${email}<br><strong>Phone:</strong> ${phone || '—'}<br><strong>Organization:</strong> ${organization}<br><strong>Website:</strong> ${website || '—'}</p><p>${(details || '').replace(/\n/g, '<br>')}</p>`,
+    }).catch(e => console.warn('[partnership-apply] email failed:', e.message));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[partnership-apply] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Suggestion / feedback form (from /suggest page)
+app.post('/api/suggestion', async (req, res) => {
+  try {
+    const { type, title, description, impact, followup, email } = req.body || {};
+    if (!title || !title.trim()) return res.status(400).json({ ok: false, error: 'Title is required.' });
+    if (!description || !description.trim()) return res.status(400).json({ ok: false, error: 'Description is required.' });
+    console.log(`[suggestion] type=${type} title="${title}" followup=${followup} email=${email || '—'}`);
+    const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
+    const adminEmail = process.env.ADMIN_EMAIL || 'holdoff@shouldiholdoff.live';
+    sendEmail({
+      to: adminEmail,
+      subject: `[${type || 'feedback'}] ${title}`,
+      text: `Type: ${type || '—'}\nTitle: ${title}\n\nDescription:\n${description}\n\nImpact:\n${impact || '—'}\n\nFollow-up: ${followup || 'no'}\nEmail: ${email || '—'}`,
+      html: `<p><strong>Type:</strong> ${type || '—'}<br><strong>Follow-up:</strong> ${followup || 'no'}<br><strong>Email:</strong> ${email || '—'}</p><h3>${title}</h3><p>${(description || '').replace(/\n/g, '<br>')}</p><p><em>Impact: ${(impact || '').replace(/\n/g, '<br>')}</em></p>`,
+    }).catch(e => console.warn('[suggestion] email failed:', e.message));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[suggestion] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Lightweight event tracking (from pricing page and other UI events)
+app.post('/api/track', async (req, res) => {
+  try {
+    const { event, tier, source } = req.body || {};
+    if (event) console.log(`[track] event=${event} tier=${tier || '—'} source=${source || '—'}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.json({ ok: true }); // Non-fatal
+  }
+});
+
+// Send message — stores a user-sent message to a contact thread
+app.post('/api/send-message', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+    const { contactId, message } = req.body || {};
+    if (!contactId) return res.status(400).json({ ok: false, error: 'contactId is required.' });
+    if (!message || !message.trim()) return res.status(400).json({ ok: false, error: 'message is required.' });
+    const msgDb = require(path.join(__dirname, 'db', 'messages'));
+    const thread = await msgDb.getOrCreateThread(user.id, contactId, null);
+    if (!thread) return res.status(404).json({ ok: false, error: 'Contact not found.' });
+    await msgDb.insertMessage(thread.id, {
+      senderType: 'user',
+      body: message.trim(),
+      externalId: null,
+      timestamp: new Date(),
+    });
+    res.json({ ok: true, threadId: thread.id });
+  } catch (err) {
+    console.error('[send-message] error:', err.message);
+    res.status(500).json({ ok: false, error: 'Failed to send message.' });
   }
 });
 
