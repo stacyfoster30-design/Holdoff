@@ -32,6 +32,33 @@ router.get('/', requireAuth, (req, res) => {
   res.render('journal', { user: { id: req.userId, email: null } });
 });
 
+/** POST /api/journal — shorthand alias used by views/journal.ejs (supports {content, mood} body). */
+router.post('/', requireAuth, async (req, res) => {
+  const { content, mood, trigger_text } = req.body || {};
+  const triggerText = (trigger_text || content || '').trim();
+  if (!triggerText || triggerText.length < 5) {
+    return res.status(400).json({ error: 'Please write at least a few words.' });
+  }
+  try {
+    const entry = await createEntry({
+      userId: req.userId,
+      triggerText,
+      messageText: null,
+      outcome: mood || null,
+      patternName: null,
+      reframe: null,
+      verdict: null,
+      source: 'manual',
+      verdictLogId: null,
+    });
+    await touchStreak(req.userId).catch(() => {});
+    res.status(201).json(entry);
+  } catch (err) {
+    console.error('[journal] POST / error:', err.message);
+    res.status(500).json({ error: 'Failed to save entry' });
+  }
+});
+
 /** POST /api/journal/entries — create a journal entry. */
 router.post('/entries', requireAuth, async (req, res) => {
   const { trigger_text, message_text, outcome, pattern_name, reframe, verdict, source, verdict_log_id } = req.body || {};

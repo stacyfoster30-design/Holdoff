@@ -105,6 +105,7 @@ app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 
 // Main API router
 app.use('/api/auth', authRouter);
+app.post('/api/auth/google', googleAuthHandler);
 app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/community', require(path.join(__dirname, 'routes', 'community')));
@@ -116,6 +117,66 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
+
+// AI filter (message analysis — critical path)
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+
+// Stripe webhook (mounts router.post('/stripe-webhook') → POST /api/stripe-webhook)
+app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
+
+// Meta pixel events (POST /api/signup fires Lead pixel)
+app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
+
+// Waitlist
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+
+// User profile & stats
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
+
+// Referral dashboard & send
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+
+// Journal — page at /journal, API at /api/journal
+const journalRouter = require(path.join(__dirname, 'routes', 'journal'));
+app.use('/journal', journalRouter);
+app.use('/api/journal', journalRouter);
+
+// Quiz — page at /quiz, API at /api/quiz
+const quizRouter = require(path.join(__dirname, 'routes', 'quiz'));
+app.use('/quiz', quizRouter);
+app.use('/api/quiz', quizRouter);
+
+// Chronicle — page at /chronicle, API at /api/chronicle
+const chronicleRouter = require(path.join(__dirname, 'routes', 'chronicle'));
+app.use('/chronicle', chronicleRouter);
+app.use('/api/chronicle', chronicleRouter);
+
+// Push notifications
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+
+// Detox 5-day email course
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+
+// Admin metrics & triggers
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+
+// Affiliates signup
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+
+// Abandoned checkout recovery unsubscribe
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+
+// Blast emails
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+
+// APK download redirect
+app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
+
+// Creator outreach
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+
+// Support contact form
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
 
 // EJS view engine
 app.set('view engine', 'ejs');
@@ -481,6 +542,243 @@ app.get('/dashboard', async (req, res) => {
 
 // Share pages
 mountSharePages(app);
+
+// ─── Missing page routes ──────────────────────────────────────────────────────
+
+// Referrals dashboard
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/referrals');
+  res.render('referrals', { user });
+});
+
+// 5-day Anxious Texting Detox landing
+app.get('/detox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('detox', { user: user || null });
+});
+
+// App download page
+app.get('/download', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('download', { user: user || null });
+});
+
+// Verdict examples gallery
+app.get('/examples', (_req, res) => res.render('examples'));
+
+// Insights dashboard (relationship health)
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user, contacts: [] });
+});
+
+// Community feed
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('community', { user: user || null });
+});
+
+// User profile
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  res.render('profile', { user });
+});
+
+// Verdict history
+app.get('/history', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+// SEO content hub
+app.get('/spirals', (_req, res) => res.render('spirals'));
+
+// Therapist affiliate programme landing
+app.get('/affiliates', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliates', { user: user || null });
+});
+
+// Account settings
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
+// ─── Missing API endpoints ────────────────────────────────────────────────────
+
+// POST /api/affiliate-apply — affiliate application form (views/affiliate.ejs)
+app.post('/api/affiliate-apply', async (req, res) => {
+  try {
+    const { name, email, phone, platform, audience, message } = req.body || {};
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').toString().trim())) {
+      return res.status(400).json({ ok: false, error: 'A valid email address is required.' });
+    }
+    const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
+    await sendEmail({
+      to: 'company@shouldiholdoff.live',
+      subject: `Affiliate Application — ${(name || email).toString().slice(0, 60)}`,
+      html: `<p><strong>Name:</strong> ${name || '–'}</p>
+             <p><strong>Email:</strong> ${email}</p>
+             <p><strong>Phone:</strong> ${phone || '–'}</p>
+             <p><strong>Platform:</strong> ${platform || '–'}</p>
+             <p><strong>Audience size:</strong> ${audience || '–'}</p>
+             <p><strong>Message:</strong> ${message || '–'}</p>`,
+    }).catch(e => console.warn('[affiliate-apply] email send skipped:', e.message));
+    console.log(`[affiliate-apply] new application: ${email}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[affiliate-apply] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// POST /api/partnership-apply — partnership application form (views/partnerships.ejs)
+app.post('/api/partnership-apply', async (req, res) => {
+  try {
+    const { name, email, phone, organization, type, details, website } = req.body || {};
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').toString().trim())) {
+      return res.status(400).json({ ok: false, error: 'A valid email address is required.' });
+    }
+    const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
+    await sendEmail({
+      to: 'company@shouldiholdoff.live',
+      subject: `Partnership Application — ${(organization || name || email).toString().slice(0, 60)}`,
+      html: `<p><strong>Name:</strong> ${name || '–'}</p>
+             <p><strong>Email:</strong> ${email}</p>
+             <p><strong>Phone:</strong> ${phone || '–'}</p>
+             <p><strong>Organization:</strong> ${organization || '–'}</p>
+             <p><strong>Partnership type:</strong> ${type || '–'}</p>
+             <p><strong>Details:</strong> ${details || '–'}</p>
+             <p><strong>Website:</strong> ${website || '–'}</p>`,
+    }).catch(e => console.warn('[partnership-apply] email send skipped:', e.message));
+    console.log(`[partnership-apply] new application: ${email}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[partnership-apply] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// POST /api/suggestion — feature suggestion / feedback form (views/suggest.ejs)
+app.post('/api/suggestion', async (req, res) => {
+  try {
+    const { type, title, description, email } = req.body || {};
+    if (!description && !title) {
+      return res.status(400).json({ ok: false, error: 'Please describe your suggestion.' });
+    }
+    const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
+    await sendEmail({
+      to: 'company@shouldiholdoff.live',
+      subject: `Suggestion [${type || 'general'}] — ${(title || '').toString().slice(0, 60) || 'No title'}`,
+      html: `<p><strong>Type:</strong> ${type || '–'}</p>
+             <p><strong>Title:</strong> ${title || '–'}</p>
+             <p><strong>Description:</strong> ${description || '–'}</p>
+             <p><strong>Email:</strong> ${email || 'anonymous'}</p>`,
+    }).catch(e => console.warn('[suggestion] email send skipped:', e.message));
+    console.log(`[suggestion] received: ${type} from ${email || 'anon'}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[suggestion] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// POST /api/track — lightweight analytics event (views/pricing.ejs)
+app.post('/api/track', (req, res) => {
+  const { event, tier, ...rest } = req.body || {};
+  console.log(`[track] ${event || 'unknown'}`, { tier, ...rest });
+  res.json({ ok: true });
+});
+
+// POST /api/preferences/save — save story experience preferences (views/story-experience.ejs)
+app.post('/api/preferences/save', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ ok: false, error: 'Not authenticated.' });
+    const { personOfInterest, relationshipType, spiralTrigger, values, tone, depth, conditions } = req.body || {};
+    const { pool } = require(path.join(__dirname, 'db', 'index'));
+    await pool.query(
+      `UPDATE users SET
+         poi_name = COALESCE($2, poi_name),
+         relationship_type = COALESCE($3, relationship_type),
+         updated_at = NOW()
+       WHERE id = $1`,
+      [user.id, personOfInterest || null, relationshipType || null]
+    ).catch(() => {}); // graceful — columns may not yet exist in older schema
+    console.log(`[preferences/save] user ${user.id} saved story preferences`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[preferences/save] error:', err.message);
+    return res.json({ ok: true }); // non-fatal for the UX
+  }
+});
+
+// GET /api/insights/stats — verdict stats for insights dashboard (views/insights.ejs)
+app.get('/api/insights/stats', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ error: 'Not authenticated.' });
+    const { pool } = require(path.join(__dirname, 'db', 'index'));
+    const result = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE verdict = 'HOLD')    AS held,
+         COUNT(*) FILTER (WHERE verdict = 'REWRITE') AS rewritten,
+         COUNT(*) FILTER (WHERE verdict = 'SEND')    AS sent,
+         COUNT(*)                                     AS total
+       FROM verdict_logs WHERE user_id = $1`,
+      [user.id]
+    );
+    const row = result.rows[0] || {};
+    const total = parseInt(row.total || 0, 10);
+    const held = parseInt(row.held || 0, 10);
+    const rewritten = parseInt(row.rewritten || 0, 10);
+    const intercepted = held + rewritten;
+    const holdRate = total > 0 ? Math.round((intercepted / total) * 100) : 0;
+    return res.json({ held, rewritten, intercepted, sent: parseInt(row.sent || 0, 10), total, holdRate });
+  } catch (err) {
+    console.error('[insights/stats] error:', err.message);
+    return res.status(500).json({ error: 'Could not load stats.' });
+  }
+});
+
+// GET /api/thread/:contactId — load messages for a contact thread (views/thread.ejs)
+app.get('/api/thread/:contactId', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ error: 'Not authenticated.' });
+    const msgDb = require(path.join(__dirname, 'db', 'messages'));
+    const thread = await msgDb.getOrCreateThread(user.id, req.params.contactId).catch(() => null);
+    if (!thread) return res.json({ messages: [] });
+    const messages = await msgDb.getMessagesByThread(thread.id).catch(() => []);
+    return res.json({ threadId: thread.id, messages });
+  } catch (err) {
+    console.error('[thread] error:', err.message);
+    return res.status(500).json({ error: 'Could not load thread.' });
+  }
+});
+
+// POST /api/send-message — send (log) a message to a contact thread (views/thread.ejs)
+app.post('/api/send-message', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user?.id) return res.status(401).json({ error: 'Not authenticated.' });
+    const { contactId, message } = req.body || {};
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Message cannot be empty.' });
+    const msgDb = require(path.join(__dirname, 'db', 'messages'));
+    const thread = await msgDb.getOrCreateThread(user.id, contactId);
+    await msgDb.insertMessage(thread.id, { senderType: 'user', body: message.trim(), externalId: null, timestamp: new Date() });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[send-message] error:', err.message);
+    return res.status(500).json({ error: 'Could not send message.' });
+  }
+});
 
 // Beta tester signup page
 app.get('/beta', async (req, res) => {
