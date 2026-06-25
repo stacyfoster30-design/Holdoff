@@ -16,6 +16,8 @@ import com.holdoff.app.ui.screens.InsightsScreen
 import com.holdoff.app.ui.screens.ProfileScreen
 import com.holdoff.app.ui.screens.SettingsScreen
 import com.holdoff.app.ui.screens.ThreadDetailScreen
+import com.holdoff.app.ui.screens.QuizScreen
+import com.holdoff.app.ui.screens.TrustedContactsScreen
 import com.holdoff.app.ui.screens.VerdictScreen
 
 /**
@@ -33,6 +35,8 @@ object Routes {
     const val PROFILE        = "profile"
     const val SETTINGS       = "settings"
     const val INSIGHTS       = "insights"
+    const val QUIZ           = "quiz"
+    const val TRUSTED        = "trusted-contacts"
 
     fun threadDetail(id: String) = "thread/$id"
     fun verdict(id: String) = "verdict/$id"
@@ -98,7 +102,8 @@ fun AppNavigation(
             VerdictScreen(
                 threadId = id,
                 onBack = { navController.popBackStack() },
-                onUpgradeClick = { navController.navigate(Routes.PAYWALL) }
+                onUpgradeClick = { navController.navigate(Routes.PAYWALL) },
+                isPremium = isPremium
             )
         }
 
@@ -127,6 +132,8 @@ fun AppNavigation(
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSubscribeClick = { navController.navigate(Routes.PAYWALL) },
                 onInsightsClick = { navController.navigate(Routes.INSIGHTS) },
+                onQuizClick = { navController.navigate(Routes.QUIZ) },
+                onTrustedContactsClick = { navController.navigate(Routes.TRUSTED) },
                 isPremium = isPremium
             )
         }
@@ -138,9 +145,26 @@ fun AppNavigation(
             )
         }
 
+        composable(Routes.QUIZ) {
+            QuizScreen(
+                onBack = { navController.popBackStack() },
+                onComplete = { style ->
+                    // TODO: save to backend
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Routes.TRUSTED) {
+            TrustedContactsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Routes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }
+
 
