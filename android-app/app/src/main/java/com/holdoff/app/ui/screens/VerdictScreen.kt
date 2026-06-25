@@ -29,6 +29,7 @@ import com.holdoff.app.ui.theme.*
 import com.holdoff.app.viewmodel.ThreadViewModel
 
 /** The Hold Off / Reach Out / Maybe verdict screen. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VerdictScreen(
     threadId: String,
