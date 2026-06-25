@@ -136,7 +136,13 @@ Format as JSON with these keys:
   ]
 }`;
 
-    if (!client || !isCapabilityAvailable('ai.openai')) {
+    const aiResult = await callAI({
+      systemPrompt: prompt,
+      userContent: 'Analyze the message above and return the JSON response.',
+      maxTokens: 2000
+    });
+
+    if (!aiResult) {
       return res.json({
         message,
         senderName,
@@ -144,18 +150,7 @@ Format as JSON with these keys:
       });
     }
 
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
-
-    const aiContent = response.choices[0].message.content || '';
+    const aiContent = aiResult.content;
 
     // Parse JSON from response
     const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
@@ -181,3 +176,4 @@ Format as JSON with these keys:
 });
 
 module.exports = router;
+
