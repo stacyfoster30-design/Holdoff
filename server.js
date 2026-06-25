@@ -716,7 +716,7 @@ app.post('/api/suggestion', async (req, res) => {
 app.post('/api/track', (req, res) => {
   const safeEvent = String(req.body?.event || 'unknown').replace(/[^\w-]/g, '_').slice(0, 64);
   const safeTier = String(req.body?.tier || '').replace(/[^\w-]/g, '_').slice(0, 32);
-  console.log(`[track] ${safeEvent}`, { tier: safeTier });
+  console.log('[track]', safeEvent, { tier: safeTier });
   res.json({ ok: true });
 });
 
