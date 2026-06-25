@@ -17,6 +17,9 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -37,6 +40,8 @@ fun ProfileScreen(
     onSettingsClick: () -> Unit,
     onSubscribeClick: () -> Unit,
     onInsightsClick: () -> Unit = {},
+    onQuizClick: () -> Unit = {},
+    onTrustedContactsClick: () -> Unit = {},
     isPremium: Boolean = false
 ) {
     // TODO: load from auth/DataStore
@@ -170,7 +175,9 @@ fun ProfileScreen(
 
             val menu = listOf(
                 Triple(Icons.Default.Settings, "Settings", onSettingsClick),
-                Triple(Icons.Default.Description, "Insights", onInsightsClick),
+                Triple(Icons.Default.Quiz, "Attachment Style Quiz", onQuizClick),
+                Triple(Icons.Default.Shield, "Trusted Contacts", onTrustedContactsClick),
+                Triple(Icons.Default.Star, "Insights", onInsightsClick),
                 Triple(Icons.AutoMirrored.Filled.Send, "Suggestion Box") { /* TODO: open form */ },
                 Triple(Icons.Default.CardGiftcard, "Gift HoldOff", onSubscribeClick),
                 Triple(Icons.Default.People, "Affiliate Program") { /* TODO */ },
@@ -212,4 +219,5 @@ private fun MenuRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         Icon(Icons.Default.ChevronRight, null, tint = OnDarkTextMuted)
     }
 }
+
 
