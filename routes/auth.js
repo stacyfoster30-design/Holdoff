@@ -44,10 +44,10 @@ const {
 const { buildWelcomeEmail } = require('../services/welcome-email');
 const { buildResetPasswordEmail } = require('../services/reset-password-email');
 const { logExitIntentEvent } = require('../db/exit-intent');
-const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
 const SALT_ROUNDS = 12;
+const GOOGLE_CLIENT_ID_FALLBACK = '251734222269-l5fn6rbfcmtmm161q3g7e7k840lavf3f.apps.googleusercontent.com';
 
 // ─── Rate limiting (in-memory per IP) ───────────────────────────────────────
 
@@ -675,8 +675,8 @@ router.post('/google', async (req, res) => {
     return res.status(400).json({ error: 'Missing Google credential.', code: 'VALIDATION_ERROR' });
   }
 
-  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-  if (!GOOGLE_CLIENT_ID || !isCapabilityAvailable('auth.google')) {
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID_FALLBACK;
+  if (!GOOGLE_CLIENT_ID) {
     return res.status(503).json({ error: 'Google sign-in is temporarily unavailable. Use email sign-in.', code: 'GOOGLE_AUTH_UNAVAILABLE' });
   }
 
