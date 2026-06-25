@@ -46,7 +46,7 @@ public class HoldOffAccessibilityService extends AccessibilityService {
     private static final int DEBOUNCE_DELAY_MS = 300;
     private static final int API_TIMEOUT_MS = 10000;
     private static final int OVERLAY_AUTO_DISMISS_MS = 30000;
-    private static final String BASE_URL = "https://holdoff.main.app";
+    private static final String BASE_URL = "https://shouldiholdoff.live";
     private static final String VERDICT_API_URL = BASE_URL + "/api/filter/analyze";
     private static final String INTERCEPT_EVENT_URL = BASE_URL + "/api/filter/intercept-event";
 
