@@ -11,7 +11,9 @@ const db = require('../db/messages');
 const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
 const { isCapabilityAvailable } = require('../config/dependency-policy');
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 router.post('/', async (req, res) => {
   try {
@@ -65,7 +67,7 @@ SPIRAL DETECTION: If user sent 3+ messages to same contact in <2 min OR message 
 
 Return ONLY valid JSON.`;
 
-    if (!isCapabilityAvailable('ai.openai')) {
+    if (!client || !isCapabilityAvailable('ai.openai')) {
       const verdict = buildOutgoingVerdictFallback(outgoingMessage);
       verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
       verdict.themeCode = verdict.attachmentPattern || 'SEC';

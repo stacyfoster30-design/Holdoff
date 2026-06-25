@@ -17,9 +17,9 @@ const db = require('../db/messages');
 const { buildInterpretFallback } = require('../services/resilient-ai');
 const { isCapabilityAvailable } = require('../config/dependency-policy');
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const client = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 /**
  * POST /api/interpreter
@@ -136,7 +136,7 @@ Format as JSON with these keys:
   ]
 }`;
 
-    if (!isCapabilityAvailable('ai.openai')) {
+    if (!client || !isCapabilityAvailable('ai.openai')) {
       return res.json({
         message,
         senderName,
