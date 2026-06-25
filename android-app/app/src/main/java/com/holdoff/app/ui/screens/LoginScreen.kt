@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 
 /** Sign In / Sign Up / Forgot Password — all in one. Calls real backend. */
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(onLoginSuccess: () -> Unit, onPremiumChanged: (Boolean) -> Unit = {}) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -136,6 +136,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                                 // For sign-up: call login endpoint; backend handles upsert on free tier
                                 val result = HoldOffApi.login(ctx, email, password)
                                 if (result.ok) {
+                                    onPremiumChanged(result.isPremium)
                                     isLoading = false
                                     onLoginSuccess()
                                 } else {
@@ -146,6 +147,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                             else -> {
                                 val result = HoldOffApi.login(ctx, email, password)
                                 if (result.ok) {
+                                    onPremiumChanged(result.isPremium)
                                     isLoading = false
                                     onLoginSuccess()
                                 } else {
