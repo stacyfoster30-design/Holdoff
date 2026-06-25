@@ -113,6 +113,8 @@ app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 
 // Main API router
 app.use('/api/auth', authRouter);
+app.post('/api/auth/google', googleAuthHandler);
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
 // Google auth handler — POST /api/google-auth (standalone, complements /api/auth/google in authRouter)
 app.post('/api/google-auth', rateLimit({
   windowMs: 60 * 1000,
@@ -122,8 +124,26 @@ app.post('/api/google-auth', rateLimit({
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 }), googleAuthHandler);
 app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
+app.use('/api/stripe-webhook', require(path.join(__dirname, 'routes', 'stripe-webhook')));
 app.use('/api/checkout', checkoutRouter);
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
 app.use('/api/community', require(path.join(__dirname, 'routes', 'community')));
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.post('/api/interpret', require(path.join(__dirname, 'routes', 'interpret')));
+app.use('/api/meta', require(path.join(__dirname, 'routes', 'meta')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
 app.use('/api/contacts', require(path.join(__dirname, 'routes', 'contacts')));
 app.use('/api/contact-insights', require(path.join(__dirname, 'routes', 'contact-insights')));
 app.use('/api/questionnaire', require(path.join(__dirname, 'routes', 'questionnaire')));
@@ -165,7 +185,6 @@ app.get('/interpret', (_req, res) => res.redirect(301, '/filter'));
 app.get('/verdict', (_req, res) => res.redirect(301, '/filter'));
 app.get('/referral', (_req, res) => res.redirect(301, '/referrals'));
 app.get('/share', (_req, res) => res.redirect(301, '/filter'));
-app.get('/checkout', (_req, res) => res.redirect(301, '/filter#pricing'));
 
 // Health check
 app.get('/robots.txt', (_req, res) => {
@@ -174,10 +193,14 @@ app.get('/robots.txt', (_req, res) => {
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
 app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
-app.get('/notifications', async (_req, res) => {
-  res.render('notifications', { user: null });
+app.get('/notifications', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('notifications', { user: user || null });
 });
-app.get('/onboarding', (_req, res) => res.render('onboarding'));
+app.get('/onboarding', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('onboarding', { user: user || null });
+});
 
 // Digital Asset Links — verifies the Android app (TWA) owns this domain.
 // Served explicitly because express.static ignores dot-folders like /.well-known.
@@ -265,6 +288,137 @@ app.get('/contacts', async (req, res) => {
   if (!user) return res.redirect('/login?returnTo=/contacts');
   res.render('contacts', { user });
 });
+
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
+});
+
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/community');
+  res.render('community', { user });
+});
+
+app.get('/quiz', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('quiz', { user: user || null });
+});
+
+app.get('/quiz-invites', (_req, res) => res.redirect('/quiz'));
+
+app.get('/journal', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/journal');
+  res.render('journal', { user });
+});
+
+app.get('/detox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('detox', { user: user || null });
+});
+
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/referrals');
+  res.render('referrals', { user });
+});
+
+app.get('/history', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+app.get('/spirals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('spirals', { user: user || null });
+});
+
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user });
+});
+
+app.get('/examples', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('examples', { user: user || null });
+});
+
+app.get('/prologue', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('prologue', { user: user || null });
+});
+
+app.get('/upgrade', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/upgrade');
+  res.render('upgrade', { user });
+});
+
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
+app.get('/affiliates', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliates', { user: user || null });
+});
+
+app.get('/cancel', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('cancel', { user: user || null });
+});
+
+app.get('/success', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('success', { user: user || null });
+});
+
+app.get('/checkout', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('checkout', { user: user || null });
+});
+
+app.get('/thread/:id', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+  res.render('thread', { user, threadId: req.params.id });
+});
+
+app.get('/compose', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/compose');
+  res.render('compose', { user });
+});
+
+app.get('/compare/:page', async (req, res, next) => {
+  const user = await getUserFromCookies(req);
+  const page = (req.params.page || '').toLowerCase();
+  const allowedPages = new Set(['index', 'character-ai', 'chatgpt', 'replika']);
+  if (!allowedPages.has(page)) return next();
+  res.render(`compare/${page}`, { user: user || null });
+});
+
+app.get('/compare', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('compare/index', { user: user || null });
+});
+
+app.get('/account/:page', async (req, res, next) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+  const page = (req.params.page || '').toLowerCase();
+  const allowedPages = new Set(['attachment-research', 'personality', 'portrait', 'trusted-contacts']);
+  if (!allowedPages.has(page)) return next();
+  res.render(`account/${page}`, { user });
+});
+
+app.use('/download', require(path.join(__dirname, 'routes', 'download')));
 
 // Filter page
 app.get('/filter', async (req, res) => {
@@ -522,7 +676,9 @@ app.get('/signup', async (req, res) => {
 });
 
 app.get('/dashboard', async (req, res) => {
-  return res.redirect('/inbox');
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/dashboard');
+  return res.render('dashboard', { user });
 });
 
 // Share pages
@@ -676,5 +832,10 @@ runMigrations().catch(e => console.warn('[startup] migrations:', e.message));
 
 const { ensureBetaTestersTable } = require(path.join(__dirname, 'db', 'beta-testers'));
 ensureBetaTestersTable().catch(e => console.warn('[startup] beta_testers table:', e.message));
+
+app.use((err, req, res, _next) => {
+  console.error('[unhandled error]', err);
+  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+});
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));
