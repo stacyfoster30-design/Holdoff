@@ -34,12 +34,12 @@ import com.holdoff.app.ui.theme.*
 fun ProfileScreen(
     onBack: () -> Unit,
     onSettingsClick: () -> Unit,
-    onSubscribeClick: () -> Unit
+    onSubscribeClick: () -> Unit,
+    isPremium: Boolean = false
 ) {
     // TODO: load from auth/DataStore
     val userName = "Stacy Ann Martin"
     val userEmail = "stacyfoster30@gmail.com"
-    val isPremium = false
 
     Scaffold(
         containerColor = MidnightNavy,
@@ -88,7 +88,7 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("\u2728", fontSize = 14.sp)
-                    Text("Premium Member", color = GlowPurple, fontWeight = FontWeight.SemiBold)
+                    Text(if (isPremium) "Lifetime Founder ✨" else "Premium Member", color = GlowPurple, fontWeight = FontWeight.SemiBold)
                 }
             } else {
                 Button(onClick = onSubscribeClick, colors = ButtonDefaults.buttonColors(containerColor = VelvetPurple)) {
