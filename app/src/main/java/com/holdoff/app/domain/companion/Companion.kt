@@ -1,7 +1,7 @@
 package com.holdoff.app.domain.companion
 
 /**
- * Companion = AI alter ego.
+ * AiCompanion = AI alter ego.
  *
  * Sadie is Stacy's alter ego. She is an empathetic, pattern-learning
  * companion built from Stacy's lived experience. She speaks like a real
@@ -17,7 +17,7 @@ package com.holdoff.app.domain.companion
  * professional mental-health care. See CompanionDisclosure.kt for the
  * in-app disclosure that must show on first launch.
  */
-enum class Companion(
+enum class AiCompanion(
     val displayName: String,
     val role: String,
     val attachmentStyle: String,
