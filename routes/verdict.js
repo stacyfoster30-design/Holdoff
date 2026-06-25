@@ -134,4 +134,40 @@ Return ONLY valid JSON.`;
   }
 });
 
+const { getCookieTokens } = require('../lib/auth');
+const { getVerdictHistory, getStreak } = require('../db/verdict-history');
+
+function requireAuth(req, res, next) {
+  const tokens = getCookieTokens(req);
+  const payload = tokens.accessPayload || tokens.refreshPayload;
+  if (!payload?.id) return res.status(401).json({ error: 'Not authenticated' });
+  req.userId = payload.id;
+  next();
+}
+
+/** GET /api/verdict/history — paginated verdict history for the logged-in user */
+router.get('/history', requireAuth, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    const cursor = req.query.cursor || null;
+    const verdictType = req.query.type || null;
+    const result = await getVerdictHistory(req.userId, { verdictType, cursor, limit });
+    res.json(result);
+  } catch (err) {
+    console.error('[verdict/history] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch verdict history' });
+  }
+});
+
+/** GET /api/verdict/streak — streak + total stats for the logged-in user */
+router.get('/streak', requireAuth, async (req, res) => {
+  try {
+    const streak = await getStreak(req.userId);
+    res.json(streak);
+  } catch (err) {
+    console.error('[verdict/streak] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch streak' });
+  }
+});
+
 module.exports = router;

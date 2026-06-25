@@ -32,6 +32,39 @@ router.get('/', requireAuth, (req, res) => {
   res.render('journal', { user: { id: req.userId, email: null } });
 });
 
+/** POST /api/journal — alias for creating a journal entry (accepts { content, mood } or full entry fields). */
+router.post('/', requireAuth, async (req, res) => {
+  const body = req.body || {};
+  // Map simple { content, mood } shape used by the journal quick-save UI
+  const trigger_text = body.trigger_text || body.content;
+  const message_text = body.message_text || null;
+  const outcome = body.outcome || body.mood || null;
+  const { pattern_name, reframe, verdict, source, verdict_log_id } = body;
+
+  if (!trigger_text || String(trigger_text).trim().length < 10) {
+    return res.status(400).json({ error: 'Content must be at least 10 characters' });
+  }
+
+  try {
+    const entry = await createEntry({
+      userId: req.userId,
+      triggerText: String(trigger_text).trim(),
+      messageText: message_text,
+      outcome: outcome || null,
+      patternName: pattern_name || null,
+      reframe: reframe || null,
+      verdict: verdict || null,
+      source: source || 'manual',
+      verdictLogId: verdict_log_id || null,
+    });
+    await touchStreak(req.userId).catch(() => {});
+    res.status(201).json(entry);
+  } catch (err) {
+    console.error('[journal] createEntry (root) error:', err.message);
+    res.status(500).json({ error: 'Failed to save journal entry' });
+  }
+});
+
 /** POST /api/journal/entries — create a journal entry. */
 router.post('/entries', requireAuth, async (req, res) => {
   const { trigger_text, message_text, outcome, pattern_name, reframe, verdict, source, verdict_log_id } = req.body || {};

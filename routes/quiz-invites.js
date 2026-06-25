@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const { createReferral } = require('../db/referrals');
 
 /**
  * POST /api/send-quiz-invites
@@ -81,12 +82,24 @@ router.post('/', async (req, res) => {
       status: 'queued',
     }));
 
-    // TODO: Store invites in database and trigger subagent
-    // For MVP: log to console and return success
-    console.log(`[quiz-invites] Queued ${invites.length} invites for referral code ${referralCode}`);
-    invites.forEach((invite) => {
-      console.log(`  → ${invite.recipientName}: ${invite.recipientPhone || invite.recipientEmail}`);
-    });
+    // Store invites in the referrals table and return success
+    let savedCount = 0;
+    for (const invite of invites) {
+      try {
+        await createReferral({
+          senderEmail: referrerEmail,
+          senderDevice: null,
+          recipientEmail: invite.recipientEmail || null,
+          note: `Quiz invite — ${quizResult || 'quiz'} — ${invite.recipientPhone || invite.recipientEmail}`,
+          utmToken: referralCode + '_' + savedCount,
+        });
+        savedCount++;
+      } catch (dbErr) {
+        // Non-fatal: log and continue
+        console.warn(`[quiz-invites] DB store failed for invite ${savedCount}:`, dbErr.message);
+      }
+    }
+    console.log(`[quiz-invites] Stored ${savedCount}/${invites.length} invites for referral code ${referralCode}`);
 
     // Return success response
     res.status(200).json({

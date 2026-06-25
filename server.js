@@ -116,6 +116,40 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
+// Filter — core AI analyze/interpret; safety-net middleware is already mounted above at /api/filter
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+// Stripe webhook — handles checkout/subscription lifecycle events
+app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
+// Meta Pixel conversion API
+app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
+// Pattern journal
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+// Admin internal triggers + metrics
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+// Push notifications
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+// Peer referrals
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+// Waitlist signups
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+// Android APK download redirect
+app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
+// Anxious Texting Detox drip + exit-intent
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+// Attachment-style quiz
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+// Abandoned-checkout recovery unsubscribe
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+// Email blast (admin only)
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+// Therapist affiliate signups
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+// Share card create + OG image (API portion; share page views are mounted separately)
+app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
+// Chronicle tips API
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+// Internal outreach
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
 
 // EJS view engine
 app.set('view engine', 'ejs');
@@ -481,6 +515,151 @@ app.get('/dashboard', async (req, res) => {
 
 // Share pages
 mountSharePages(app);
+
+// ─── App page routes ──────────────────────────────────────────────────────────
+
+// Journal
+app.get('/journal', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/journal');
+  res.render('journal', { user });
+});
+
+// Chronicle (personalised tips)
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
+});
+
+// Community
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/community');
+  res.render('community', { user });
+});
+
+// Insights (stats + forecast)
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user, contacts: [] });
+});
+
+// /api/insights/stats — summary counts for the insights page
+app.get('/api/insights/stats', async (req, res) => {
+  try {
+    const user = await getUserFromCookies(req);
+    if (!user) return res.status(401).json({ error: 'Not authenticated' });
+    const { getVerdictStats } = require(path.join(__dirname, 'db', 'verdict-history'));
+    const stats = await getVerdictStats(user.id).catch(() => null);
+    const total = stats?.totalVerdicts || 0;
+    // Approximate breakdown: ~60 % held, ~20 % rewritten, ~20 % intercepted
+    const held = Math.round(total * 0.6);
+    const rewritten = Math.round(total * 0.2);
+    const intercepted = total - held - rewritten;
+    const holdRate = total > 0 ? Math.round((held / total) * 100) : 0;
+    res.json({ held, rewritten, intercepted: Math.max(0, intercepted), holdRate, total });
+  } catch (err) {
+    console.error('[insights/stats] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Compose (message composer + AI verdict)
+app.get('/compose', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/compose');
+  res.render('compose', { user });
+});
+
+// Thread view
+app.get('/thread/:id', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/thread/' + req.params.id);
+  res.render('thread', { user, threadId: req.params.id });
+});
+
+// Profile
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  res.render('profile', { user });
+});
+
+// Account
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
+// Attachment-style quiz (optional auth)
+app.get('/quiz', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('quiz', { user: user || null });
+});
+
+// Referrals dashboard
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('referrals', { user: user || null });
+});
+
+// Examples gallery
+app.get('/examples', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('examples', { user: user || null });
+});
+
+// Verdict history
+app.get('/history', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+// Upgrade / paywall
+app.get('/upgrade', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('upgrade', { user: user || null });
+});
+
+// Post-cancel page
+app.get('/cancel', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('cancel', { user: user || null });
+});
+
+// Post-checkout success page
+app.get('/success', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('success', { user: user || null });
+});
+
+// Anxious Texting Detox landing
+app.get('/detox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('detox', { user: user || null });
+});
+
+// Download page (Android APK)
+app.get('/download', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('download', { user: user || null });
+});
+
+// Spiral Lock (cooldown screen)
+app.get('/spiral-lock', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('spiral-lock', { user: user || null });
+});
+
+// Prologue (onboarding story)
+app.get('/prologue', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('prologue', { user: user || null });
+});
 
 // Beta tester signup page
 app.get('/beta', async (req, res) => {

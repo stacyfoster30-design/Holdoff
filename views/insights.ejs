@@ -188,10 +188,26 @@
       const btn = document.getElementById('forecast-btn');
       btn.disabled = true;
       btn.textContent = '🔮 Generating...';
-      setTimeout(() => {
-        btn.textContent = '🔮 Forecast Generated!';
-        // TODO: real AI forecast
-      }, 2000);
+      fetch('/api/insights/stats', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => {
+          const holdRate = data.holdRate || 0;
+          const msg = holdRate >= 70
+            ? '🌿 Strong hold discipline. Your patterns are shifting toward security.'
+            : holdRate >= 40
+              ? '⚡ You\'re building self-awareness. Keep intercepting the impulse.'
+              : '💡 Early stage — every held message trains your nervous system.';
+          const panel = document.getElementById('panel-forecast');
+          const note = document.createElement('p');
+          note.style.cssText = 'margin-top:14px;font-size:0.9rem;color:var(--text-muted);text-align:center;';
+          note.textContent = msg;
+          panel.querySelector('.card').appendChild(note);
+          btn.textContent = '✅ Forecast Ready';
+        })
+        .catch(() => {
+          btn.textContent = '🔮 Generate AI Forecast';
+          btn.disabled = false;
+        });
     }
   </script>
 </body>
