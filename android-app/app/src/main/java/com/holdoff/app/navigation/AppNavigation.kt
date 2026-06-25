@@ -12,6 +12,7 @@ import com.holdoff.app.ui.screens.LoginScreen
 import com.holdoff.app.ui.screens.OnboardingScreen
 import com.holdoff.app.ui.screens.PaywallScreen
 import com.holdoff.app.ui.screens.PremiumStoryScreen
+import com.holdoff.app.ui.screens.InsightsScreen
 import com.holdoff.app.ui.screens.ProfileScreen
 import com.holdoff.app.ui.screens.SettingsScreen
 import com.holdoff.app.ui.screens.ThreadDetailScreen
@@ -31,6 +32,7 @@ object Routes {
     const val PAYWALL        = "paywall"
     const val PROFILE        = "profile"
     const val SETTINGS       = "settings"
+    const val INSIGHTS       = "insights"
 
     fun threadDetail(id: String) = "thread/$id"
     fun verdict(id: String) = "verdict/$id"
@@ -124,6 +126,14 @@ fun AppNavigation(
                 onBack = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSubscribeClick = { navController.navigate(Routes.PAYWALL) },
+                onInsightsClick = { navController.navigate(Routes.INSIGHTS) },
+                isPremium = isPremium
+            )
+        }
+
+        composable(Routes.INSIGHTS) {
+            InsightsScreen(
+                onBack = { navController.popBackStack() },
                 isPremium = isPremium
             )
         }
@@ -133,3 +143,4 @@ fun AppNavigation(
         }
     }
 }
+
