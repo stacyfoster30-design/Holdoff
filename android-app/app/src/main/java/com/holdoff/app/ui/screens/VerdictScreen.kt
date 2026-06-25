@@ -1,6 +1,7 @@
 package com.holdoff.app.ui.screens
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +39,7 @@ fun VerdictScreen(
     threadId: String,
     onBack: () -> Unit,
     onUpgradeClick: () -> Unit,
+    onTrustedContactsClick: () -> Unit = {},
     isPremium: Boolean = false,
     vm: ThreadViewModel = viewModel()
 ) {
@@ -170,7 +172,7 @@ fun VerdictScreen(
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = GlowPurple),
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(brush = Brush.linearGradient(listOf(GlowPurple, SoftLavender)))
+                            border = BorderStroke(1.dp, Brush.linearGradient(listOf(GlowPurple, SoftLavender)))
                         ) {
                             Text("\u270F\uFE0F  Rewrite It — Sadie's Version", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         }
@@ -256,7 +258,7 @@ fun VerdictScreen(
                     // ── Trusted Contact Option ──
                     Spacer(Modifier.height(20.dp))
                     OutlinedButton(
-                        onClick = { /* TODO: navigate to trusted contacts */ },
+                        onClick = onTrustedContactsClick,
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftLavender)

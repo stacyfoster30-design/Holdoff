@@ -23,6 +23,7 @@ object HoldOffApi {
     private const val PREFS_NAME = "holdoff_prefs"
     private const val KEY_TOKEN  = "auth_token"
     private const val KEY_PREMIUM = "is_premium"
+    private const val KEY_ATTACHMENT_STYLE = "attachment_style"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -50,6 +51,12 @@ object HoldOffApi {
 
     fun clearSession(ctx: Context) =
         prefs(ctx).edit().remove(KEY_TOKEN).remove(KEY_PREMIUM).apply()
+
+    fun saveAttachmentStyle(ctx: Context, quizResult: String) =
+        prefs(ctx).edit().putString(KEY_ATTACHMENT_STYLE, quizResult).apply()
+
+    fun getAttachmentStyle(ctx: Context): String? =
+        prefs(ctx).getString(KEY_ATTACHMENT_STYLE, null)
 
     // ── auth ─────────────────────────────────────────────────────────────────
 
