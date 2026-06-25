@@ -8,6 +8,8 @@ const express = require('express');
 const router = express.Router();
 const { Anthropic } = require('@anthropic-ai/sdk');
 const db = require('../db/messages');
+const { requireAuth } = require('../lib/auth');
+const { getVerdictHistory, getStreak } = require('../db/verdict-history');
 
 const client = new Anthropic();
 
@@ -131,6 +133,33 @@ Return ONLY valid JSON.`;
         analysis: 'Try rephrasing.',
       });
     }
+  }
+});
+
+/** GET /api/verdict/streak — current hold streak and total verdict count. */
+router.get('/streak', requireAuth, async (req, res) => {
+  try {
+    const streak = await getStreak(req.userId || req.user?.id);
+    res.json(streak || { currentStreak: 0, longestStreak: 0, totalVerdicts: 0 });
+  } catch (err) {
+    console.error('[verdict/streak]', err.message);
+    res.status(500).json({ error: 'Failed to fetch streak.' });
+  }
+});
+
+/** GET /api/verdict/history — paginated verdict history for logged-in user. */
+router.get('/history', requireAuth, async (req, res) => {
+  try {
+    const { verdictType, cursor, limit } = req.query;
+    const entries = await getVerdictHistory(req.userId || req.user?.id, {
+      verdictType: verdictType || null,
+      cursor: cursor || null,
+      limit: limit ? parseInt(limit, 10) : 50,
+    });
+    res.json(entries);
+  } catch (err) {
+    console.error('[verdict/history]', err.message);
+    res.status(500).json({ error: 'Failed to fetch history.' });
   }
 });
 
