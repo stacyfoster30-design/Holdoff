@@ -40,7 +40,8 @@ object Routes {
 fun AppNavigation(
     navController: NavHostController,
     startDestination: String,
-    isPremium: Boolean
+    isPremium: Boolean,
+    onPremiumChanged: (Boolean) -> Unit = {}
 ) {
     NavHost(navController = navController, startDestination = startDestination) {
 
@@ -53,11 +54,14 @@ fun AppNavigation(
         }
 
         composable(Routes.LOGIN) {
-            LoginScreen(onLoginSuccess = {
-                navController.navigate(Routes.HOME) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
-                }
-            })
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onPremiumChanged = onPremiumChanged
+            )
         }
 
         composable(Routes.HOME) {
@@ -119,7 +123,8 @@ fun AppNavigation(
             ProfileScreen(
                 onBack = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
-                onSubscribeClick = { navController.navigate(Routes.PAYWALL) }
+                onSubscribeClick = { navController.navigate(Routes.PAYWALL) },
+                isPremium = isPremium
             )
         }
 
