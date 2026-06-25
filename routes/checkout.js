@@ -20,6 +20,7 @@ const {
 const { updateMembershipType } = require('../db/users');
 const { logExitIntentEvent } = require('../db/exit-intent');
 const { PLANS, TIER_URLS } = require('../config/plans');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
 const EMAIL_PROXY_URL = process.env.HOLDOFF_EMAIL_PROXY_URL;
@@ -53,6 +54,9 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
 // Auth-gated — 400 if no active subscription found.
 
 router.post('/portal', requireAuth, async (req, res) => {
+  if (!isCapabilityAvailable('payments.stripe')) {
+    return res.status(503).json({ error: 'Billing portal is temporarily unavailable.', code: 'STRIPE_UNAVAILABLE' });
+  }
   const sub = await getSubscriptionByEmail(req.user.email).catch(() => null);
   if (!sub?.stripe_customer_id) {
     return res.status(400).json({ error: 'No active subscription found.', code: 'NO_SUBSCRIPTION' });
@@ -259,6 +263,9 @@ router.post('/activate', async (req, res) => {
 // Returns { verified: boolean, tier: string|null, amount: number|null, currency: string }
 
 router.get('/verify-session', async (req, res) => {
+  if (!isCapabilityAvailable('payments.stripe')) {
+    return res.status(503).json({ error: 'Session verification is temporarily unavailable.', code: 'STRIPE_UNAVAILABLE' });
+  }
   const { session_id } = req.query;
   if (!session_id) {
     return res.status(400).json({ error: 'session_id is required.', code: 'VALIDATION_ERROR' });

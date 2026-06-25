@@ -24,6 +24,7 @@ const { isProEmail } = require('../db/subscriptions');
 const { verifyToken, getCookieTokens } = require('../lib/auth');
 const { getAttachmentProfile } = require('../db/quiz');
 const { recordVerdict } = require('../db/verdict-history');
+const { buildAnalyzeFallback, buildInterpretFallback } = require('../services/resilient-ai');
 
 const FREE_VERDICT_LIMIT = 3;
 
@@ -123,13 +124,7 @@ router.post('/interpret', async (req, res) => {
   if (source === 'fallback') {
     log('all_paths_failed', `latency=${latencyMs}ms`);
     logVerdictCall({ verdictSource: 'fallback', verdict: 'INTERPRET_FALLBACK', latencyMs, errorMessage: 'All AI paths failed' }).catch(() => {});
-    return res.status(200).json({
-      detected_style: 'Avoidant',
-      what_it_means: "The message is ambiguous — without more context, the safest read is that they're giving you space.",
-      how_you_misread_it: "Anxious minds fill silence with threat. The gaps between texts usually mean someone is busy, not plotting.",
-      what_they_need: "A pause before you send anything. Let the message sit.",
-      source: 'fallback',
-    });
+    return res.status(200).json(buildInterpretFallback(message));
   }
 
   log('model_call_returned', `source=${source}`);
@@ -288,7 +283,7 @@ router.post('/analyze', async (req, res) => {
     if (source === 'fallback') {
       log('fallback_response', `latency=${latencyMs}ms`);
       logVerdictCall({ verdictSource: 'fallback', verdict: 'HOLD', latencyMs, errorMessage: 'All AI paths failed' }).catch(() => {});
-      return res.json({ ...STATIC_HOLD });
+      return res.json({ ...buildAnalyzeFallback(message), fallback_default: STATIC_HOLD.pattern });
     }
 
     let parsed;
@@ -344,7 +339,7 @@ router.post('/analyze', async (req, res) => {
     console.error(`[filter:analyze] reqId=${reqId} FATAL: ${fatalErr.message}`);
     logVerdictCall({ verdictSource: 'fallback', verdict: 'HOLD', latencyMs, errorMessage: `Fatal: ${fatalErr.message}` }).catch(() => {});
     if (!res.headersSent) {
-      return res.json({ ...STATIC_HOLD });
+      return res.json({ ...buildAnalyzeFallback(req.body?.message), fallback_default: STATIC_HOLD.pattern });
     }
   }
 });

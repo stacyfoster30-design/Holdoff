@@ -7,18 +7,23 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const { buildLandingContext } = require(path.join(__dirname, 'lib', 'landing-context'));
 const rateLimit = require('express-rate-limit');
+const { getDependencyStatus, isCapabilityAvailable } = require(path.join(__dirname, 'config', 'dependency-policy'));
 
 // Sentry error tracking — initialized before any other middleware so all downstream errors are captured.
 const Sentry = require('@sentry/node');
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV || 'development',
-  sampleRate: 0.1,
-  tracesSampler: (ctx) => {
-    if (ctx.tag?.request?.status === 200) return 0.1;
-    return 1.0;
-  },
-});
+if (isCapabilityAvailable('observability.sentry')) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    sampleRate: 0.1,
+    tracesSampler: (ctx) => {
+      if (ctx.tag?.request?.status === 200) return 0.1;
+      return 1.0;
+    },
+  });
+} else {
+  console.warn('[startup] Sentry DSN missing — running without external observability');
+}
 const { verifyToken, getCookieTokens } = require(path.join(__dirname, 'lib', 'auth'));
 const authRouter = require(path.join(__dirname, 'routes', 'auth'));
 const { mountSharePages } = require(path.join(__dirname, 'routes', 'share'));
@@ -98,7 +103,10 @@ app.use('/api/verdict', rateLimit({
 }));
 
 // Additional API endpoints
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_req, res) => {
+  const deps = getDependencyStatus();
+  res.json({ status: 'ok', mode: deps.mode, dependencies: deps.status });
+});
 
 // Mount SEO routes at root
 app.use('/', require(path.join(__dirname, 'routes', 'seo')));
