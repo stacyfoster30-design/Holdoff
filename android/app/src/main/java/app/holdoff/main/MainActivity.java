@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://holdoff.main.app/filter");
+        webView.loadUrl("https://shouldiholdoff.live/filter");
 
         // Handle deep link from widget
         handleWidgetIntent(getIntent());
