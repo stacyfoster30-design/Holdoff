@@ -77,8 +77,8 @@ router.post('/chat', verifyToken, async (req, res) => {
     const Anthropic = require('@anthropic-ai/sdk');
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 1024,
       system: prompt.system,
       messages: [
@@ -87,7 +87,7 @@ router.post('/chat', verifyToken, async (req, res) => {
       ],
     });
 
-    const reply = response.content[0].type === 'text' ? response.content[0].text : '';
+    const reply = response.choices[0].message.content;
 
     return res.json({
       reply,
