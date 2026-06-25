@@ -12,11 +12,11 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../lib/auth');
-const anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const db = require('../db/messages');
 
-const client = new anthropic.Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
@@ -145,13 +145,10 @@ Format as JSON with these keys:
       ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
+    const aiContent = response.choices[0].message.content || '';
 
     // Parse JSON from response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Could not parse JSON from Claude response');
     }
