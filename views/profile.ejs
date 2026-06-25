@@ -146,12 +146,26 @@
           }).join('')}</ul></div>`;
         }
 
+        
+        h+=\`<div class="card gift-card" style="border:1px solid rgba(139,92,246,0.3);background:linear-gradient(135deg,rgba(30,15,60,0.6),rgba(20,10,50,0.8))">
+          <div class="card__title" style="display:flex;align-items:center;gap:8px">🎁 Gift HoldOff</div>
+          <p style="color:#B8A9C9;font-style:italic;margin:8px 0 12px;line-height:1.6">
+            "I gave her this because I knew she needed it. Truth is, I needed it too — to save me from her spiral."<br>
+            <span style="color:#8B5CF6;font-size:0.85em;font-weight:600">— Danny</span>
+          </p>
+          <p style="color:#9E948E;font-size:0.9em;margin-bottom:12px">Give someone you love the gift of clarity. Send them HoldOff.</p>
+          <a href="/checkout?plan=gift" class="btn-ghost" style="border-color:#8B5CF6;color:#8B5CF6">Send a Gift ✨</a>
+        </div>\`;
+
         h+=`<div class="card"><div class="card__title">Account</div><div class="btn-row">
           <a href="/history" class="btn-ghost">View Verdict History</a>
           <a href="/quiz" class="btn-ghost">Retake Attachment Quiz</a>
           <a href="/journal" class="btn-ghost">Pattern Journal</a>
           <a href="/upgrade" class="btn-ghost">Manage Subscription</a>
           <a href="/referrals" class="btn-ghost">Refer Friends</a>
+          <a href="/suggest" class="btn-ghost">Suggestion Box</a>
+          <a href="/affiliates" class="btn-ghost">Affiliate Program</a>
+          <a href="/partnerships" class="btn-ghost">Partner With Us</a>
           <button class="btn-ghost btn-red" id="logoutBtn">Log out</button>
         </div></div>`;
 
