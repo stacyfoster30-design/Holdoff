@@ -7,7 +7,8 @@
  */
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../lib/auth');
+const rateLimit = require('express-rate-limit');
+const { requireAuth } = require('../lib/auth');
 const {
   buildCompanionPrompt,
   listSouls,
@@ -17,6 +18,14 @@ const {
 } = require('../lib/companion-ai');
 const { buildCompanionFallback } = require('../services/resilient-ai');
 const { callAI } = require('../services/ai-provider');
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages. Please slow down.', code: 'RATE_LIMITED' },
+});
 
 // Legacy → canonical
 function canonicalSoul(name) {
@@ -45,7 +54,7 @@ router.get('/variants', (_req, res) => {
 });
 
 // POST /api/companion/chat — chat with a soul in a chosen attachment style
-router.post('/chat', verifyToken, async (req, res) => {
+router.post('/chat', chatLimiter, requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {
     return res.status(401).json({ error: 'Not authenticated' });
