@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.HoldOff" parent="@style/Theme.Material3.Light.NoActionBar">
-        <item name="android:colorPrimary">#C97B5D</item>
-        <item name="android:colorPrimaryDark">#9B4F32</item>
-        <item name="android:colorAccent">#C97B5D</item>
-        <item name="android:statusBarColor">#FAF6F0</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">#FAF6F0</item>
-        <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowBackground">#FAF6F0</item>
+    <!-- Midnight Velvet — deep purples + romantic blues. Never coral. Never peach. -->
+    <style name="Theme.HoldOff" parent="@style/Theme.Material3.DayNight.NoActionBar">
+        <item name="android:colorPrimary">#7B35C1</item>
+        <item name="android:colorPrimaryDark">#2D1257</item>
+        <item name="android:colorAccent">#7B35C1</item>
+        <item name="android:statusBarColor">#0A0A1A</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">#0A0A1A</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">#0A0A1A</item>
+    </style>
+
+    <!-- Android 12+ splash screen — midnight navy, no white flash -->
+    <style name="Theme.HoldOff.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0A0A1A</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.HoldOff</item>
     </style>
 
     <style name="Theme.HoldOff.Overlay">
-        <item name="android:windowBackground">#0E0C0B</item>
+        <item name="android:windowBackground">#0A0A1A</item>
     </style>
 </resources>
