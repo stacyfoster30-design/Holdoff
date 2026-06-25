@@ -57,7 +57,10 @@
       </div>
       <div class="auth-field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+        <div style="position:relative;">
+          <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••" style="padding-right:3rem;">
+          <button type="button" onclick="togglePassword()" id="togglePwBtn" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;font-size:1.1rem;padding:0;" title="Show password">👁</button>
+        </div>
       </div>
       <div class="auth-error" id="loginError"><%
         try {
@@ -149,6 +152,21 @@
           btn.textContent = "Log in"; btn.disabled = false;
         }
       } catch(ex) { err.textContent = "Network error — try again"; err.style.display = "block"; btn.textContent = "Log in"; btn.disabled = false; }
+    }
+
+    // Password visibility toggle
+    function togglePassword() {
+      const pw = document.getElementById("password");
+      const btn = document.getElementById("togglePwBtn");
+      if (pw.type === "password") {
+        pw.type = "text";
+        btn.textContent = "🙈";
+        btn.title = "Hide password";
+      } else {
+        pw.type = "password";
+        btn.textContent = "👁";
+        btn.title = "Show password";
+      }
     }
   </script>
   <script src="/js/floating-companions.js" defer></script>
