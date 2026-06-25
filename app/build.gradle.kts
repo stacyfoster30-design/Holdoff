@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "live.shouldiholdoff.holdoff"
+        applicationId = "com.stacymartin.holdoff"
         minSdk = 26
         targetSdk = 34
         versionCode = 4
