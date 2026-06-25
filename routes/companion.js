@@ -74,14 +74,14 @@ router.post('/chat', verifyToken, async (req, res) => {
       { attachmentStyle: style }
     );
 
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const OpenAI = require('openai');
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 1024,
-      system: prompt.system,
       messages: [
+        { role: 'system', content: prompt.system },
         ...prompt.conversationMessages,
         { role: 'user', content: message },
       ],
