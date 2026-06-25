@@ -134,8 +134,8 @@ Format as JSON with these keys:
   ]
 }`;
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 2000,
       messages: [
         {
