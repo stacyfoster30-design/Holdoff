@@ -96,6 +96,27 @@ app.use('/api/verdict', rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 }));
+app.use('/api/preferences', rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}));
+app.use('/api/insights', rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}));
+app.use('/api/thread', rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}));
 
 // Additional API endpoints
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
@@ -616,7 +637,8 @@ app.get('/account', async (req, res) => {
 app.post('/api/affiliate-apply', async (req, res) => {
   try {
     const { name, email, phone, platform, audience, message } = req.body || {};
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').toString().trim())) {
+    const emailStr = (email || '').toString().trim().slice(0, 320);
+    if (!emailStr || !emailStr.includes('@') || !emailStr.includes('.')) {
       return res.status(400).json({ ok: false, error: 'A valid email address is required.' });
     }
     const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
@@ -642,7 +664,8 @@ app.post('/api/affiliate-apply', async (req, res) => {
 app.post('/api/partnership-apply', async (req, res) => {
   try {
     const { name, email, phone, organization, type, details, website } = req.body || {};
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').toString().trim())) {
+    const emailStr = (email || '').toString().trim().slice(0, 320);
+    if (!emailStr || !emailStr.includes('@') || !emailStr.includes('.')) {
       return res.status(400).json({ ok: false, error: 'A valid email address is required.' });
     }
     const { sendEmail } = require(path.join(__dirname, 'services', 'email'));
@@ -691,8 +714,9 @@ app.post('/api/suggestion', async (req, res) => {
 
 // POST /api/track — lightweight analytics event (views/pricing.ejs)
 app.post('/api/track', (req, res) => {
-  const { event, tier, ...rest } = req.body || {};
-  console.log(`[track] ${event || 'unknown'}`, { tier, ...rest });
+  const safeEvent = String(req.body?.event || 'unknown').replace(/[^\w-]/g, '_').slice(0, 64);
+  const safeTier = String(req.body?.tier || '').replace(/[^\w-]/g, '_').slice(0, 32);
+  console.log(`[track] ${safeEvent}`, { tier: safeTier });
   res.json({ ok: true });
 });
 
