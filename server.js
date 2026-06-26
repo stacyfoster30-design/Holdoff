@@ -745,6 +745,13 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Forgot email / account recovery page
+app.get('/forgot-email', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('forgot-email', { user: null });
+});
+
 // Forgot password page
 app.get('/forgot-password', async (req, res) => {
   const user = await getUserFromCookies(req);
