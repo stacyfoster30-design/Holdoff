@@ -120,6 +120,47 @@ async function runMigrations() {
 
     console.log('[migrations] messages table created/verified');
 
+    // Ensure auth refresh tokens table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        user_agent TEXT,
+        revoked_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_user_id
+        ON auth_refresh_tokens(user_id);
+      CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_active
+        ON auth_refresh_tokens(expires_at)
+        WHERE revoked_at IS NULL;
+    `);
+
+    console.log('[migrations] auth_refresh_tokens table created/verified');
+
+    // Ensure password reset tokens table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id
+        ON password_reset_tokens(user_id);
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_active
+        ON password_reset_tokens(expires_at)
+        WHERE used_at IS NULL;
+    `);
+
+    console.log('[migrations] password_reset_tokens table created/verified');
+
     console.log('[migrations] All migrations completed successfully');
   } catch (err) {
     console.error('[migrations] Fatal error:', err.message);
