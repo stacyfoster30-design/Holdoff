@@ -7,6 +7,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/messages');
+const { requireAuth } = require('../lib/auth');
+const { getVerdictHistory, getStreak } = require('../db/verdict-history');
 const { callAI } = require('../services/ai-provider');
 const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
 
@@ -121,6 +123,33 @@ Return ONLY valid JSON.`;
     verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
     verdict.themeCode = verdict.attachmentPattern || 'SEC';
     res.status(200).json(verdict);
+  }
+});
+
+/** GET /api/verdict/streak — current hold streak and total verdict count. */
+router.get('/streak', requireAuth, async (req, res) => {
+  try {
+    const streak = await getStreak(req.userId || req.user?.id);
+    res.json(streak || { currentStreak: 0, longestStreak: 0, totalVerdicts: 0 });
+  } catch (err) {
+    console.error('[verdict/streak]', err.message);
+    res.status(500).json({ error: 'Failed to fetch streak.' });
+  }
+});
+
+/** GET /api/verdict/history — paginated verdict history for logged-in user. */
+router.get('/history', requireAuth, async (req, res) => {
+  try {
+    const { verdictType, cursor, limit } = req.query;
+    const entries = await getVerdictHistory(req.userId || req.user?.id, {
+      verdictType: verdictType || null,
+      cursor: cursor || null,
+      limit: limit ? parseInt(limit, 10) : 50,
+    });
+    res.json(entries);
+  } catch (err) {
+    console.error('[verdict/history]', err.message);
+    res.status(500).json({ error: 'Failed to fetch history.' });
   }
 });
 

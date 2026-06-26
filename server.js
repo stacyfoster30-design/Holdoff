@@ -181,6 +181,27 @@ app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 // Interpret handler — mounted at /api/interpret (complements /api/filter/interpret)
 app.post('/api/interpret', require(path.join(__dirname, 'routes', 'interpret')));
 
+// Additional API routes (previously unmounted)
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
+app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
+app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
+
 // EJS view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -522,6 +543,64 @@ app.get('/affiliate', async (req, res) => {
 app.get('/partnerships', async (req, res) => {
   const user = await getUserFromCookies(req);
   res.render('partnerships', { user: user || null });
+});
+
+// Partnership application endpoint
+app.post('/api/partnership-apply', async (req, res) => {
+  try {
+    const { name, email, phone, organization, type, details, website } = req.body || {};
+    if (!name || !name.trim()) {
+      return res.status(400).json({ ok: false, error: 'Name is required.' });
+    }
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ ok: false, error: 'Valid email is required.' });
+    }
+    if (!organization || !organization.trim()) {
+      return res.status(400).json({ ok: false, error: 'Organization is required.' });
+    }
+
+    const HOLDOFF_API_BASE_URL = process.env.HOLDOFF_API_BASE_URL;
+    const HOLDOFF_API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
+    const SUPPORT_EMAIL = 'company@shouldiholdoff.live';
+
+    const body = [
+      `Name: ${name.trim()}`,
+      `Email: ${email.trim()}`,
+      phone ? `Phone: ${phone.trim()}` : null,
+      `Organization: ${organization.trim()}`,
+      type ? `Type: ${type}` : null,
+      details ? `Details: ${details.trim()}` : null,
+      website ? `Website: ${website.trim()}` : null,
+    ].filter(Boolean).join('\n');
+
+    if (HOLDOFF_API_BASE_URL && HOLDOFF_API_TOKEN) {
+      try {
+        const proxyUrl = `${HOLDOFF_API_BASE_URL}/api/proxy/email/send`;
+        await fetch(proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + HOLDOFF_API_TOKEN
+          },
+          body: JSON.stringify({
+            to: SUPPORT_EMAIL,
+            subject: `Partnership Application: ${name.trim()} — ${organization.trim()}`,
+            text: body,
+            from_name: name.trim(),
+            reply_to: email.trim(),
+          }),
+        });
+      } catch (emailErr) {
+        console.warn('[partnership-apply] email send failed:', emailErr.message);
+      }
+    }
+
+    console.log(`[partnership-apply] ${name.trim()} <${email.trim()}> — ${organization.trim()}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[partnership-apply] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
 });
 
 // Suggest
