@@ -563,6 +563,10 @@ app.get('/story-experience', async (req, res) => {
 
 // Companion chat page — Sadie or Dan
 app.get('/companion', async (req, res) => {
+  const user = await getUserFromCookies(req).catch(() => null);
+  if (!user) {
+    return res.redirect('/login?returnTo=' + encodeURIComponent(req.originalUrl));
+  }
   const soul = req.query.soul === 'Dan' ? 'Dan' : 'Sadie';
   const CHARACTERS = {
     Sadie: {
