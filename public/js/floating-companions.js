@@ -47,22 +47,46 @@
   ];
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+  function makeCompanion(soul, line, imgSrc) {
+    var companion = document.createElement('div');
+    companion.className = 'holdoff-companion';
+    companion.dataset.soul = soul;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.appendChild(document.createTextNode(line + ' '));
+    var link = document.createElement('a');
+    link.href = '/companion?soul=' + soul;
+    link.textContent = 'Chat with ' + soul + ' \u2192';
+    var closeSpan = document.createElement('span');
+    closeSpan.className = 'close';
+    closeSpan.title = 'hide';
+    closeSpan.textContent = '\u00d7';
+    bubble.appendChild(link);
+    bubble.appendChild(closeSpan);
+
+    var sticker = document.createElement('div');
+    sticker.className = 'sticker';
+    sticker.title = 'Chat with ' + soul;
+    var img = document.createElement('img');
+    img.src = imgSrc;
+    img.alt = soul;
+    sticker.appendChild(img);
+
+    companion.appendChild(bubble);
+    companion.appendChild(sticker);
+    return companion;
+  }
+
   var wrap = document.createElement('div');
   wrap.className = 'holdoff-companions';
-  wrap.innerHTML = ''
-    + '<div class="holdoff-companion" data-soul="Dan">'
-    +   '<div class="bubble">' + pick(danLines) + ' <a href="/companion?soul=Dan">Chat with Dan →</a><span class="close" title="hide">×</span></div>'
-    +   '<div class="sticker" title="Chat with Dan">'
-    +     '<img src="/assets/DAN_COMPANION.png" alt="Dan">'
-    +   '</div>'
-    + '</div>'
-    + '<div class="holdoff-companion" data-soul="Sadie">'
-    +   '<div class="bubble">' + pick(sadieLines) + ' <a href="/companion?soul=Sadie">Chat with Sadie →</a><span class="close" title="hide">×</span></div>'
-    +   '<div class="sticker" title="Chat with Sadie">'
-    +     '<img src="/assets/SADIE_COMPANION.png" alt="Sadie">'
-    +   '</div>'
-    + '</div>'
-    + '<button class="holdoff-dismiss-all" title="hide companions">hide</button>';
+  wrap.appendChild(makeCompanion('Dan', pick(danLines), '/assets/DAN_COMPANION.png'));
+  wrap.appendChild(makeCompanion('Sadie', pick(sadieLines), '/assets/SADIE_COMPANION.png'));
+  var dismissBtn = document.createElement('button');
+  dismissBtn.className = 'holdoff-dismiss-all';
+  dismissBtn.title = 'hide companions';
+  dismissBtn.textContent = 'hide';
+  wrap.appendChild(dismissBtn);
 
   function init() {
     document.body.appendChild(wrap);
