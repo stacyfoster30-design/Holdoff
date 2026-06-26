@@ -49,6 +49,16 @@ const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
 const SALT_ROUNDS = 12;
 const GOOGLE_CLIENT_ID_FALLBACK = '251734222269-l5fn6rbfcmtmm161q3g7e7k840lavf3f.apps.googleusercontent.com';
 
+// ─── Password strength validation ──────────────────────────────────────────
+
+function validatePassword(password) {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter.';
+  if (!/[0-9]/.test(password)) return 'Password must include at least one number.';
+  return null; // valid
+}
+
+
 // ─── Rate limiting (in-memory per IP) ───────────────────────────────────────
 
 /**
@@ -165,8 +175,9 @@ router.post('/signup', async (req, res) => {
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     return res.status(400).json({ error: 'Valid email is required.', code: 'VALIDATION_ERROR' });
   }
-  if (!password || password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters.', code: 'VALIDATION_ERROR' });
+  const pwError = validatePassword(password);
+  if (pwError) {
+    return res.status(400).json({ error: pwError, code: 'VALIDATION_ERROR' });
   }
 
   // Check duplicate
@@ -570,8 +581,9 @@ router.put('/account', requireAuth, async (req, res) => {
   }
 
   if (action === 'change_password') {
-    if (!new_password || new_password.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters.', code: 'VALIDATION_ERROR' });
+    const pwErr = validatePassword(new_password);
+    if (pwErr) {
+      return res.status(400).json({ error: pwErr, code: 'VALIDATION_ERROR' });
     }
     const user = await findUserById(userId);
     if (user.password_hash) {

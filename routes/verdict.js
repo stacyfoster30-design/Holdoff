@@ -6,14 +6,9 @@
 
 const express = require('express');
 const router = express.Router();
-const OpenAI = require('openai');
 const db = require('../db/messages');
+const { callAI } = require('../services/ai-provider');
 const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
-const { isCapabilityAvailable } = require('../config/dependency-policy');
-
-const client = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
 
 router.post('/', async (req, res) => {
   try {
@@ -67,23 +62,20 @@ SPIRAL DETECTION: If user sent 3+ messages to same contact in <2 min OR message 
 
 Return ONLY valid JSON.`;
 
-    if (!client || !isCapabilityAvailable('ai.openai')) {
+    const aiResult = await callAI({
+      systemPrompt,
+      userContent: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}`,
+      maxTokens: 500
+    });
+
+    if (!aiResult) {
       const verdict = buildOutgoingVerdictFallback(outgoingMessage);
       verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
       verdict.themeCode = verdict.attachmentPattern || 'SEC';
       return res.json(verdict);
     }
 
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 500,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}` },
-      ],
-    });
-
-    const content = response.choices[0].message.content || '{}';
+    const content = aiResult.content;
 
     // Parse JSON from response
     let verdict;
@@ -133,3 +125,4 @@ Return ONLY valid JSON.`;
 });
 
 module.exports = router;
+

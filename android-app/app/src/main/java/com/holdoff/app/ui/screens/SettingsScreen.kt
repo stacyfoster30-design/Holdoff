@@ -82,6 +82,52 @@ fun SettingsScreen(onBack: () -> Unit) {
                     }
                 }
             }
+            SettingsSection("My Conditions") {
+                Text(
+                    "Select any conditions that apply. This helps Sadie understand your patterns better. Not a diagnosis.",
+                    color = OnDarkTextMuted, style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(8.dp))
+                val myConditions = remember {
+                    mutableStateMapOf(
+                        "anxiety" to false, "depression" to false, "adhd" to false,
+                        "rsd" to false, "autism" to false, "trauma" to false, "addiction" to false,
+                        "bpd" to false, "ptsd" to false, "ocd" to false, "bipolar" to false
+                    )
+                }
+                val conditionLabels = mapOf(
+                    "anxiety" to "\uD83D\uDCA8 Anxiety",
+                    "depression" to "\uD83C\uDF27\uFE0F Depression",
+                    "adhd" to "\u26A1 ADHD",
+                    "rsd" to "\uD83D\uDC94 Rejection Sensitivity (RSD)",
+                    "autism" to "\uD83E\uDDE9 Autism",
+                    "trauma" to "\uD83E\uDE79 Trauma / C-PTSD",
+                    "addiction" to "\u26D3\uFE0F Addiction",
+                    "bpd" to "\uD83C\uDF0A BPD",
+                    "ptsd" to "\uD83C\uDF2A\uFE0F PTSD",
+                    "ocd" to "\uD83D\uDD04 OCD",
+                    "bipolar" to "\u2194\uFE0F Bipolar"
+                )
+                conditionLabels.forEach { (key, label) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text(label, color = OnDarkText, modifier = Modifier.weight(1f))
+                        Checkbox(
+                            checked = myConditions[key] == true,
+                            onCheckedChange = { checked -> myConditions[key] = checked },
+                            colors = CheckboxDefaults.colors(checkedColor = GlowPurple)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "\u26A0\uFE0F Self-reported, not a diagnosis. This is for AI personalization only.",
+                    color = OnDarkTextMuted, style = MaterialTheme.typography.bodySmall
+                )
+            }
             SettingsSection("Account") {
                 Text("User ID: holdoff_stacy_001", color = OnDarkTextMuted, style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = { /* TODO */ }) { Text("Change Password", color = GlowPurple) }
@@ -129,3 +175,4 @@ private fun SettingsToggle(label: String, value: Boolean, onChange: (Boolean) ->
         )
     }
 }
+

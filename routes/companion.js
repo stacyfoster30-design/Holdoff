@@ -7,7 +7,8 @@
  */
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../lib/auth');
+const rateLimit = require('express-rate-limit');
+const { requireAuth } = require('../lib/auth');
 const {
   buildCompanionPrompt,
   listSouls,
@@ -16,7 +17,15 @@ const {
   STYLE_ORDER,
 } = require('../lib/companion-ai');
 const { buildCompanionFallback } = require('../services/resilient-ai');
-const { isCapabilityAvailable } = require('../config/dependency-policy');
+const { callAI } = require('../services/ai-provider');
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages. Please slow down.', code: 'RATE_LIMITED' },
+});
 
 // Legacy → canonical
 function canonicalSoul(name) {
@@ -45,7 +54,7 @@ router.get('/variants', (_req, res) => {
 });
 
 // POST /api/companion/chat — chat with a soul in a chosen attachment style
-router.post('/chat', verifyToken, async (req, res) => {
+router.post('/chat', chatLimiter, requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -76,10 +85,19 @@ router.post('/chat', verifyToken, async (req, res) => {
       { attachmentStyle: style }
     );
 
-    const OpenAI = require('openai');
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Build full message history for companion
+    const messages = [
+      ...prompt.conversationMessages.map(m => m.role === 'system' ? '' : m.content).filter(Boolean),
+      message
+    ].join('\n\n');
 
-    if (!isCapabilityAvailable('ai.openai')) {
+    const aiResult = await callAI({
+      systemPrompt: prompt.system,
+      userContent: message,
+      maxTokens: 1024
+    });
+
+    if (!aiResult) {
       const fallback = buildCompanionFallback({ soul: prompt.soul.key, style: prompt.style.key, message });
       return res.json({
         ...fallback,
@@ -89,23 +107,12 @@ router.post('/chat', verifyToken, async (req, res) => {
       });
     }
 
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 1024,
-      messages: [
-        { role: 'system', content: prompt.system },
-        ...prompt.conversationMessages,
-        { role: 'user', content: message },
-      ],
-    });
-
-    const reply = response.choices[0].message.content;
-
     return res.json({
-      reply,
+      reply: aiResult.content,
       soul: prompt.soul.key,
       style: prompt.style.key,
       styleLabel: prompt.style.label,
+      source: aiResult.source,
     });
   } catch (error) {
     console.error('[companion] Error:', error.message);
@@ -120,3 +127,4 @@ router.post('/chat', verifyToken, async (req, res) => {
 });
 
 module.exports = router;
+
