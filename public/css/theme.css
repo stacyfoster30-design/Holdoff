@@ -10,15 +10,14 @@
 }
 
 :root {
-  /* DEFAULT — Secure/Safe baseline (midnight velvet) */
-  --bg: #0F0A1A;
-  --fg: #F5F0FF;
-  --accent: #7B5DBA;
-  --accent-warm: #9B7FCC;
-  --accent-deep: #5A3F8C;
-  --muted: #A89DBD;
-  --border: #2A1F4A;
-  --surface: #1A1025;
+  --bg: #0d0a1a;
+  --fg: #e8e4f0;
+  --accent: #7c5cbf;
+  --accent-warm: #5b8def;
+  --accent-deep: #6948b0;
+  --muted: #9b8fb8;
+  --border: #2d2450;
+  --surface: #1a1432;
 
   --font-display: 'Fraunces', Georgia, serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
@@ -30,68 +29,6 @@
   --space-xl: 4rem;
   --space-2xl: 6rem;
   --space-3xl: 10rem;
-}
-
-/* ── Verdict-Based Dynamic Theming ────────────────────────────────── */
-
-/* Anxious-Preoccupied: Bright lime green, vibrant & edgy */
-body[data-verdict="ANX"] {
-  --bg: #0A1408;
-  --fg: #C6FF00;
-  --accent: #A3E635;
-  --accent-warm: #BFFF00;
-  --accent-deep: #76B82A;
-  --muted: #7FB069;
-  --border: #2D4D00;
-  --surface: #1A2E0F;
-}
-
-/* Avoidant-Dismissive: Icy cyan, cold & withdrawn */
-body[data-verdict="AVO"] {
-  --bg: #0A1518;
-  --fg: #B0E9F0;
-  --accent: #4DD9E8;
-  --accent-warm: #6DD9E8;
-  --accent-deep: #2BA3B3;
-  --muted: #5BA8B8;
-  --border: #1A3F4A;
-  --surface: #0F2530;
-}
-
-/* Fearful-Avoidant: Deep magenta + electric purple, chaotic */
-body[data-verdict="FA"] {
-  --bg: #1A0A2E;
-  --fg: #FF88FF;
-  --accent: #E640FF;
-  --accent-warm: #FF66FF;
-  --accent-deep: #B400FF;
-  --muted: #B88FCC;
-  --border: #4A1A6A;
-  --surface: #2E1550;
-}
-
-/* Angry: Fire red with blue flames */
-body[data-verdict="ANGRY"] {
-  --bg: #1A0A08;
-  --fg: #FF6B5B;
-  --accent: #FF4433;
-  --accent-warm: #FF6B33;
-  --accent-deep: #CC2200;
-  --muted: #FF9966;
-  --border: #4A1810;
-  --surface: #2E1008;
-}
-
-/* Risky/Reckless: Golden amber, warning */
-body[data-verdict="RISKY"] {
-  --bg: #1A1408;
-  --fg: #FFD700;
-  --accent: #FFC700;
-  --accent-warm: #FFE44D;
-  --accent-deep: #CC9900;
-  --muted: #D4A017;
-  --border: #4A3A00;
-  --surface: #2E2400;
 }
 
 html {
@@ -290,8 +227,8 @@ em {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 60%, rgba(123, 93, 186, 0.15) 0%, transparent 70%),
-    radial-gradient(ellipse 80% 40% at 30% 80%, rgba(155, 127, 204, 0.1) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 50% at 50% 60%, rgba(200, 123, 93, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 30% 80%, rgba(232, 168, 124, 0.08) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -589,7 +526,7 @@ em {
 .closing__glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(123, 93, 186, 0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(200, 123, 93, 0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -965,8 +902,8 @@ em {
 }
 
 .sandbox-verdict--safe {
-  background: rgba(123, 93, 186, 0.15);
-  border: 1px solid rgba(123, 93, 186, 0.4);
+  background: rgba(90, 143, 106, 0.1);
+  border: 1px solid rgba(90, 143, 106, 0.3);
 }
 
 .sandbox-verdict__icon {
@@ -977,7 +914,7 @@ em {
 .sandbox-verdict__label {
   font-weight: 600;
   font-size: 0.95rem;
-  color: #9B7FCC;
+  color: #3A6B47;
   margin-bottom: 0.35rem;
 }
 
@@ -1179,7 +1116,7 @@ em {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(42, 37, 34, 0.6);
+  background: rgba(13, 10, 26, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
@@ -1190,21 +1127,20 @@ em {
 }
 
 .contact-modal__card {
-  background: #1A1025;
+  background: var(--surface);
   border-radius: 12px;
   padding: 2.5rem;
   position: relative;
   max-width: 420px;
   width: 92%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  border: 1px solid #2A1F4A;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
 .contact-modal__title {
   font-family: 'Fraunces', Georgia, serif;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #F5F0FF;
+  color: var(--fg);
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
 }
@@ -1216,7 +1152,7 @@ em {
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #A89DBD;
+  color: var(--muted);
   cursor: pointer;
   line-height: 1;
   padding: 0.25rem;
@@ -1224,7 +1160,7 @@ em {
 }
 
 .contact-modal__close:hover {
-  color: #F5F0FF;
+  color: var(--fg);
 }
 
 .contact-modal__field {
@@ -1235,7 +1171,7 @@ em {
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #A89DBD;
+  color: var(--muted);
   margin-bottom: 0.4rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1245,12 +1181,12 @@ em {
 .contact-modal__textarea {
   width: 100%;
   padding: 0.7rem 0.9rem;
-  border: 1.5px solid #2A1F4A;
+  border: 1.5px solid var(--border);
   border-radius: 6px;
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.95rem;
-  color: #F5F0FF;
-  background: #0F0A1A;
+  color: var(--fg);
+  background: var(--bg);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -1258,7 +1194,7 @@ em {
 
 .contact-modal__input:focus,
 .contact-modal__textarea:focus {
-  border-color: #7B5DBA;
+  border-color: var(--accent);
 }
 
 .contact-modal__textarea {
@@ -1269,7 +1205,7 @@ em {
 .contact-modal__submit {
   width: 100%;
   padding: 0.75rem;
-  background: #7B5DBA;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -1282,7 +1218,7 @@ em {
 }
 
 .contact-modal__submit:hover {
-  background: #5A3F8C;
+  background: var(--accent-deep);
 }
 
 .contact-modal__submit:disabled {
@@ -1291,7 +1227,7 @@ em {
 }
 
 .contact-modal__success {
-  color: #9B7FCC;
+  color: #5A8F6A;
   font-size: 0.9rem;
   font-weight: 500;
   margin-top: 1rem;
@@ -1299,7 +1235,7 @@ em {
 }
 
 .contact-modal__error {
-  color: #DD8B7F;
+  color: #C05A4A;
   font-size: 0.85rem;
   margin-top: 0.75rem;
   text-align: center;

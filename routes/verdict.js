@@ -6,10 +6,11 @@
 
 const express = require('express');
 const router = express.Router();
-const { Anthropic } = require('@anthropic-ai/sdk');
 const db = require('../db/messages');
-
-const client = new Anthropic();
+const { requireAuth } = require('../lib/auth');
+const { getVerdictHistory, getStreak } = require('../db/verdict-history');
+const { callAI } = require('../services/ai-provider');
+const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
 
 router.post('/', async (req, res) => {
   try {
@@ -63,19 +64,20 @@ SPIRAL DETECTION: If user sent 3+ messages to same contact in <2 min OR message 
 
 Return ONLY valid JSON.`;
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 500,
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}`,
-        },
-      ],
+    const aiResult = await callAI({
+      systemPrompt,
+      userContent: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}`,
+      maxTokens: 500
     });
 
-    const content = response.content[0].type === 'text' ? response.content[0].text : '{}';
+    if (!aiResult) {
+      const verdict = buildOutgoingVerdictFallback(outgoingMessage);
+      verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+      verdict.themeCode = verdict.attachmentPattern || 'SEC';
+      return res.json(verdict);
+    }
+
+    const content = aiResult.content;
 
     // Parse JSON from response
     let verdict;
@@ -117,21 +119,39 @@ Return ONLY valid JSON.`;
     res.json(verdict);
   } catch (error) {
     console.error('Verdict API error:', error.message || error);
-    if (process.env.NODE_ENV === 'development') {
-      res.status(500).json({
-        error: 'Could not analyze message',
-        details: error.message,
-        safetyLevel: 'yellow',
-        analysis: 'Try rephrasing.',
-      });
-    } else {
-      res.status(500).json({
-        error: 'Could not analyze message',
-        safetyLevel: 'yellow',
-        analysis: 'Try rephrasing.',
-      });
-    }
+    const verdict = buildOutgoingVerdictFallback(req.body?.outgoingMessage || '');
+    verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+    verdict.themeCode = verdict.attachmentPattern || 'SEC';
+    res.status(200).json(verdict);
+  }
+});
+
+/** GET /api/verdict/streak — current hold streak and total verdict count. */
+router.get('/streak', requireAuth, async (req, res) => {
+  try {
+    const streak = await getStreak(req.userId || req.user?.id);
+    res.json(streak || { currentStreak: 0, longestStreak: 0, totalVerdicts: 0 });
+  } catch (err) {
+    console.error('[verdict/streak]', err.message);
+    res.status(500).json({ error: 'Failed to fetch streak.' });
+  }
+});
+
+/** GET /api/verdict/history — paginated verdict history for logged-in user. */
+router.get('/history', requireAuth, async (req, res) => {
+  try {
+    const { verdictType, cursor, limit } = req.query;
+    const entries = await getVerdictHistory(req.userId || req.user?.id, {
+      verdictType: verdictType || null,
+      cursor: cursor || null,
+      limit: limit ? parseInt(limit, 10) : 50,
+    });
+    res.json(entries);
+  } catch (err) {
+    console.error('[verdict/history]', err.message);
+    res.status(500).json({ error: 'Failed to fetch history.' });
   }
 });
 
 module.exports = router;
+

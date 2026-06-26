@@ -22,7 +22,7 @@
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       padding: 20px;
@@ -31,119 +31,31 @@
     .companion-header {
       display: flex;
       align-items: center;
-      gap: 18px;
-      padding: 22px;
+      gap: 15px;
+      padding: 20px;
       background: rgba(45, 27, 78, 0.4);
       border-radius: 12px;
       margin-bottom: 20px;
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .character-avatar {
-      position: relative;
-      width: 148px;
-      min-width: 148px;
-      height: 180px;
-      border-radius: 22px;
-      overflow: hidden;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: transparent;
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background:
-        radial-gradient(circle at top, var(--character-accent-soft) 0%, rgba(26, 26, 62, 0) 62%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(26, 26, 62, 0.92) 100%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 18px 40px rgba(11, 5, 24, 0.38);
-      isolation: isolate;
+      overflow: hidden;
+      flex-shrink: 0;
     }
-
-    .character-avatar::before {
-      content: '';
-      position: absolute;
-      inset: 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      pointer-events: none;
-    }
-
-    .character-avatar::after {
-      content: '';
-      position: absolute;
-      left: 18px;
-      right: 18px;
-      bottom: 12px;
-      height: 18px;
-      border-radius: 999px;
-      background: rgba(10, 7, 22, 0.5);
-      filter: blur(10px);
-      transform-origin: center;
-      animation: shadowPulse 4s ease-in-out infinite;
-    }
-
-    .character-avatar[data-state="thinking"] .character-portrait {
-      animation: characterFloat 1.8s ease-in-out infinite, characterThink 1s ease-in-out infinite;
-    }
-
-    .character-avatar[data-state="thinking"]::after {
-      animation-duration: 1.8s;
-      transform: scaleX(0.92);
-    }
-
-    .character-avatar[data-state="speaking"] .character-portrait {
-      animation: characterFloat 2.6s ease-in-out infinite, characterSpeak 0.45s ease-in-out infinite;
-    }
-
-    .character-portrait {
-      position: relative;
-      z-index: 1;
+    .character-avatar img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      object-position: center bottom;
-      padding: 10px 8px 0;
-      filter: drop-shadow(0 20px 22px rgba(0, 0, 0, 0.32));
-      animation: characterFloat 4s ease-in-out infinite;
-    }
-
-    @keyframes characterFloat {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-7px);
-      }
-    }
-
-    @keyframes characterThink {
-      0%, 100% {
-        transform: translateY(0) rotate(0deg);
-      }
-      35% {
-        transform: translateY(-6px) rotate(-1.5deg);
-      }
-      70% {
-        transform: translateY(-2px) rotate(1.5deg);
-      }
-    }
-
-    @keyframes characterSpeak {
-      0%, 100% {
-        transform: translateY(0) scale(1);
-      }
-      50% {
-        transform: translateY(-5px) scale(1.02);
-      }
-    }
-
-    @keyframes shadowPulse {
-      0%, 100% {
-        opacity: 0.55;
-        transform: scaleX(1);
-      }
-      50% {
-        opacity: 0.82;
-        transform: scaleX(0.88);
-      }
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 50%;
     }
 
     .character-info h2 {
@@ -156,25 +68,6 @@
       font-size: 14px;
       color: #b8a89f;
       font-style: italic;
-    }
-
-    .character-status {
-      margin-top: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: #dcd1ff;
-      font-style: normal;
-    }
-
-    .character-status::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--character-accent);
-      box-shadow: 0 0 16px var(--character-accent-soft);
     }
 
     .chat-history {
@@ -191,6 +84,34 @@
       display: flex;
       gap: 10px;
       animation: slideIn 0.3s ease-out;
+    }
+
+    .message-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      align-self: flex-end;
+      background: rgba(45, 27, 78, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+
+    .message-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    .message-avatar .avatar-emoji {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
     }
 
     @keyframes slideIn {
@@ -226,7 +147,7 @@
       background: rgba(45, 27, 78, 0.6);
       color: #e8dcc8;
       border-radius: 4px 12px 12px 12px;
-      border-left: 3px solid var(--character-accent);
+      border-left: 3px solid #8b5cf6;
     }
 
     .typing-indicator {
@@ -240,7 +161,7 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--character-accent);
+      background: #8b5cf6;
       animation: typing 1.4s infinite;
     }
 
@@ -331,32 +252,6 @@
       background: rgba(139, 92, 246, 0.3);
     }
 
-    @media (max-width: 640px) {
-      .companion-container {
-        padding: 16px;
-      }
-
-      .companion-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .character-avatar {
-        width: 100%;
-        min-width: 0;
-        height: 220px;
-      }
-
-      .message-bubble {
-        max-width: 100%;
-      }
-
-      .chat-input-area {
-        position: sticky;
-        bottom: 0;
-      }
-    }
-
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -373,32 +268,102 @@
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(139, 92, 246, 0.5);
     }
+
+    /* Attachment style picker */
+    .style-picker {
+      background: rgba(26, 14, 46, 0.55);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .style-picker-label {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #b8a8d6;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .style-picker-label .help {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11px;
+      color: #8b7d93;
+      font-style: italic;
+    }
+    .style-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .style-pill {
+      background: rgba(45, 27, 78, 0.5);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #e8dcc8;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .style-pill:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.6);
+    }
+    .style-pill.active {
+      background: linear-gradient(135deg, #6b4b9f 0%, #8b5cf6 100%);
+      border-color: #8b5cf6;
+      color: #fff;
+      box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.5);
+    }
+    .style-pill .core {
+      font-size: 10px;
+      opacity: 0.8;
+      margin-left: 6px;
+    }
+    .style-blurb {
+      font-size: 12px;
+      color: #c9b8e6;
+      margin-top: 10px;
+      font-style: italic;
+      line-height: 1.45;
+      min-height: 1em;
+    }
   </style>
 </head>
 <body>
-  <div
-    class="companion-container"
-    style="--character-accent: <%= character.accentColor %>; --character-accent-soft: <%= character.accentSoft %>;"
-  >
+  <div class="companion-container">
     <a href="/story" class="back-btn">← Back to story</a>
 
     <div class="companion-header">
-      <div class="character-avatar" id="characterAvatar" data-state="idle">
-        <img
-          src="<%= character.portrait %>"
-          alt="<%= character.name %>"
-          class="character-portrait"
-        >
+      <div class="character-avatar">
+        <img src="<%= character.image %>" alt="<%= character.name %>" onerror="this.style.display='none';this.parentNode.insertAdjacentHTML('beforeend','<span style=\'font-size:28px\'><%= character.emoji %></span>')">
       </div>
       <div class="character-info">
         <h2><%= character.name %></h2>
         <p><%= character.tagline %></p>
-        <p class="character-status" id="characterStatus">Ready to listen</p>
       </div>
+    </div>
+
+    <div class="style-picker" id="stylePicker">
+      <div class="style-picker-label">
+        <span>Attachment state · how <%= character.name %> shows up</span>
+        <span class="help">same 4 styles for both souls</span>
+      </div>
+      <div class="style-pills" id="stylePills"></div>
+      <div class="style-blurb" id="styleBlurb"></div>
     </div>
 
     <div class="chat-history" id="chatHistory">
       <div class="message assistant">
+        <div class="message-avatar">
+          <img src="<%= character.image %>" alt="<%= character.name %>"
+               onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=\'avatar-emoji\'><%= character.emoji %></span>')">
+        </div>
         <div class="message-bubble">
           <%= character.greeting %>
         </div>
@@ -420,29 +385,56 @@
   <script>
     const character = <%- JSON.stringify(character) %>;
     const userContext = <%- JSON.stringify(userContext) %>;
-    const characterAvatar = document.getElementById('characterAvatar');
-    const characterStatus = document.getElementById('characterStatus');
+
+    // Canonical soul name (server accepts legacy Stacy/Danny but uses Sadie/Dan internally).
+    const SOUL_NAME = (character.name === 'Stacy') ? 'Sadie'
+                    : (character.name === 'Danny') ? 'Dan'
+                    : character.name;
+    const CORE_STYLE = (SOUL_NAME === 'Sadie') ? 'fearful_avoidant' : 'dismissive_avoidant';
 
     let conversationHistory = [];
-    let speakingTimer = null;
+    let currentStyle = CORE_STYLE;
+    let stylesByKey = {};
 
-    function setCharacterState(state, statusText) {
-      if (characterAvatar) {
-        characterAvatar.dataset.state = state;
-      }
-
-      if (characterStatus && statusText) {
-        characterStatus.textContent = statusText;
+    async function loadStyles() {
+      try {
+        const r = await fetch('/api/companion/styles?soul=' + encodeURIComponent(SOUL_NAME));
+        const data = await r.json();
+        const pills = document.getElementById('stylePills');
+        pills.innerHTML = '';
+        (data.styles || []).forEach((s) => {
+          stylesByKey[s.key] = s;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'style-pill' + (s.key === currentStyle ? ' active' : '');
+          btn.dataset.key = s.key;
+          btn.innerHTML = escapeHtml(s.label) +
+            (s.key === CORE_STYLE ? '<span class="core">· core</span>' : '');
+          btn.addEventListener('click', () => selectStyle(s.key));
+          pills.appendChild(btn);
+        });
+        renderBlurb();
+      } catch (e) {
+        console.error('Failed to load styles', e);
       }
     }
 
-    function showSpeakingState() {
-      window.clearTimeout(speakingTimer);
-      setCharacterState('speaking', `${character.name} is here with you`);
-      speakingTimer = window.setTimeout(() => {
-        setCharacterState('idle', 'Ready to listen');
-      }, 1800);
+    function selectStyle(key) {
+      currentStyle = key;
+      document.querySelectorAll('.style-pill').forEach((el) => {
+        el.classList.toggle('active', el.dataset.key === key);
+      });
+      renderBlurb();
     }
+
+    function renderBlurb() {
+      const s = stylesByKey[currentStyle];
+      const el = document.getElementById('styleBlurb');
+      if (!s) { el.textContent = ''; return; }
+      el.textContent = s.blurb || '';
+    }
+
+    loadStyles();
 
     function scrollToBottom() {
       const chatHistory = document.getElementById('chatHistory');
@@ -453,7 +445,29 @@
       const chatHistory = document.getElementById('chatHistory');
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${role}`;
-      messageDiv.innerHTML = `<div class="message-bubble">${escapeHtml(content)}</div>`;
+
+      if (role === 'assistant') {
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'message-avatar';
+        const img = document.createElement('img');
+        img.src = character.image || '';
+        img.alt = character.name;
+        img.onerror = function () {
+          this.style.display = 'none';
+          const fallback = document.createElement('span');
+          fallback.className = 'avatar-emoji';
+          fallback.textContent = character.emoji || '?';
+          avatarDiv.appendChild(fallback);
+        };
+        avatarDiv.appendChild(img);
+        messageDiv.appendChild(avatarDiv);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.textContent = content;
+      messageDiv.appendChild(bubble);
+
       chatHistory.appendChild(messageDiv);
       
       if (role === 'user') {
@@ -464,7 +478,6 @@
     }
 
     function showTyping() {
-      setCharacterState('thinking', `${character.name} is thinking...`);
       const chatHistory = document.getElementById('chatHistory');
       const typingDiv = document.createElement('div');
       typingDiv.className = 'message assistant';
@@ -485,7 +498,6 @@
       if (typingIndicator) {
         typingIndicator.remove();
       }
-      setCharacterState('idle', 'Ready to listen');
     }
 
     function escapeHtml(text) {
@@ -502,7 +514,6 @@
 
       input.value = '';
       document.getElementById('sendBtn').disabled = true;
-      setCharacterState('thinking', 'Listening to you...');
 
       addMessage('user', message);
       showTyping();
@@ -514,7 +525,9 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            characterName: character.name,
+            soulName: SOUL_NAME,
+            characterName: character.name, // legacy field, still accepted
+            attachmentStyle: currentStyle,
             message,
             conversationHistory,
           }),
@@ -529,11 +542,9 @@
         const data = await response.json();
         addMessage('assistant', data.reply);
         conversationHistory.push({ role: 'assistant', content: data.reply });
-        showSpeakingState();
       } catch (error) {
         removeTyping();
         addMessage('assistant', `Sorry, I couldn't respond right now. Try again in a moment.`);
-        setCharacterState('idle', 'Ready to listen');
         console.error('Chat error:', error);
       } finally {
         document.getElementById('sendBtn').disabled = false;

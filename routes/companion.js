@@ -1,68 +1,130 @@
 /**
  * AI Companion chat route
- * Handles conversations with Stacy (fearful-avoidant) and Danny (avoidant-dismissive/discovering/anxious/secure)
+ *
+ * Two souls (Sadie, Dan) × four canonical attachment styles
+ * (secure, anxious, dismissive_avoidant, fearful_avoidant).
+ * Same style set for both souls, soul-specific overlays.
  */
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../lib/auth');
-const { buildCompanionPrompt, getCharacterDefinition } = require('../lib/companion-ai');
+const rateLimit = require('express-rate-limit');
+const { requireAuth } = require('../lib/auth');
+const {
+  buildCompanionPrompt,
+  listSouls,
+  listAttachmentStyles,
+  listCompanionVariants,
+  STYLE_ORDER,
+} = require('../lib/companion-ai');
+const { buildCompanionFallback } = require('../services/resilient-ai');
+const { callAI } = require('../services/ai-provider');
 
-// POST /api/companion/chat — chat with an AI character
-router.post('/chat', verifyToken, async (req, res) => {
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages. Please slow down.', code: 'RATE_LIMITED' },
+});
+
+// Legacy → canonical
+function canonicalSoul(name) {
+  if (!name) return null;
+  const n = String(name).trim();
+  if (n === 'Stacy') return 'Sadie';
+  if (n === 'Danny') return 'Dan';
+  if (n === 'Sadie' || n === 'Dan') return n;
+  return null;
+}
+
+// GET /api/companion/souls — list available souls
+router.get('/souls', (_req, res) => {
+  res.json({ souls: listSouls() });
+});
+
+// GET /api/companion/styles?soul=Sadie — list the 4 styles with soul-specific blurbs
+router.get('/styles', (req, res) => {
+  const soul = canonicalSoul(req.query.soul);
+  res.json({ soul, styles: listAttachmentStyles(soul) });
+});
+
+// GET /api/companion/variants — all 8 (4 styles × 2 souls)
+router.get('/variants', (_req, res) => {
+  res.json({ variants: listCompanionVariants() });
+});
+
+// POST /api/companion/chat — chat with a soul in a chosen attachment style
+router.post('/chat', chatLimiter, requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  const { characterName, message, conversationHistory } = req.body;
+  const { characterName, soulName, message, conversationHistory, attachmentStyle } = req.body;
 
-  if (!characterName || !message) {
-    return res.status(400).json({ error: 'Missing characterName or message' });
+  const soul = canonicalSoul(soulName || characterName);
+  if (!soul) {
+    return res.status(400).json({ error: 'Invalid soul (use Sadie or Dan)' });
+  }
+  if (!message) {
+    return res.status(400).json({ error: 'Missing message' });
   }
 
-  const selectedCharacter = getCharacterDefinition(characterName);
-  if (!selectedCharacter) {
-    return res.status(400).json({ error: 'Invalid character name' });
+  // If a style was provided, make sure it's one of the canonical 4.
+  let style = attachmentStyle;
+  if (style && !STYLE_ORDER.includes(style)) {
+    style = undefined;
   }
 
   try {
-    // Build personalized prompt with character personality + user context
     const prompt = await buildCompanionPrompt(
-      characterName,
+      soul,
       message,
       conversationHistory || [],
-      user
+      user,
+      { attachmentStyle: style }
     );
 
-    // Call Claude to generate response
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+    // Build full message history for companion
+    const messages = [
+      ...prompt.conversationMessages.map(m => m.role === 'system' ? '' : m.content).filter(Boolean),
+      message
+    ].join('\n\n');
+
+    const aiResult = await callAI({
+      systemPrompt: prompt.system,
+      userContent: message,
+      maxTokens: 1024
     });
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1024,
-      system: prompt.system,
-      messages: [
-        ...prompt.conversationMessages,
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
+    if (!aiResult) {
+      const fallback = buildCompanionFallback({ soul: prompt.soul.key, style: prompt.style.key, message });
+      return res.json({
+        ...fallback,
+        soul: prompt.soul.key,
+        style: prompt.style.key,
+        styleLabel: prompt.style.label,
+      });
+    }
+
+    return res.json({
+      reply: aiResult.content,
+      soul: prompt.soul.key,
+      style: prompt.style.key,
+      styleLabel: prompt.style.label,
+      source: aiResult.source,
     });
-
-    const reply = response.content[0].type === 'text' ? response.content[0].text : '';
-
-    return res.json({ reply });
   } catch (error) {
     console.error('[companion] Error:', error.message);
-    return res.status(500).json({
-      error: 'Failed to generate response',
-      message: error.message,
+    const fallback = buildCompanionFallback({ soul, style, message });
+    return res.status(200).json({
+      ...fallback,
+      soul: soul || 'Sadie',
+      style: style || null,
+      styleLabel: style || null,
     });
   }
 });
 
 module.exports = router;
+

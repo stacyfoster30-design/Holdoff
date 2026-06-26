@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-client-id" content="<%= typeof googleClientId !== 'undefined' ? googleClientId : '' %>">
   <title>HoldOff — Your Story</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * {
       margin: 0;
@@ -300,7 +302,12 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required>
+        <div style="position:relative;">
+          <input type="password" id="password" name="password" placeholder="••••••••" required oninput="checkPwStrength()" style="padding-right:3rem;">
+          <button type="button" onclick="togglePw()" id="togglePwBtn" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(200,150,255,0.6);cursor:pointer;font-size:1.1rem;padding:0;" title="Show password">👁</button>
+        </div>
+        <div id="pwStrength" style="margin-top:6px;height:4px;border-radius:2px;background:rgba(200,150,255,0.1);overflow:hidden;"><div id="pwBar" style="height:100%;width:0;border-radius:2px;transition:all .3s;"></div></div>
+        <div id="pwLabel" style="font-size:11px;color:rgba(200,150,255,0.5);margin-top:4px;"></div>
         <div class="error" id="passwordError"></div>
       </div>
 
@@ -366,8 +373,8 @@
         hasError = true;
       }
 
-      if (!password || password.length < 8) {
-        document.getElementById('passwordError').textContent = 'Password must be at least 8 characters';
+      if (!password || password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+        document.getElementById('passwordError').textContent = 'Password must be at least 8 characters with 1 uppercase letter and 1 number';
         document.getElementById('passwordError').classList.add('show');
         hasError = true;
       }
@@ -393,17 +400,42 @@
           return;
         }
 
-        // Signup successful — store user id and send to required onboarding
-        try {
-          const newId = (data.user && data.user.id) || data.id;
-          if (newId) localStorage.setItem('user_id', newId);
-        } catch (e) {}
-        window.location.href = '/onboarding';
+        // Signup successful — redirect to dashboard
+        window.location.href = '/dashboard';
       } catch (error) {
         alert('Error during signup. Please try again.');
         console.error(error);
       }
     });
+
+    function togglePw() {
+      const pw = document.getElementById("password");
+      const btn = document.getElementById("togglePwBtn");
+      if (pw.type === "password") { pw.type = "text"; btn.textContent = "🙈"; btn.title = "Hide password"; }
+      else { pw.type = "password"; btn.textContent = "👁"; btn.title = "Show password"; }
+    }
+    function checkPwStrength() {
+      const pw = document.getElementById("password").value;
+      const bar = document.getElementById("pwBar");
+      const label = document.getElementById("pwLabel");
+      let score = 0;
+      if (pw.length >= 8) score++;
+      if (pw.length >= 12) score++;
+      if (/[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      const levels = [
+        { w: "0%", c: "#666", t: "" },
+        { w: "20%", c: "#f87171", t: "Weak" },
+        { w: "40%", c: "#fb923c", t: "Fair" },
+        { w: "60%", c: "#facc15", t: "Good" },
+        { w: "80%", c: "#a78bfa", t: "Strong" },
+        { w: "100%", c: "#34d399", t: "Excellent" }
+      ];
+      const l = levels[score];
+      bar.style.width = l.w; bar.style.background = l.c; label.textContent = l.t; label.style.color = l.c;
+    }
   </script>
+  <script src="/js/floating-companions.js" defer></script>
 </body>
 </html>

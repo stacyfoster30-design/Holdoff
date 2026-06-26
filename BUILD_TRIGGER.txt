@@ -1,3 +1,1 @@
-APK Build Triggered: June 17, 2026 03:07 AM MT
-Workflow: Build HoldOff APK
-Target: Android Release APK
+Build #237 — fix peach splash → midnight velvet dark purple — Thu Jun 25 02:18:32 UTC 2026
