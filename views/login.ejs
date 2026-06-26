@@ -14,6 +14,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    .forgot-links {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+      margin-top: .25rem; margin-bottom: 1rem;
+    }
+    .forgot-links a {
+      color: var(--accent); font-size: .8rem; text-decoration: none;
+      padding: 4px 0; min-height: 44px; display: flex; align-items: center;
+    }
+    .forgot-links a:hover { text-decoration: underline; }
+  </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     .auth-wrap { max-width: 420px; margin: 6rem auto 4rem; padding: 0 1.5rem; }
@@ -70,8 +81,12 @@
       <button type="submit" class="auth-submit">Log in</button>
     </form>
 
+    <div class="forgot-links">
+      <a href="/forgot-email">Forgot your email?</a>
+      <a href="/forgot-password">Forgot password?</a>
+    </div>
+
     <div class="auth-footer">
-      <a href="/forgot-password">Forgot password?</a> &nbsp;·&nbsp;
       Do not have an account? <a href="/signup">Sign up</a>
     </div>
   </div>
