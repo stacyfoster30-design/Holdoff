@@ -145,6 +145,13 @@ app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
 app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
 app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
 app.use('/api/contacts', require(path.join(__dirname, 'routes', 'contacts')));
+app.use('/api/contact-insights', rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}));
 app.use('/api/contact-insights', require(path.join(__dirname, 'routes', 'contact-insights')));
 app.use('/api/questionnaire', require(path.join(__dirname, 'routes', 'questionnaire')));
 app.use('/api/quiz-invites', require(path.join(__dirname, 'routes', 'quiz-invites')));
