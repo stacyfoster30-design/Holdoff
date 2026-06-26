@@ -609,7 +609,7 @@
         // Fetch verdict count
         const verdictRes = await fetch(`/api/verdict/count/${userId}`);
         if (verdictRes.ok) {
-          const verdictData = verdictRes.json();
+          const verdictData = await verdictRes.json();
           document.getElementById('verdicts-count').textContent = verdictData.count || 0;
         }
       } catch (err) {

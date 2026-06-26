@@ -6,12 +6,11 @@
 
 const express = require('express');
 const router = express.Router();
-const { Anthropic } = require('@anthropic-ai/sdk');
 const db = require('../db/messages');
 const { requireAuth } = require('../lib/auth');
 const { getVerdictHistory, getStreak } = require('../db/verdict-history');
-
-const client = new Anthropic();
+const { callAI } = require('../services/ai-provider');
+const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
 
 router.post('/', async (req, res) => {
   try {
@@ -65,19 +64,20 @@ SPIRAL DETECTION: If user sent 3+ messages to same contact in <2 min OR message 
 
 Return ONLY valid JSON.`;
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 500,
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}`,
-        },
-      ],
+    const aiResult = await callAI({
+      systemPrompt,
+      userContent: `User's message to send: "${outgoingMessage}"\n\nUser conditions: ${conditionsList}`,
+      maxTokens: 500
     });
 
-    const content = response.content[0].type === 'text' ? response.content[0].text : '{}';
+    if (!aiResult) {
+      const verdict = buildOutgoingVerdictFallback(outgoingMessage);
+      verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+      verdict.themeCode = verdict.attachmentPattern || 'SEC';
+      return res.json(verdict);
+    }
+
+    const content = aiResult.content;
 
     // Parse JSON from response
     let verdict;
@@ -119,20 +119,10 @@ Return ONLY valid JSON.`;
     res.json(verdict);
   } catch (error) {
     console.error('Verdict API error:', error.message || error);
-    if (process.env.NODE_ENV === 'development') {
-      res.status(500).json({
-        error: 'Could not analyze message',
-        details: error.message,
-        safetyLevel: 'yellow',
-        analysis: 'Try rephrasing.',
-      });
-    } else {
-      res.status(500).json({
-        error: 'Could not analyze message',
-        safetyLevel: 'yellow',
-        analysis: 'Try rephrasing.',
-      });
-    }
+    const verdict = buildOutgoingVerdictFallback(req.body?.outgoingMessage || '');
+    verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+    verdict.themeCode = verdict.attachmentPattern || 'SEC';
+    res.status(200).json(verdict);
   }
 });
 
@@ -164,3 +154,4 @@ router.get('/history', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+

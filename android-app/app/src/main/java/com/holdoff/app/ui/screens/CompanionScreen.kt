@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,7 +26,7 @@ import com.holdoff.app.ui.theme.*
 import com.holdoff.app.viewmodel.ChatMessage
 import com.holdoff.app.viewmodel.CompanionViewModel
 
-/** Sadie chat — your AI companion (and AI Stacy / AI Danny if premium). */
+/** Sadie & Dan — your AI companions with selectable attachment styles. */
 @Composable
 fun CompanionScreen(
     onBack: () -> Unit,
@@ -50,14 +51,14 @@ fun CompanionScreen(
                         Column {
                             Text(
                                 when (state.activeCompanion) {
-                                    "ai_danny" -> "AI Danny"
-                                    "ai_stacy" -> "AI Stacy"
-                                    else -> "Sadie"
+                                    "dan" -> "Dan \uD83D\uDC99"
+                                    else -> "Sadie \uD83D\uDC9C"
                                 },
                                 fontWeight = FontWeight.Bold, color = OnDarkText
                             )
                             Text(
-                                if (state.isTyping) "typing\u2026" else "your companion",
+                                if (state.isTyping) "typing\u2026"
+                                else state.activeStyleLabel,
                                 fontSize = 12.sp, color = OnDarkTextMuted
                             )
                         }
@@ -73,31 +74,71 @@ fun CompanionScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (isPremium) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().background(SurfaceVariant).padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf("sadie" to "Sadie \uD83D\uDC9C", "ai_stacy" to "AI Stacy", "ai_danny" to "AI Danny").forEach { (id, label) ->
-                        FilterChip(
-                            selected = state.activeCompanion == id,
-                            onClick = { vm.switchCompanion(id) },
-                            label = { Text(label, fontSize = 12.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = VelvetPurple,
-                                selectedLabelColor = OnDarkText
-                            )
+            // Soul selector — Sadie & Dan
+            Row(
+                modifier = Modifier.fillMaxWidth().background(SurfaceVariant).padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("sadie" to "Sadie \uD83D\uDC9C", "dan" to "Dan \uD83D\uDC99").forEach { (id, label) ->
+                    FilterChip(
+                        selected = state.activeCompanion == id,
+                        onClick = {
+                            if (id == "dan" && !isPremium) onUpgradeClick()
+                            else vm.switchCompanion(id)
+                        },
+                        label = { Text(label, fontSize = 13.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = if (id == "dan") RoyalPurple else VelvetPurple,
+                            selectedLabelColor = OnDarkText
                         )
-                    }
+                    )
                 }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth().background(VelvetPurple.copy(alpha = 0.2f)).padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            }
+
+            // Attachment style picker
+            if (isPremium) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .background(DeepPurple.copy(alpha = 0.5f))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Text("\u2728 Unlock AI Stacy + AI Danny", color = OnDarkText, fontSize = 13.sp)
-                    TextButton(onClick = onUpgradeClick) { Text("Upgrade", color = GlowPurple) }
+                    Text(
+                        "Attachment state \u00B7 how ${if (state.activeCompanion == "dan") "Dan" else "Sadie"} shows up",
+                        fontSize = 11.sp, color = OnDarkTextMuted
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val styles = listOf(
+                            "secure" to "Secure",
+                            "anxious" to "Anxious",
+                            "dismissive_avoidant" to "Dismissive",
+                            "fearful_avoidant" to "Fearful"
+                        )
+                        val coreStyle = if (state.activeCompanion == "dan") "dismissive_avoidant" else "fearful_avoidant"
+                        styles.forEach { (key, label) ->
+                            FilterChip(
+                                selected = state.activeStyle == key,
+                                onClick = { vm.switchStyle(key) },
+                                label = {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(label, fontSize = 11.sp)
+                                        if (key == coreStyle) {
+                                            Text("core", fontSize = 9.sp, color = GlowPurple, fontStyle = FontStyle.Italic)
+                                        }
+                                    }
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = GlowPurple.copy(alpha = 0.3f),
+                                    selectedLabelColor = OnDarkText,
+                                    labelColor = OnDarkTextMuted
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -130,7 +171,12 @@ fun CompanionScreen(
                         value = state.inputText,
                         onValueChange = vm::updateInput,
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Talk to Sadie\u2026", color = OnDarkTextMuted) },
+                        placeholder = {
+                            Text(
+                                "Talk to ${if (state.activeCompanion == "dan") "Dan" else "Sadie"}\u2026",
+                                color = OnDarkTextMuted
+                            )
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = GlowPurple,
                             unfocusedBorderColor = DividerColor,
@@ -154,10 +200,10 @@ fun CompanionScreen(
 private fun CompanionChatBubble(m: ChatMessage) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (m.isFromSadie) Arrangement.Start else Arrangement.End,
+        horizontalArrangement = if (m.isFromCompanion) Arrangement.Start else Arrangement.End,
         verticalAlignment = Alignment.Bottom
     ) {
-        if (m.isFromSadie) {
+        if (m.isFromCompanion) {
             SadieAvatar(size = SadieSize.SMALL)
             Spacer(Modifier.width(8.dp))
         }
@@ -166,11 +212,11 @@ private fun CompanionChatBubble(m: ChatMessage) {
                 .widthIn(max = 280.dp)
                 .clip(RoundedCornerShape(
                     topStart = 16.dp, topEnd = 16.dp,
-                    bottomStart = if (m.isFromSadie) 4.dp else 16.dp,
-                    bottomEnd = if (m.isFromSadie) 16.dp else 4.dp
+                    bottomStart = if (m.isFromCompanion) 4.dp else 16.dp,
+                    bottomEnd = if (m.isFromCompanion) 16.dp else 4.dp
                 ))
                 .background(
-                    if (m.isFromSadie) Brush.horizontalGradient(listOf(SurfaceVariant, RoyalPurple))
+                    if (m.isFromCompanion) Brush.horizontalGradient(listOf(SurfaceVariant, RoyalPurple))
                     else Brush.horizontalGradient(listOf(VelvetPurple, GlowPurple))
                 )
                 .padding(14.dp)

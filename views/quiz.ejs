@@ -326,7 +326,7 @@ function renderResults(data) {
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 async function apiSaveAnswer(question_number, selected_option) {
-  const res = await fetch('/quiz/api/quiz/answer', {
+  const res = await fetch('/api/quiz/answer', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -337,7 +337,7 @@ async function apiSaveAnswer(question_number, selected_option) {
 }
 
 async function apiSubmitQuiz() {
-  const res = await fetch('/quiz/api/quiz/submit', {
+  const res = await fetch('/api/quiz/submit', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -348,7 +348,7 @@ async function apiSubmitQuiz() {
 }
 
 async function apiResetQuiz() {
-  const res = await fetch('/quiz/api/quiz/reset', {
+  const res = await fetch('/api/quiz/reset', {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -357,7 +357,7 @@ async function apiResetQuiz() {
 }
 
 async function apiGetProfile() {
-  const res = await fetch('/quiz/api/quiz/profile', { credentials: 'include' });
+  const res = await fetch('/api/quiz/profile', { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch profile');
   return res.json();
 }

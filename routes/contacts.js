@@ -27,7 +27,7 @@ router.get('/', requireAuth, async (req, res) => {
         ...c,
         // Normalize: frontend expects `name` and `phone`
         name: c.display_name || c.name || 'Unknown',
-        phone: c.phone || c.phone_number || null,
+        phone: c.phone_number || c.phone || null,
         // Inbox preview fields
         lastMessage: c.last_message || null,
         lastMessageTime: c.last_messaged_at || c.updated_at || c.created_at || null,
@@ -50,13 +50,14 @@ router.get('/', requireAuth, async (req, res) => {
 // POST /api/contacts
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { displayName, relationship, durationDays } = req.body || {};
+    const { displayName, relationship, durationDays, phoneNumber } = req.body || {};
     if (!displayName) return res.status(400).json({ error: 'displayName required' });
     const contact = await createContact({
       userId: req.user.id,
       displayName,
       relationship: relationship || null,
       durationDays: durationDays || null,
+      phoneNumber: phoneNumber || null,
     });
     res.json(contact);
   } catch (e) {
@@ -82,9 +83,9 @@ router.get('/:id', requireAuth, async (req, res) => {
 // PATCH /api/contacts/:id
 router.patch('/:id', requireAuth, async (req, res) => {
   try {
-    const { displayName, relationship, durationDays } = req.body || {};
+    const { displayName, relationship, durationDays, phoneNumber } = req.body || {};
     const updated = await updateContact(req.params.id, req.user.id, {
-      displayName, relationship, durationDays,
+      displayName, relationship, durationDays, phoneNumber,
     });
     if (!updated) return res.status(404).json({ error: 'Not found' });
     res.json(updated);

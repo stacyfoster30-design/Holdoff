@@ -6,12 +6,12 @@ const { pool } = require('./index');
 
 // ── contacts ──────────────────────────────────────────────────────────────────
 
-async function createContact({ userId, displayName, relationship, durationDays }) {
+async function createContact({ userId, displayName, relationship, durationDays, phoneNumber }) {
   const { rows } = await pool.query(
-    `INSERT INTO contacts (user_id, display_name, relationship, duration_days)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO contacts (user_id, display_name, relationship, duration_days, phone_number)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [userId, displayName, relationship || null, durationDays || null]
+    [userId, displayName, relationship || null, durationDays || null, phoneNumber || null]
   );
   return rows[0];
 }
@@ -33,7 +33,7 @@ async function getContacts(userId, { includeDeleted = false } = {}) {
   return rows;
 }
 
-async function updateContact(contactId, userId, { displayName, relationship, durationDays, isSpam, spamReports }) {
+async function updateContact(contactId, userId, { displayName, relationship, durationDays, isSpam, spamReports, phoneNumber }) {
   const { rows } = await pool.query(
     `UPDATE contacts SET
        display_name = COALESCE($3, display_name),
@@ -41,10 +41,11 @@ async function updateContact(contactId, userId, { displayName, relationship, dur
        duration_days = COALESCE($5, duration_days),
        is_spam = COALESCE($6, is_spam),
        spam_reports = COALESCE($7, spam_reports),
+       phone_number = COALESCE($8, phone_number),
        updated_at = NOW()
      WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
      RETURNING *`,
-    [contactId, userId, displayName, relationship, durationDays, isSpam, spamReports]
+    [contactId, userId, displayName, relationship, durationDays, isSpam, spamReports, phoneNumber]
   );
   return rows[0] || null;
 }

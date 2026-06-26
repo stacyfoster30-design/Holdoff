@@ -1,20 +1,25 @@
 package com.holdoff.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.holdoff.app.data.network.HoldOffApi
 import com.holdoff.app.ui.screens.CompanionScreen
 import com.holdoff.app.ui.screens.HomeScreen
 import com.holdoff.app.ui.screens.LoginScreen
 import com.holdoff.app.ui.screens.OnboardingScreen
 import com.holdoff.app.ui.screens.PaywallScreen
 import com.holdoff.app.ui.screens.PremiumStoryScreen
+import com.holdoff.app.ui.screens.InsightsScreen
 import com.holdoff.app.ui.screens.ProfileScreen
 import com.holdoff.app.ui.screens.SettingsScreen
 import com.holdoff.app.ui.screens.ThreadDetailScreen
+import com.holdoff.app.ui.screens.QuizScreen
+import com.holdoff.app.ui.screens.TrustedContactsScreen
 import com.holdoff.app.ui.screens.VerdictScreen
 
 /**
@@ -31,6 +36,9 @@ object Routes {
     const val PAYWALL        = "paywall"
     const val PROFILE        = "profile"
     const val SETTINGS       = "settings"
+    const val INSIGHTS       = "insights"
+    const val QUIZ           = "quiz"
+    const val TRUSTED        = "trusted-contacts"
 
     fun threadDetail(id: String) = "thread/$id"
     fun verdict(id: String) = "verdict/$id"
@@ -40,7 +48,8 @@ object Routes {
 fun AppNavigation(
     navController: NavHostController,
     startDestination: String,
-    isPremium: Boolean
+    isPremium: Boolean,
+    onPremiumChanged: (Boolean) -> Unit = {}
 ) {
     NavHost(navController = navController, startDestination = startDestination) {
 
@@ -53,11 +62,14 @@ fun AppNavigation(
         }
 
         composable(Routes.LOGIN) {
-            LoginScreen(onLoginSuccess = {
-                navController.navigate(Routes.HOME) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
-                }
-            })
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onPremiumChanged = onPremiumChanged
+            )
         }
 
         composable(Routes.HOME) {
@@ -92,7 +104,11 @@ fun AppNavigation(
             VerdictScreen(
                 threadId = id,
                 onBack = { navController.popBackStack() },
-                onUpgradeClick = { navController.navigate(Routes.PAYWALL) }
+                onUpgradeClick = { navController.navigate(Routes.PAYWALL) },
+                onTrustedContactsClick = {
+                    navController.navigate(Routes.TRUSTED) { launchSingleTop = true }
+                },
+                isPremium = isPremium
             )
         }
 
@@ -118,8 +134,36 @@ fun AppNavigation(
         composable(Routes.PROFILE) {
             ProfileScreen(
                 onBack = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
-                onSubscribeClick = { navController.navigate(Routes.PAYWALL) }
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
+                onSubscribeClick = { navController.navigate(Routes.PAYWALL) { launchSingleTop = true } },
+                onInsightsClick = { navController.navigate(Routes.INSIGHTS) { launchSingleTop = true } },
+                onQuizClick = { navController.navigate(Routes.QUIZ) { launchSingleTop = true } },
+                onTrustedContactsClick = { navController.navigate(Routes.TRUSTED) { launchSingleTop = true } },
+                isPremium = isPremium
+            )
+        }
+
+        composable(Routes.INSIGHTS) {
+            InsightsScreen(
+                onBack = { navController.popBackStack() },
+                isPremium = isPremium
+            )
+        }
+
+        composable(Routes.QUIZ) {
+            val context = LocalContext.current
+            QuizScreen(
+                onBack = { navController.popBackStack() },
+                onComplete = { style ->
+                    HoldOffApi.saveAttachmentStyle(context, style)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Routes.TRUSTED) {
+            TrustedContactsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -128,3 +172,5 @@ fun AppNavigation(
         }
     }
 }
+
+
