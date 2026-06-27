@@ -18,6 +18,14 @@ const submitLimiter = rateLimit({
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 });
 
+const readLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+});
+
 /**
  * GET /api/questionnaire
  * Serve the questionnaire HTML
@@ -93,7 +101,7 @@ router.post('/submit', submitLimiter, requireAuth, async (req, res) => {
  * GET /api/questionnaire/user-conditions/:userId
  * Get user's selected conditions
  */
-router.get('/user-conditions/:userId', requireAuth, async (req, res) => {
+router.get('/user-conditions/:userId', readLimiter, requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const conditions = await db.getUserConditions(userId);
