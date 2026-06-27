@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const { createReferral } = require('../db/referrals');
 const { sendEmail } = require('../services/email');
 
 const APP_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
@@ -58,6 +59,39 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Queue invites for async delivery (store in DB or queue service)
+    // For now, we'll queue them to be sent by a subagent
+    const invites = validContacts.map((contact) => ({
+      referralCode,
+      referrerName,
+      referrerEmail,
+      referrerQuizResult: quizResult,
+      recipientName: contact.name || 'Friend',
+      recipientPhone: contact.phone,
+      recipientEmail: contact.email,
+      trackingUrl,
+      sentAt: new Date().toISOString(),
+      status: 'queued',
+    }));
+
+    // Store invites in the referrals table and return success
+    let savedCount = 0;
+    for (const invite of invites) {
+      try {
+        await createReferral({
+          senderEmail: referrerEmail,
+          senderDevice: null,
+          recipientEmail: invite.recipientEmail || null,
+          note: `Quiz invite — ${quizResult || 'quiz'} — ${invite.recipientPhone || invite.recipientEmail}`,
+          utmToken: referralCode + '_' + savedCount,
+        });
+        savedCount++;
+      } catch (dbErr) {
+        // Non-fatal: log and continue
+        console.warn(`[quiz-invites] DB store failed for invite ${savedCount}:`, dbErr.message);
+      }
+    }
+    console.log(`[quiz-invites] Stored ${savedCount}/${invites.length} invites for referral code ${referralCode}`);
     // Generate unique referral code tied to sender email (stable)
     const referralCode = crypto.createHash('sha256')
       .update(referrerEmail.toLowerCase().trim())
