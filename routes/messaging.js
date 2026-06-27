@@ -108,7 +108,7 @@ const readLimit = rateLimit({
  * GET /api/messaging/threads
  * Returns cached thread list for the logged-in user.
  */
-router.get('/threads', requireAuth, readLimit, async (req, res) => {
+router.get('/threads', readLimit, requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT c.id, c.display_name AS contact_name, c.phone_number,
