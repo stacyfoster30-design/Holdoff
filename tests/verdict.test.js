@@ -93,7 +93,7 @@ async function startServer() {
   });
 
   serverProcess.on('exit', (code) => {
-    if (code !== 0) {
+    if (code !== 0 && code !== null) {
       console.error(`Server exited early with code ${code}`);
       if (stderr) console.error(stderr);
     }
@@ -160,11 +160,13 @@ async function testLegacyVerdictRouteStillWorks() {
 
 async function testRateLimitEnforced() {
   console.log('TEST: /api/verdict rate limit → 429 on 31st request in a minute');
+  // Earlier tests already make four /api/verdict requests in the current window:
+  // history, streak, invalid history, and one legacy POST.
   const results = await Promise.all(
-    Array.from({ length: 30 }, (_, i) => post('/api/verdict', { outgoingMessage: `rate test ${i}` }))
+    Array.from({ length: 26 }, (_, i) => post('/api/verdict', { outgoingMessage: `rate test ${i}` }))
   );
   const all200 = results.every((r) => r.status === 200);
-  console.log(`  First 30 requests: ${all200 ? 'all 200 OK' : 'some non-200: ' + results.map((r) => r.status).join(', ')}`);
+  console.log(`  First 26 requests: ${all200 ? 'all 200 OK' : 'some non-200: ' + results.map((r) => r.status).join(', ')}`);
   const res = await post('/api/verdict', { outgoingMessage: 'rate limit test' });
   assert(res.status === 429, `Expected 429 on 31st request, got ${res.status}`);
   assert(res.body.code === 'RATE_LIMITED', `Expected code RATE_LIMITED, got: ${JSON.stringify(res.body)}`);
@@ -207,11 +209,11 @@ async function main() {
     testEmptyAnalyzeMessage,
     testMissingAnalyzeMessage,
     testValidAnalyzeMessage,
-    testLegacyVerdictRouteStillWorks,
-    testRateLimitEnforced,
     testHistoryNeedsAuth,
     testStreakNeedsAuth,
     testInvalidVerdictTypeInHistory,
+    testLegacyVerdictRouteStillWorks,
+    testRateLimitEnforced,
   ];
 
   for (const test of tests) {
