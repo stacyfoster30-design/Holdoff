@@ -891,10 +891,10 @@
         }, 7000);
 
         try {
-          const resp = await fetch('/api/verdict', {
+          const resp = await fetch('/api/filter/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message_text: message }),
+            body: JSON.stringify({ message, context }),
             signal: ac.signal,
           });
 

@@ -1,33 +1,31 @@
 /**
- * Automated test suite for /api/verdict endpoints.
- * Runs against the actual running server (no test DB mocking).
- *
- * Usage:
- *   node tests/verdict.test.js
- *
- * Prerequisites:
- *   - Server must be running on localhost:3000 (or override BASE_URL)
- *   - No AI providers required — fallback verdict returns HOLD gracefully
+ * Automated test suite for HoldOff verdict endpoints.
+ * Boots the real app server, then exercises the public verdict APIs.
  */
 const http = require('http');
+const { spawn } = require('child_process');
+const path = require('path');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const PORT = 3000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+let serverProcess = null;
 
-// ── Test utilities ─────────────────────────────────────────────────────────────
-
-function post(path, body, cookies = '') {
+function request(method, requestPath, body, cookies = '') {
   return new Promise((resolve, reject) => {
-    const url = new URL(path, BASE_URL);
-    const bodyStr = JSON.stringify(body);
+    const url = new URL(requestPath, BASE_URL);
+    const bodyStr = body === undefined ? '' : JSON.stringify(body);
     const req = http.request({
       hostname: url.hostname,
       port: url.port,
       path: url.pathname + url.search,
-      method: 'POST',
+      method,
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(bodyStr),
-        ...(cookies ? { 'Cookie': cookies } : {}),
+        Accept: 'application/json',
+        ...(body !== undefined ? {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(bodyStr),
+        } : {}),
+        ...(cookies ? { Cookie: cookies } : {}),
       },
     }, (res) => {
       let data = '';
@@ -41,37 +39,17 @@ function post(path, body, cookies = '') {
       });
     });
     req.on('error', reject);
-    req.write(bodyStr);
+    if (body !== undefined) req.write(bodyStr);
     req.end();
   });
 }
 
-function get(path, cookies = '') {
-  return new Promise((resolve, reject) => {
-    const url = new URL(path, BASE_URL);
-    const req = http.request({
-      hostname: url.hostname,
-      port: url.port,
-      path: url.pathname + url.search,
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        ...(cookies ? { 'Cookie': cookies } : {}),
-      },
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, body: JSON.parse(data) });
-        } catch {
-          resolve({ status: res.statusCode, body: data });
-        }
-      });
-    });
-    req.on('error', reject);
-    req.end();
-  });
+function post(requestPath, body, cookies = '') {
+  return request('POST', requestPath, body, cookies);
+}
+
+function get(requestPath, cookies = '') {
+  return request('GET', requestPath, undefined, cookies);
 }
 
 function assert(condition, message) {
@@ -84,26 +62,74 @@ function assertIn(value, allowed, message) {
   }
 }
 
-// ── Test cases ────────────────────────────────────────────────────────────────
+async function waitForServer(timeoutMs = 30000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const res = await get('/health');
+      if (res.status === 200) return;
+    } catch (_) {
+      // keep polling
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error('Timed out waiting for the app server to start');
+}
 
-async function testEmptyMessage() {
-  console.log('TEST: Empty message → 400');
-  const res = await post('/api/verdict', { message_text: '' });
+async function startServer() {
+  serverProcess = spawn('node', ['server.js'], {
+    cwd: path.join(__dirname, '..'),
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      JWT_SECRET: process.env.JWT_SECRET || 'test_jwt_secret_at_least_32_chars',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  let stderr = '';
+  serverProcess.stderr.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  serverProcess.on('exit', (code) => {
+    if (code !== 0 && code !== null) {
+      console.error(`Server exited early with code ${code}`);
+      if (stderr) console.error(stderr);
+    }
+  });
+
+  await waitForServer();
+}
+
+async function stopServer() {
+  if (!serverProcess) return;
+  serverProcess.kill('SIGTERM');
+  await new Promise((resolve) => {
+    serverProcess.on('exit', resolve);
+    setTimeout(resolve, 5000);
+  });
+  serverProcess = null;
+}
+
+async function testEmptyAnalyzeMessage() {
+  console.log('TEST: Empty analyze message → 400');
+  const res = await post('/api/filter/analyze', { message: '' });
   assert(res.status === 400, `Expected 400, got ${res.status}`);
-  assert(res.body.error && res.body.error.toLowerCase().includes('empty'), `Expected error about empty message, got: ${JSON.stringify(res.body)}`);
+  assert(res.body.error && res.body.error.toLowerCase().includes('required'), `Expected error about message, got: ${JSON.stringify(res.body)}`);
   console.log('  PASS');
 }
 
-async function testMissingMessageText() {
-  console.log('TEST: Missing message_text → 400');
-  const res = await post('/api/verdict', {});
+async function testMissingAnalyzeMessage() {
+  console.log('TEST: Missing analyze message → 400');
+  const res = await post('/api/filter/analyze', {});
   assert(res.status === 400, `Expected 400, got ${res.status}`);
   assert(res.body.error && res.body.error.toLowerCase().includes('required'), `Expected error about required field, got: ${JSON.stringify(res.body)}`);
   console.log('  PASS');
 }
 
-async function testValidMessage() {
-  console.log('TEST: Valid message → 200 + valid verdict object');
+async function testValidAnalyzeMessage() {
+  console.log('TEST: Valid analyze message → 200 + valid verdict object');
   const messages = [
     'are we okay',
     'i miss you so much',
@@ -113,32 +139,35 @@ async function testValidMessage() {
   ];
 
   for (const message of messages) {
-    const res = await post('/api/verdict', { message_text: message });
+    const res = await post('/api/filter/analyze', { message });
     assert(res.status === 200, `Message "${message}": expected 200, got ${res.status}`);
-    assertIn(res.body.verdict, ['SEND', 'HOLD', 'REWRITE'], `verdict`);
+    assertIn(res.body.verdict, ['SEND', 'HOLD', 'REWRITE'], 'verdict');
     assert(res.body.feedback_text || res.body.whats_happening, `Message "${message}": missing feedback_text / whats_happening`);
     assert(res.body.pattern || res.body.pattern_name, `Message "${message}": missing pattern`);
     console.log(`  PASS: "${message}" → ${res.body.verdict}`);
   }
 }
 
+async function testLegacyVerdictRouteStillWorks() {
+  console.log('TEST: Legacy /api/verdict route still returns recipient-read analysis');
+  const res = await post('/api/verdict', { outgoingMessage: 'can we talk tonight?' });
+  assert(res.status === 200, `Expected 200, got ${res.status}`);
+  assert(res.body.recipientRead, `Expected recipientRead, got: ${JSON.stringify(res.body)}`);
+  assert(res.body.safetyLevel, `Expected safetyLevel, got: ${JSON.stringify(res.body)}`);
+  assert(res.body.themeCode, `Expected themeCode, got: ${JSON.stringify(res.body)}`);
+  console.log(`  PASS: safetyLevel=${res.body.safetyLevel}`);
+}
+
 async function testRateLimitEnforced() {
-  console.log('TEST: Rate limit → 429 on 31st request in a minute');
-
-  // Use a fresh cookie jar to get a clean IP-based rate limit bucket
-  const email = `ratelimit_${Date.now()}@test.example.com`;
-
-  // First 30 should succeed
-  const promises = [];
-  for (let i = 0; i < 30; i++) {
-    promises.push(post('/api/verdict', { message_text: `rate test ${i}` }));
-  }
-  const results = await Promise.all(promises);
+  console.log('TEST: /api/verdict rate limit → 429 on 31st request in a minute');
+  // Earlier tests already make four /api/verdict requests in the current window:
+  // history, streak, invalid history, and one legacy POST.
+  const results = await Promise.all(
+    Array.from({ length: 26 }, (_, i) => post('/api/verdict', { outgoingMessage: `rate test ${i}` }))
+  );
   const all200 = results.every((r) => r.status === 200);
-  console.log(`  First 30 requests: ${all200 ? 'all 200 OK' : 'some non-200: ' + results.map((r) => r.status).join(', ')}`);
-
-  // 31st should be 429
-  const res = await post('/api/verdict', { message_text: 'rate limit test' });
+  console.log(`  First 26 requests: ${all200 ? 'all 200 OK' : 'some non-200: ' + results.map((r) => r.status).join(', ')}`);
+  const res = await post('/api/verdict', { outgoingMessage: 'rate limit test' });
   assert(res.status === 429, `Expected 429 on 31st request, got ${res.status}`);
   assert(res.body.code === 'RATE_LIMITED', `Expected code RATE_LIMITED, got: ${JSON.stringify(res.body)}`);
   console.log('  PASS');
@@ -165,20 +194,26 @@ async function testInvalidVerdictTypeInHistory() {
   console.log('  PASS');
 }
 
-// ── Run all tests ─────────────────────────────────────────────────────────────
-
 async function main() {
   console.log(`\nRunning verdict API tests against ${BASE_URL}\n`);
   const failures = [];
 
+  try {
+    await startServer();
+  } catch (err) {
+    console.error('Failed to boot app server:', err);
+    process.exit(1);
+  }
+
   const tests = [
-    testEmptyMessage,
-    testMissingMessageText,
-    testValidMessage,
-    testRateLimitEnforced,
+    testEmptyAnalyzeMessage,
+    testMissingAnalyzeMessage,
+    testValidAnalyzeMessage,
     testHistoryNeedsAuth,
     testStreakNeedsAuth,
     testInvalidVerdictTypeInHistory,
+    testLegacyVerdictRouteStillWorks,
+    testRateLimitEnforced,
   ];
 
   for (const test of tests) {
@@ -190,20 +225,23 @@ async function main() {
     }
   }
 
+  await stopServer();
+
   console.log('\n────────────────────────────────────');
   if (failures.length === 0) {
     console.log('ALL TESTS PASSED');
     process.exit(0);
-  } else {
-    console.log(`${failures.length} TEST(S) FAILED:`);
-    for (const { name, err } of failures) {
-      console.log(`  - ${name}: ${err.message}`);
-    }
-    process.exit(1);
   }
+
+  console.log(`${failures.length} TEST(S) FAILED:`);
+  for (const { name, err } of failures) {
+    console.log(`  - ${name}: ${err.message}`);
+  }
+  process.exit(1);
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error('Test runner error:', err);
+  await stopServer();
   process.exit(1);
 });
