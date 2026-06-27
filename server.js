@@ -101,6 +101,30 @@ app.use('/api/verdict', rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 }));
+// Secondary per-user rate limit (60/hour) — prevents authenticated VPN bypass
+const { requireAuth: _requireAuthForRateLimit } = require('./lib/auth');
+const perUserVerdictLimit = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use user ID from JWT if present, fall back to IP
+    try {
+      const jwt = require('jsonwebtoken');
+      const token = req.cookies?.holdoff_token;
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'holdoff_jwt_secret_dev_only');
+        if (decoded?.id) return `user:${decoded.id}`;
+      }
+    } catch (_) { /* fall through to IP */ }
+    return `ip:${req.ip}`;
+  },
+  message: { error: 'Hourly limit reached. Try again later.', code: 'RATE_LIMITED' },
+  skip: (req) => req.method === 'GET',
+});
+app.use('/api/verdict', perUserVerdictLimit);
+app.use('/api/filter/interpret', perUserVerdictLimit);
 
 // Additional API endpoints
 app.get('/api/health', (_req, res) => {
@@ -220,6 +244,18 @@ app.get('/robots.txt', (_req, res) => {
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
+const healthzLimit = rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false });
+app.get('/healthz', healthzLimit, async (_req, res) => {
+  const result = { ok: true, db: false, ai: false, ts: new Date().toISOString() };
+  try {
+    const { pool } = require('./db/index');
+    await pool.query('SELECT 1');
+    result.db = true;
+  } catch (_) { result.ok = false; }
+  result.ai = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENAI_DIRECT_API_KEY);
+  if (!result.ai) result.ok = false;
+  res.status(result.ok ? 200 : 503).json(result);
+});
 app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
 app.get('/notifications', async (req, res) => {
   const user = await getUserFromCookies(req);
@@ -300,7 +336,7 @@ app.get('/', async (req, res) => {
       maxAge: 90 * 24 * 60 * 60 * 1000,
     });
   }
-  res.render('index', { user });
+  res.render('index', { user, variant: (process.env.LANDING_VARIANT || 'A').toUpperCase() });
 });
 
 // Inbox

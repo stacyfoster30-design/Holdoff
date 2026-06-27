@@ -68,8 +68,38 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew bundleRelease --no-daemon --stacktrace
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Build release APK (signed if keystore available, debug otherwise)
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/app/keystore/holdoff-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_PASSWORD" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace
+          else
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          fi
+
+      - name: Commit APK to public/holdoff.apk
+        run: |
+          # Copy whichever APK was built into public/holdoff.apk for the web server to serve
+          APK=$(find app/build/outputs/apk -name "*.apk" | head -1)
+          if [ -n "$APK" ]; then
+            mkdir -p public
+            cp "$APK" public/holdoff.apk
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add public/holdoff.apk
+            if git diff --staged --quiet; then
+              echo "APK unchanged — nothing to commit"
+            else
+              git commit -m "ci: update holdoff.apk [skip ci]"
+              git push
+            fi
+          else
+            echo "No APK found — skipping commit"
+          fi
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
@@ -78,11 +108,11 @@ jobs:
           path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: warn
 
-      - name: Upload debug APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: holdoff-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: holdoff-apk
+          path: app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
 
       - name: Create GitHub Release
@@ -92,12 +122,12 @@ jobs:
           name: "HoldOff Native Build ${{ github.run_number }}"
           body: |
             HoldOff Native Android - Real Kotlin + Jetpack Compose
-            
+
             **AAB** (for Play Console upload)
             **APK** (for direct install: Settings > Install unknown apps > Install)
           files: |
             app/build/outputs/bundle/release/*.aab
-            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/**/*.apk
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,4 @@
-package com.holdoff.app.domain.analysis
+package live.shouldiholdoff.holdoff.domain.analysis
 
 /**
  * Per-message analysis. Looks at a single SMS or draft and returns

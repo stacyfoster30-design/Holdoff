@@ -1,7 +1,7 @@
-package com.holdoff.app.domain.companion
+package live.shouldiholdoff.holdoff.domain.companion
 
-import com.holdoff.app.domain.analysis.Mood
-import com.holdoff.app.domain.analysis.RelationshipAnalysis
+import live.shouldiholdoff.holdoff.domain.analysis.Mood
+import live.shouldiholdoff.holdoff.domain.analysis.RelationshipAnalysis
 
 /**
  * Empathy Insights = what Sadie and Dan want you to know in the moment.

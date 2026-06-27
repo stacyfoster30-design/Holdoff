@@ -12,9 +12,18 @@ import live.shouldiholdoff.holdoff.data.api.RetrofitClient
 import live.shouldiholdoff.holdoff.data.db.AppDatabase
 import live.shouldiholdoff.holdoff.data.repositories.AuthRepository
 import live.shouldiholdoff.holdoff.data.repositories.SMSRepository
+import live.shouldiholdoff.holdoff.domain.analysis.MessageAnalyzer
+import live.shouldiholdoff.holdoff.domain.analysis.RelationshipAnalyzer
 import live.shouldiholdoff.holdoff.domain.models.CompanionMessage
 import live.shouldiholdoff.holdoff.domain.models.SMSThread
 import live.shouldiholdoff.holdoff.domain.models.User
+import live.shouldiholdoff.holdoff.domain.quiz.QuizResult
+import live.shouldiholdoff.holdoff.domain.spiral.SpiralLock
+import live.shouldiholdoff.holdoff.domain.spiral.SpiralState
+import live.shouldiholdoff.holdoff.domain.verdict.LocalVerdictResult
+import live.shouldiholdoff.holdoff.domain.verdict.VerdictInterpreter
+import live.shouldiholdoff.holdoff.domain.verdict.VerdictSignals
+import java.util.Calendar
 
 data class AppUiState(
     val threads: List<SMSThread> = emptyList(),
@@ -24,7 +33,18 @@ data class AppUiState(
     val isCompanionLoading: Boolean = false,
     val selectedThread: SMSThread? = null,
     val isAnalyzingThread: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // Spiral lock state — exposed so UI can show countdown
+    val spiralState: SpiralState = SpiralState.Idle,
+    // Local pre-flight verdict before API call
+    val localVerdict: LocalVerdictResult? = null,
+    // Paywall gate — number of analyses used in this session
+    val localVerdictCount: Int = 0,
+    val showPaywall: Boolean = false,
+    // Quiz result
+    val quizResult: QuizResult? = null,
+    // Companion disclosure acknowledged
+    val companionDisclosureAcknowledged: Boolean = false
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -32,6 +52,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db          = AppDatabase.getDatabase(application)
     private val smsRepo     = SMSRepository(application)
     private val authRepo    = AuthRepository(application)
+    private val spiralLock  = SpiralLock()
 
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
@@ -39,6 +60,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         loadCachedThreads()
         loadUser()
+        // Reflect spiral lock state changes into UI state
+        viewModelScope.launch {
+            spiralLock.state.collect { spiralState ->
+                _uiState.value = _uiState.value.copy(spiralState = spiralState)
+            }
+        }
     }
 
     // ── Threads ────────────────────────────────────────────────────────────────
@@ -74,12 +101,96 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectThread(thread: SMSThread) {
         _uiState.value = _uiState.value.copy(selectedThread = thread, isAnalyzingThread = true)
+        // Run local MessageAnalyzer pre-flight on the last message
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val localAnalysis = MessageAnalyzer.analyze(thread.lastMessage, hour, 0)
         analyzeThread(thread)
     }
 
     fun clearSelectedThread() {
-        _uiState.value = _uiState.value.copy(selectedThread = null)
+        _uiState.value = _uiState.value.copy(selectedThread = null, localVerdict = null)
     }
+
+    /**
+     * Run a local pre-flight verdict on a draft text before calling the API.
+     * Shows [LocalVerdictResult] immediately; paywall fires if over free limit.
+     */
+    fun runLocalVerdict(draftText: String, minutesSinceTheirReply: Long = 0) {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val signals = VerdictSignals(
+            draftText = draftText,
+            recentSendsLastHour = 0,
+            minutesSinceTheirReply = minutesSinceTheirReply,
+            hourOfDay = hour,
+            recentSpiralCount = 0
+        )
+        val localVerdict = VerdictInterpreter.interpret(signals)
+
+        // Engage spiral lock if HOLD_OFF
+        if (localVerdict.kind == live.shouldiholdoff.holdoff.domain.verdict.VerdictKind.HOLD_OFF) {
+            spiralLock.engage()
+        }
+
+        // Check paywall gate (3 free analyses)
+        val newCount = _uiState.value.localVerdictCount + 1
+        val showPaywall = newCount > live.shouldiholdoff.holdoff.billing.BillingManager.FREE_VERDICT_LIMIT && !isPremium
+
+        _uiState.value = _uiState.value.copy(
+            localVerdict = localVerdict,
+            localVerdictCount = newCount,
+            showPaywall = showPaywall
+        )
+    }
+
+    /**
+     * Run per-contact RelationshipAnalyzer against cached thread messages.
+     */
+    fun analyzeRelationship(thread: SMSThread) {
+        viewModelScope.launch {
+            // For now use the last message as a single-message sample —
+            // full analysis requires message history which arrives via sync.
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val userMsg = MessageAnalyzer.analyze(thread.lastMessage, hour, 0)
+            val rel = RelationshipAnalyzer.analyze(
+                partnerName = thread.contactName,
+                userMessages = listOf(userMsg),
+                partnerMessages = emptyList(),
+                spiralDays30 = 0,
+                healthyDays30 = 0
+            )
+            val insight = "${rel.sadieInsight} ${rel.danInsight}"
+            db.threadDao().updateVerdict(
+                id = thread.threadId,
+                verdict = thread.verdict,
+                score = thread.verdictScore,
+                insight = insight
+            )
+            val updated = db.threadDao().getThread(thread.threadId)
+            _uiState.value = _uiState.value.copy(selectedThread = updated)
+        }
+    }
+
+    fun dismissPaywall() {
+        _uiState.value = _uiState.value.copy(showPaywall = false)
+    }
+
+    // ── Quiz ──────────────────────────────────────────────────────────────────
+
+    fun saveQuizResult(result: QuizResult) {
+        _uiState.value = _uiState.value.copy(quizResult = result)
+    }
+
+    // ── Companion disclosure ──────────────────────────────────────────────────
+
+    fun acknowledgeCompanionDisclosure() {
+        _uiState.value = _uiState.value.copy(companionDisclosureAcknowledged = true)
+    }
+
+    // ── Spiral lock helpers ───────────────────────────────────────────────────
+
+    fun tickSpiralLock() = spiralLock.tick()
+
+    fun releaseSpiralLock() = spiralLock.release(live.shouldiholdoff.holdoff.domain.spiral.ReleaseReason.MANUAL_OVERRIDE)
 
     private fun analyzeThread(thread: SMSThread) {
         viewModelScope.launch {

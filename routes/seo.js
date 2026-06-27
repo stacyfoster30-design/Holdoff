@@ -29,6 +29,17 @@ const seoFiles = {
   '/avoidant-shutdown': 'avoidant-shutdown.html',
   '/patterns/avoidant-shutdown': 'avoidant-shutdown.html',
   '/patterns/avoidant-deactivation': 'avoidant-deactivation.html',
+  // New SEO pages — long-tail attachment style queries
+  '/fearful-avoidant-silent-treatment': 'fearful-avoidant-silent-treatment.html',
+  '/avoidant-attachment-texting': 'avoidant-attachment-texting.html',
+  '/anxious-attachment-texting-patterns': 'anxious-attachment-texting-patterns.html',
+  '/dismissive-avoidant-texting': 'dismissive-avoidant-texting.html',
+  '/why-do-i-spiral-when-they-dont-text-back': 'why-do-i-spiral-when-they-dont-text-back.html',
+  '/should-i-send-the-text': 'should-i-send-the-text.html',
+  '/fearful-avoidant-texting-patterns': 'fearful-avoidant-texting-patterns.html',
+  '/stop-checking-phone-waiting-for-text': 'stop-checking-phone-waiting-for-text.html',
+  '/how-to-text-someone-with-anxious-attachment': 'how-to-text-someone-with-anxious-attachment.html',
+  '/when-to-hold-off-texting': 'when-to-hold-off-texting.html',
 };
 
 Object.entries(seoFiles).forEach(([route, filename]) => {

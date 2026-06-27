@@ -1,4 +1,4 @@
-package com.holdoff.app.domain.spiral
+package live.shouldiholdoff.holdoff.domain.spiral
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
