@@ -37,7 +37,7 @@ router.get('/', requireAuth, async (req, res) => {
         health_score: analysis?.health_score ?? null,
         attachment_style: analysis?.attachment_pattern ?? null,
         exit_warning: analysis?.exit_warning ?? false,
-        message_count: stats?.total ?? 0,
+        message_count: (Number(stats?.sent_count) || 0) + (Number(stats?.received_count) || 0),
       };
     }));
     res.json(enriched);

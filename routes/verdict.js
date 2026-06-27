@@ -1,36 +1,95 @@
 /**
  * Verdict Route for HoldOff
- * Analyzes OUTGOING messages: "How will they receive this?"
- * Shows reader's perspective + user's condition anxiety about response
+ * - POST /api/verdict: outgoing-message recipient-read analysis (legacy clients)
+ * - GET /api/verdict/history: paginated verdict history for the logged-in user
+ * - GET /api/verdict/streak: current streak + total verdict count
+ * - GET /api/verdict/count/:userId: total verdict count for the logged-in user
  */
 
 const express = require('express');
 const router = express.Router();
 const db = require('../db/messages');
 const { requireAuth } = require('../lib/auth');
-const { getVerdictHistory, getStreak } = require('../db/verdict-history');
+const {
+  getVerdictHistory,
+  getStreak,
+  getTotalVerdictCount,
+} = require('../db/verdict-history');
+const { validateHistoryQuery } = require('../lib/request-validators');
 const { callAI } = require('../services/ai-provider');
 const { buildOutgoingVerdictFallback } = require('../services/resilient-ai');
 
+const VALID_SAFETY_LEVELS = new Set(['green', 'yellow', 'red', 'spiral']);
+const VALID_ATTACHMENT_PATTERNS = new Set(['ANX', 'AVO', 'FA', 'SEC']);
+
+function buildLegacyAnalysis(verdict) {
+  return `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
+}
+
+function normalizeOutgoingVerdict(verdict) {
+  const safetyLevel = VALID_SAFETY_LEVELS.has(String(verdict?.safetyLevel || '').toLowerCase())
+    ? String(verdict.safetyLevel).toLowerCase()
+    : 'yellow';
+  const normalized = {
+    ...verdict,
+    safetyLevel,
+    attachmentPattern: VALID_ATTACHMENT_PATTERNS.has(verdict?.attachmentPattern)
+      ? verdict.attachmentPattern
+      : 'SEC',
+  };
+
+  normalized.verdict = normalized.verdict || (safetyLevel === 'green' ? 'SEND' : safetyLevel === 'yellow' ? 'REWRITE' : 'HOLD');
+  if (!['SEND', 'HOLD', 'REWRITE'].includes(normalized.verdict)) {
+    normalized.verdict = 'HOLD';
+  }
+  normalized.pattern = normalized.pattern || normalized.attachmentPattern || 'SEC';
+  normalized.feedback_text = normalized.feedback_text || normalized.reasoning || normalized.recipientRead || 'Pause and review before sending.';
+  normalized.analysis = buildLegacyAnalysis(normalized);
+
+  let themeCode = normalized.attachmentPattern;
+  if (normalized.emotionalState === 'ANGRY') {
+    themeCode = 'ANGRY';
+  } else if (normalized.emotionalState === 'RISKY') {
+    themeCode = 'RISKY';
+  }
+  normalized.themeCode = themeCode || 'SEC';
+
+  return normalized;
+}
+
+function buildHistoryResponse(result) {
+  return {
+    ...result,
+    entries: result.entries || [],
+    verdicts: result.entries || [],
+  };
+}
+
+function isDatabaseUnavailable(err) {
+  return err?.code === 'DATABASE_UNAVAILABLE';
+}
+
 router.post('/', async (req, res) => {
   try {
-    const { outgoingMessage, message_text, userConditions, contactId, userId } = req.body || {};
-    const message = typeof outgoingMessage === 'string' ? outgoingMessage : message_text;
+    const { outgoingMessage, message_text, userConditions, userId, user_id } = req.body || {};
+    const rawMessage = typeof outgoingMessage === 'string' ? outgoingMessage : message_text;
 
-    if (message === undefined || message === null) {
+    if (rawMessage === undefined || rawMessage === null) {
       return res.status(400).json({ error: 'message_text is required' });
     }
-    if (!String(message).trim()) {
+
+    const normalizedMessage = String(rawMessage).trim();
+    if (!normalizedMessage) {
       return res.status(400).json({ error: 'message_text cannot be empty' });
     }
 
-    // Auto-fetch user conditions from DB if not provided
-    let conditions = userConditions;
-    if (!conditions && userId) {
+    const requestUserId = userId || user_id;
+    let conditions = Array.isArray(userConditions) ? userConditions.filter(Boolean) : null;
+    if ((!conditions || conditions.length === 0) && requestUserId) {
       try {
-        conditions = await db.getUserConditions(userId);
+        conditions = await db.getUserConditions(requestUserId);
       } catch (err) {
-        console.error('Error fetching user conditions:', err);
+        console.error('Error fetching user conditions:', err.message || err);
         conditions = [];
       }
     }
@@ -70,113 +129,83 @@ Return ONLY valid JSON.`;
 
     const aiResult = await callAI({
       systemPrompt,
-      userContent: `User's message to send: "${message}"\n\nUser conditions: ${conditionsList}`,
-      maxTokens: 500
+      userContent: `User's message to send: "${normalizedMessage}"\n\nUser conditions: ${conditionsList}`,
+      maxTokens: 500,
     });
 
-    if (!aiResult) {
-      const verdict = normalizeVerdictResponse(buildOutgoingVerdictFallback(message));
-      verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
-      verdict.themeCode = verdict.attachmentPattern || 'SEC';
-      return res.json(verdict);
+    if (!aiResult?.content) {
+      return res.json(normalizeOutgoingVerdict(buildOutgoingVerdictFallback(normalizedMessage)));
     }
 
-    const content = aiResult.content;
-
-    // Parse JSON from response
-    let verdict;
+    let parsed;
     try {
-      verdict = JSON.parse(content);
-    } catch (e) {
-      console.error('Failed to parse verdict response:', content);
-      verdict = {
+      parsed = JSON.parse(aiResult.content);
+    } catch (err) {
+      console.error('Failed to parse verdict response:', aiResult.content);
+      parsed = {
         recipientRead: 'Unable to analyze',
         userAnxiety: 'Try rephrasing',
         safetyLevel: 'yellow',
+        attachmentPattern: 'SEC',
+        emotionalState: null,
         reasoning: 'Could not fully process this message.',
         spiralLockout: 0,
       };
     }
 
-    // Default to yellow if no level provided
-    if (!['green', 'yellow', 'red', 'spiral'].includes(verdict.safetyLevel)) {
-      verdict.safetyLevel = 'yellow';
-    }
-
-    // Default to SEC if no attachment pattern provided
-    if (!['ANX', 'AVO', 'FA', 'SEC'].includes(verdict.attachmentPattern)) {
-      verdict.attachmentPattern = 'SEC';
-    }
-
-    // For compatibility with frontend
-    verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
-    
-    // Determine theme code (emotionalState takes priority over attachmentPattern)
-    let themeCode = verdict.attachmentPattern || 'SEC';
-    if (verdict.emotionalState === 'ANGRY') {
-      themeCode = 'ANGRY';
-    } else if (verdict.emotionalState === 'RISKY') {
-      themeCode = 'RISKY';
-    }
-    verdict.themeCode = themeCode;
-
-    res.json(normalizeVerdictResponse(verdict));
+    return res.json(normalizeOutgoingVerdict(parsed));
   } catch (error) {
     console.error('Verdict API error:', error.message || error);
-    const verdict = normalizeVerdictResponse(buildOutgoingVerdictFallback(req.body?.outgoingMessage || req.body?.message_text || ''));
-    verdict.analysis = `**How they'll read it:** ${verdict.recipientRead}\n\n**Your concern:** ${verdict.userAnxiety}`;
-    verdict.themeCode = verdict.attachmentPattern || 'SEC';
-    res.status(200).json(verdict);
+    return res.status(200).json(
+      normalizeOutgoingVerdict(buildOutgoingVerdictFallback(req.body?.outgoingMessage || req.body?.message_text || ''))
+    );
   }
 });
 
-function normalizeVerdictResponse(verdict) {
-  const safetyLevel = String(verdict.safetyLevel || '').toLowerCase();
-  const normalized = {
-    ...verdict,
-    verdict: verdict.verdict || (safetyLevel === 'green' ? 'SEND' : safetyLevel === 'yellow' ? 'REWRITE' : 'HOLD'),
-    pattern: verdict.pattern || verdict.attachmentPattern || 'SEC',
-    feedback_text: verdict.feedback_text || verdict.reasoning || verdict.recipientRead || 'Pause and review before sending.',
-  };
-  if (!['SEND', 'HOLD', 'REWRITE'].includes(normalized.verdict)) {
-    normalized.verdict = 'HOLD';
-  }
-  return normalized;
-}
-
-function validateHistoryQuery(req, res, next) {
-  const verdictType = req.query.verdict_type || req.query.verdictType || req.query.type;
-  if (verdictType && !['SEND', 'HOLD', 'REWRITE'].includes(String(verdictType).toUpperCase())) {
-    return res.status(400).json({ error: 'Invalid verdict_type' });
-  }
-  req.verdictType = verdictType ? String(verdictType).toUpperCase() : null;
-  next();
-}
-
-/** GET /api/verdict/streak — current hold streak and total verdict count. */
-router.get('/streak', requireAuth, async (req, res) => {
-  try {
-    const streak = await getStreak(req.userId || req.user?.id);
-    res.json(streak || { currentStreak: 0, longestStreak: 0, totalVerdicts: 0 });
-  } catch (err) {
-    console.error('[verdict/streak]', err.message);
-    res.status(500).json({ error: 'Failed to fetch streak.' });
-  }
-});
-
-/** GET /api/verdict/history — paginated verdict history for logged-in user. */
 router.get('/history', validateHistoryQuery, requireAuth, async (req, res) => {
   try {
-    const { cursor, limit } = req.query;
-    const entries = await getVerdictHistory(req.userId || req.user?.id, {
-      verdictType: req.verdictType,
-      cursor: cursor || null,
-      limit: limit ? parseInt(limit, 10) : 50,
+    const verdictType = req.query.verdict_type || req.query.verdictType || req.query.type || null;
+    const result = await getVerdictHistory(req.user.id, {
+      verdictType,
+      cursor: req.query.cursor || null,
+      limit: req.query.limit ? parseInt(req.query.limit, 10) : 50,
     });
-    res.json(entries);
+    res.json(buildHistoryResponse(result));
   } catch (err) {
-    console.error('[verdict/history]', err.message);
-    res.status(500).json({ error: 'Failed to fetch history.' });
+    if (isDatabaseUnavailable(err)) {
+      return res.json(buildHistoryResponse({ entries: [], nextCursor: null, hasMore: false }));
+    }
+    console.error('[verdict/history] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch verdict history' });
+  }
+});
+
+router.get('/streak', requireAuth, async (req, res) => {
+  try {
+    const streak = await getStreak(req.user.id);
+    res.json(streak || { currentStreak: 0, longestStreak: 0, totalVerdicts: 0, lastVerdictAt: null });
+  } catch (err) {
+    if (isDatabaseUnavailable(err)) {
+      return res.json({ currentStreak: 0, longestStreak: 0, totalVerdicts: 0, lastVerdictAt: null });
+    }
+    console.error('[verdict/streak] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch streak' });
+  }
+});
+
+router.get('/count/:userId', requireAuth, async (req, res) => {
+  try {
+    if (String(req.user.id) !== String(req.params.userId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const count = await getTotalVerdictCount(req.user.id);
+    res.json({ count });
+  } catch (err) {
+    if (isDatabaseUnavailable(err)) {
+      return res.json({ count: 0 });
+    }
+    console.error('[verdict/count] error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch verdict count' });
   }
 });
 
