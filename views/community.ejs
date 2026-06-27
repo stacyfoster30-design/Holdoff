@@ -67,32 +67,7 @@
       </div>
 
       <!-- Posts -->
-      <div id="posts-list">
-        <% if (typeof posts !== 'undefined' && posts.length > 0) { %>
-          <% posts.forEach(function(post) { %>
-            <div class="community-post" data-mood="<%= post.mood || 'all' %>">
-              <div class="post-header">
-                <div class="post-author">
-                  <div class="post-avatar"><%= post.mood === 'spiraling' ? '🌀' : post.mood === 'anxious' ? '😰' : post.mood === 'victory' ? '🏆' : '🫧' %></div>
-                  <span>Anonymous</span>
-                </div>
-                <span style="font-size:0.75rem;color:var(--text-dim);"><%= post.time_ago || '' %></span>
-              </div>
-              <div class="post-content"><%= post.content %></div>
-              <div class="post-actions">
-                <button class="post-action" onclick="reactPost(this, 'heart')">💜 <span><%= post.hearts || 0 %></span></button>
-                <button class="post-action" onclick="reactPost(this, 'hug')">🫂 <span><%= post.hugs || 0 %></span></button>
-                <button class="post-action" onclick="reactPost(this, 'same')">🙋 Same</button>
-              </div>
-            </div>
-          <% }); %>
-        <% } else { %>
-          <div class="empty-state">
-            <div class="empty-icon">🫂</div>
-            <div class="empty-text">Be the first to share.<br>Everything here is anonymous and judgment-free.</div>
-          </div>
-        <% } %>
-      </div>
+      <div id="posts-list"></div>
     </div>
 
     <%- include('partials/bottom_nav') %>
@@ -102,29 +77,124 @@
     function filterPosts(el, mood) {
       document.querySelectorAll('.mood-bar .mood-pill').forEach(p => p.classList.remove('active'));
       el.classList.add('active');
+      applyMoodFilter(mood);
+    }
+
+    let activeMood = 'all';
+
+    function escHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function moodIcon(mood) {
+      if (mood === 'spiraling') return '🌀';
+      if (mood === 'anxious') return '😰';
+      if (mood === 'victory') return '🏆';
+      if (mood === 'calm') return '😌';
+      return '🫧';
+    }
+
+    function timeAgo(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+      const diffMs = Date.now() - d.getTime();
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      return `${days}d ago`;
+    }
+
+    function renderPosts(posts) {
+      const list = document.getElementById('posts-list');
+      if (!Array.isArray(posts) || posts.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🫂</div>
+            <div class="empty-text">Be the first to share.<br>Everything here is anonymous and judgment-free.</div>
+          </div>`;
+        return;
+      }
+      list.innerHTML = posts.map(post => {
+        const mood = post.mood_label || 'all';
+        return `
+          <div class="community-post" data-mood="${escHtml(mood)}">
+            <div class="post-header">
+              <div class="post-author">
+                <div class="post-avatar">${moodIcon(mood)}</div>
+                <span>${escHtml(post.display_name || 'Anonymous')}</span>
+              </div>
+              <span style="font-size:0.75rem;color:var(--text-dim);">${escHtml(timeAgo(post.created_at))}</span>
+            </div>
+            <div class="post-content">${escHtml(post.content)}</div>
+            <div class="post-actions">
+              <button class="post-action" onclick="reactPost(this, '${escHtml(post.id)}')">🫂 <span>${Number(post.reactions) || 0}</span></button>
+            </div>
+          </div>`;
+      }).join('');
+      applyMoodFilter(activeMood);
+    }
+
+    function applyMoodFilter(mood) {
+      activeMood = mood;
       document.querySelectorAll('.community-post').forEach(post => {
         post.style.display = (mood === 'all' || post.dataset.mood === mood) ? '' : 'none';
       });
+    }
+
+    async function loadPosts() {
+      try {
+        const res = await fetch('/api/community/feed?limit=50');
+        const payload = await res.json();
+        renderPosts(payload?.posts || []);
+      } catch (_) {
+        renderPosts([]);
+      }
     }
 
     async function submitPost() {
       const content = document.getElementById('post-text').value.trim();
       if (!content) return;
       try {
+        const mood = document.getElementById('post-mood').value;
+        const moodLevelMap = { calm: 25, anxious: 75, spiraling: 95, victory: 10 };
         await fetch('/api/community/post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, mood: document.getElementById('post-mood').value })
+          body: JSON.stringify({
+            content,
+            mood_label: mood,
+            mood_level: moodLevelMap[mood] || null
+          })
         });
-        location.reload();
+        document.getElementById('post-text').value = '';
+        await loadPosts();
       } catch(e) { alert('Could not post. Try again.'); }
     }
 
-    function reactPost(btn, type) {
-      const span = btn.querySelector('span');
-      if (span) span.textContent = parseInt(span.textContent || 0) + 1;
-      btn.style.color = 'var(--primary)';
+    async function reactPost(btn, postId) {
+      try {
+        const res = await fetch('/api/community/react', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ post_id: postId })
+        });
+        if (!res.ok) return;
+        const span = btn.querySelector('span');
+        if (span) span.textContent = String((Number(span.textContent) || 0) + 1);
+        btn.style.color = 'var(--primary)';
+      } catch (_) {}
     }
+
+    loadPosts();
   </script>
 </body>
 </html>
