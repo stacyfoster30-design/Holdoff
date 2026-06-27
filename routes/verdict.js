@@ -27,16 +27,23 @@ function buildLegacyAnalysis(verdict) {
 }
 
 function normalizeOutgoingVerdict(verdict) {
+  const safetyLevel = VALID_SAFETY_LEVELS.has(String(verdict?.safetyLevel || '').toLowerCase())
+    ? String(verdict.safetyLevel).toLowerCase()
+    : 'yellow';
   const normalized = {
     ...verdict,
-    safetyLevel: VALID_SAFETY_LEVELS.has(String(verdict?.safetyLevel || '').toLowerCase())
-      ? String(verdict.safetyLevel).toLowerCase()
-      : 'yellow',
+    safetyLevel,
     attachmentPattern: VALID_ATTACHMENT_PATTERNS.has(verdict?.attachmentPattern)
       ? verdict.attachmentPattern
       : 'SEC',
   };
 
+  normalized.verdict = normalized.verdict || (safetyLevel === 'green' ? 'SEND' : safetyLevel === 'yellow' ? 'REWRITE' : 'HOLD');
+  if (!['SEND', 'HOLD', 'REWRITE'].includes(normalized.verdict)) {
+    normalized.verdict = 'HOLD';
+  }
+  normalized.pattern = normalized.pattern || normalized.attachmentPattern || 'SEC';
+  normalized.feedback_text = normalized.feedback_text || normalized.reasoning || normalized.recipientRead || 'Pause and review before sending.';
   normalized.analysis = buildLegacyAnalysis(normalized);
 
   let themeCode = normalized.attachmentPattern;
@@ -64,17 +71,23 @@ function isDatabaseUnavailable(err) {
 
 router.post('/', async (req, res) => {
   try {
-    const { outgoingMessage, userConditions, userId } = req.body || {};
-    const normalizedMessage = typeof outgoingMessage === 'string' ? outgoingMessage.trim() : '';
+    const { outgoingMessage, message_text, userConditions, userId, user_id } = req.body || {};
+    const rawMessage = typeof outgoingMessage === 'string' ? outgoingMessage : message_text;
 
-    if (!normalizedMessage) {
-      return res.status(400).json({ error: 'outgoingMessage is required' });
+    if (rawMessage === undefined || rawMessage === null) {
+      return res.status(400).json({ error: 'message_text is required' });
     }
 
+    const normalizedMessage = String(rawMessage).trim();
+    if (!normalizedMessage) {
+      return res.status(400).json({ error: 'message_text cannot be empty' });
+    }
+
+    const requestUserId = userId || user_id;
     let conditions = Array.isArray(userConditions) ? userConditions.filter(Boolean) : null;
-    if ((!conditions || conditions.length === 0) && userId) {
+    if ((!conditions || conditions.length === 0) && requestUserId) {
       try {
-        conditions = await db.getUserConditions(userId);
+        conditions = await db.getUserConditions(requestUserId);
       } catch (err) {
         console.error('Error fetching user conditions:', err.message || err);
         conditions = [];
@@ -144,7 +157,7 @@ Return ONLY valid JSON.`;
   } catch (error) {
     console.error('Verdict API error:', error.message || error);
     return res.status(200).json(
-      normalizeOutgoingVerdict(buildOutgoingVerdictFallback(req.body?.outgoingMessage || ''))
+      normalizeOutgoingVerdict(buildOutgoingVerdictFallback(req.body?.outgoingMessage || req.body?.message_text || ''))
     );
   }
 });

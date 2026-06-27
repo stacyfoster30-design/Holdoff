@@ -100,6 +100,7 @@ app.use('/api/verdict', rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+  skip: (req) => req.method === 'GET',
 }));
 // Secondary per-user rate limit (60/hour) — prevents authenticated VPN bypass
 const { requireAuth: _requireAuthForRateLimit } = require('./lib/auth');
@@ -472,7 +473,7 @@ app.get('/pricing', async (req, res) => {
 app.get('/settings', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) {
-    return res.redirect('/login?next=/settings');
+    return res.redirect('/login?returnTo=/settings');
   }
   res.render('settings', { user });
 });

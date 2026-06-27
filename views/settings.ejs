@@ -582,14 +582,16 @@
         if (response.ok) {
           const data = await response.json();
           selectedConditions = data.conditions || [];
-          
+          patternTrackingEnabled = data.pattern_tracking_enabled !== false;
+          spiralTrackingEnabled = data.spiral_tracking_enabled !== false;
+            
           // Update UI
           document.querySelectorAll('.condition-card').forEach(card => {
             const condition = card.dataset.condition;
-            if (selectedConditions.includes(condition)) {
-              card.classList.add('selected');
-            }
+            card.classList.toggle('selected', selectedConditions.includes(condition));
           });
+          updateToggleState('pattern-toggle', patternTrackingEnabled);
+          updateToggleState('spiral-toggle', spiralTrackingEnabled);
         }
       } catch (err) {
         console.error('Error loading conditions:', err);
@@ -631,16 +633,19 @@
 
     // Toggle pattern tracking
     function togglePatternTracking() {
-      const btn = document.getElementById('pattern-toggle');
       patternTrackingEnabled = !patternTrackingEnabled;
-      btn.classList.toggle('active');
+      updateToggleState('pattern-toggle', patternTrackingEnabled);
     }
 
     // Toggle spiral tracking
     function toggleSpiralTracking() {
-      const btn = document.getElementById('spiral-toggle');
       spiralTrackingEnabled = !spiralTrackingEnabled;
-      btn.classList.toggle('active');
+      updateToggleState('spiral-toggle', spiralTrackingEnabled);
+    }
+
+    function updateToggleState(id, enabled) {
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.toggle('active', !!enabled);
     }
 
     // Save settings
@@ -657,7 +662,9 @@
           body: JSON.stringify({
             userId: userId,
             conditions: selectedConditions,
-            attachment_style: localStorage.getItem('attachment_style') || 'secure'
+            attachment_style: localStorage.getItem('attachment_style') || 'secure',
+            pattern_tracking_enabled: patternTrackingEnabled,
+            spiral_tracking_enabled: spiralTrackingEnabled
           })
         });
 
@@ -700,8 +707,8 @@
       loadSettings();
       const patternBtn = document.getElementById('pattern-toggle');
       const spiralBtn = document.getElementById('spiral-toggle');
-      if (patternTrackingEnabled) patternBtn.classList.add('active');
-      if (spiralTrackingEnabled) spiralBtn.classList.add('active');
+      updateToggleState('pattern-toggle', patternTrackingEnabled);
+      updateToggleState('spiral-toggle', spiralTrackingEnabled);
     });
   </script>
   <script src="/js/floating-companions.js" defer></script>

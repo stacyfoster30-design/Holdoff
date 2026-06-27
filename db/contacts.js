@@ -138,6 +138,77 @@ async function getAnalysisHistory(userId, contactId, { limit = 12 } = {}) {
   return rows;
 }
 
+// ── contact_insights ──────────────────────────────────────────────────────────
+
+async function getContactInsights(userId, contactId) {
+  const { rows } = await pool.query(
+    `SELECT ci.*
+     FROM contact_insights ci
+     INNER JOIN contacts c ON c.id = ci.contact_id
+     WHERE ci.contact_id = $1 AND c.user_id = $2 AND c.deleted_at IS NULL`,
+    [contactId, userId]
+  );
+  return rows[0] || null;
+}
+
+async function upsertContactInsights(userId, contactId, insights) {
+  const contact = await getContact(contactId, userId);
+  if (!contact) return null;
+
+  const {
+    redFlags = [],
+    yellowFlags = [],
+    greenFlags = [],
+    riskLevel = 'Medium',
+    trustLevel = 'Stable',
+    attachmentStyleFit = null,
+    communicationStyleMatch = 0,
+    compatibilityScore = 0,
+    compatibilitySummary = '',
+    lastAnalyzedMessage = null,
+    analysisTimestamp = new Date(),
+  } = insights || {};
+
+  const { rows } = await pool.query(
+    `INSERT INTO contact_insights (
+       contact_id, red_flags, yellow_flags, green_flags,
+       risk_level, trust_level, attachment_style_fit,
+       communication_style_match, compatibility_score, compatibility_summary,
+       last_analyzed_message, analysis_count, updated_at
+     )
+     VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, 1, $12)
+     ON CONFLICT (contact_id) DO UPDATE
+     SET red_flags = EXCLUDED.red_flags,
+         yellow_flags = EXCLUDED.yellow_flags,
+         green_flags = EXCLUDED.green_flags,
+         risk_level = EXCLUDED.risk_level,
+         trust_level = EXCLUDED.trust_level,
+         attachment_style_fit = EXCLUDED.attachment_style_fit,
+         communication_style_match = EXCLUDED.communication_style_match,
+         compatibility_score = EXCLUDED.compatibility_score,
+         compatibility_summary = EXCLUDED.compatibility_summary,
+         last_analyzed_message = EXCLUDED.last_analyzed_message,
+         analysis_count = contact_insights.analysis_count + 1,
+         updated_at = EXCLUDED.updated_at
+     RETURNING *`,
+    [
+      contactId,
+      JSON.stringify(redFlags),
+      JSON.stringify(yellowFlags),
+      JSON.stringify(greenFlags),
+      riskLevel,
+      trustLevel,
+      attachmentStyleFit,
+      Number(communicationStyleMatch) || 0,
+      Number(compatibilityScore) || 0,
+      compatibilitySummary || '',
+      lastAnalyzedMessage,
+      analysisTimestamp,
+    ]
+  );
+  return rows[0] || null;
+}
+
 // ── spam & call tracking ──────────────────────────────────────────────────────
 
 async function markAsSpam(contactId, userId) {
@@ -249,6 +320,8 @@ module.exports = {
   saveAnalysis,
   getLatestAnalysis,
   getAnalysisHistory,
+  getContactInsights,
+  upsertContactInsights,
   markAsSpam,
   getSpamContacts,
   addCall,
