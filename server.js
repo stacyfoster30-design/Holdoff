@@ -217,48 +217,8 @@ app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
 app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 // Internal outreach
 app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
-// Previously unmounted routes — now wired up:
-app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
-app.use('/api/stripe-webhook', require(path.join(__dirname, 'routes', 'stripe-webhook')));
-app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
-app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
-app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
-app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
-app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
-app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
-app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
-app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
-app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
-app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
-app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+// Explicit health-check alias
 app.use('/api/health-check', require(path.join(__dirname, 'routes', 'health')));
-app.use('/api/meta', require(path.join(__dirname, 'routes', 'meta')));
-app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
-app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
-app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
-// Interpret handler — mounted at /api/interpret (complements /api/filter/interpret)
-app.post('/api/interpret', require(path.join(__dirname, 'routes', 'interpret')));
-
-// Additional API routes (previously unmounted)
-app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
-app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
-app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
-app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
-app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
-app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
-app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
-app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
-app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
-app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
-app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
-app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
-app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
-app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
-app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
-app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
-app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
-app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
-app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
 
 // EJS view engine
 app.set('view engine', 'ejs');
@@ -733,7 +693,6 @@ app.get('/companion', async (req, res) => {
       greeting: "Okay. What's actually going on here?"
     }
   };
-  const user = await getUserFromCookies(req).catch(() => null);
   const userContext = {
     name: (user && (user.name || user.firstName)) || null,
     isPremium: !!(user && (user.isPremium || user.premium)),
