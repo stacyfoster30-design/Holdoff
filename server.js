@@ -183,40 +183,8 @@ app.use('/api/messaging', require(path.join(__dirname, 'routes', 'messaging')));
 app.use('/api/verdict', require(path.join(__dirname, 'routes', 'verdict')));
 app.use('/api/interpreter', require(path.join(__dirname, 'routes', 'interpreter')));
 app.use('/api/companion', require(path.join(__dirname, 'routes', 'companion')));
-// Filter — core AI analyze/interpret; safety-net middleware is already mounted above at /api/filter
-app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
-// Stripe webhook — handles checkout/subscription lifecycle events
-app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
-// Meta Pixel conversion API
-app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
-// Pattern journal
-app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
-// Admin internal triggers + metrics
-app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
-// Push notifications
-app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
-// Peer referrals
-app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
-// Waitlist signups
-app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
 // Android APK download redirect
 app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
-// Anxious Texting Detox drip + exit-intent
-app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
-// Attachment-style quiz
-app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
-// Abandoned-checkout recovery unsubscribe
-app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
-// Email blast (admin only)
-app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
-// Therapist affiliate signups
-app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
-// Share card create + OG image (API portion; share page views are mounted separately)
-app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
-// Chronicle tips API
-app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
-// Internal outreach
-app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
 // Explicit health-check alias
 app.use('/api/health-check', require(path.join(__dirname, 'routes', 'health')));
 
