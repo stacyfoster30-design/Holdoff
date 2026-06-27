@@ -1,4 +1,4 @@
-package com.holdoff.app.domain.verdict
+package live.shouldiholdoff.holdoff.domain.verdict
 
 /**
  * VerdictInterpreter turns a raw verdict (HOLD_OFF / REACH_OUT / WAIT)
@@ -21,7 +21,11 @@ data class VerdictSignals(
     val recentSpiralCount: Int
 )
 
-data class VerdictResult(
+/**
+ * Local computed verdict result.
+ * Distinct from [live.shouldiholdoff.holdoff.domain.models.VerdictResult] which is the API response DTO.
+ */
+data class LocalVerdictResult(
     val kind: VerdictKind,
     val confidence: Int,
     val sadieMessage: String,
@@ -31,7 +35,7 @@ data class VerdictResult(
 
 object VerdictInterpreter {
 
-    fun interpret(s: VerdictSignals): VerdictResult {
+    fun interpret(s: VerdictSignals): LocalVerdictResult {
         val reasoning = mutableListOf<String>()
         var holdScore = 0
         var reachScore = 0
@@ -88,6 +92,6 @@ object VerdictInterpreter {
             VerdictKind.WAIT_AND_SEE -> "I might just need space. Space isn't rejection. Let me come back to you."
         }
 
-        return VerdictResult(kind, confidence, sadie, dan, reasoning)
+        return LocalVerdictResult(kind, confidence, sadie, dan, reasoning)
     }
 }

@@ -316,12 +316,23 @@
     <div style="margin-bottom: 20px;">
       <img src="/assets/SADIE_COMPANION.png" alt="Sadie" style="width: 140px; height: 140px; object-fit: cover; object-position: top center; border-radius: 50%; border: 2px solid #a78bfa; background: transparent;">
     </div>
+    <% if (variant === 'B') { %>
+    <%# Variant B: Quiz-first hero — leads with attachment style quiz CTA %>
+    <h1>What's Your <span class="highlight">Texting Style?</span></h1>
+    <p class="subheading">Take the free 2-minute attachment quiz and find out why you spiral before you send. Then let HoldOff be your pause.</p>
+    <div class="cta-section">
+      <a href="/quiz" class="btn-primary">Take the Free Quiz →</a>
+      <a href="/filter" class="btn-secondary">Try the App Free</a>
+    </div>
+    <% } else { %>
+    <%# Variant A (default): Demo-first hero %>
     <h1>Build Your <span class="highlight">Pause</span></h1>
     <p class="subheading">You know what you need. HoldOff is the space you design. Language you choose. Insights you control. The pause that works for you.</p>
     <div class="cta-section">
       <a href="/filter" class="btn-secondary">Try the App Free →</a>
       <a href="/signup" class="btn-primary">Start Building</a>
     </div>
+    <% } %>
   </div>
 
   <div class="insight-cards">
@@ -438,5 +449,11 @@
     }
   </script>
   <script src="/js/floating-companions.js" defer></script>
+  <script>
+    // Meta Pixel A/B variant tracking
+    if (typeof fbq === 'function') {
+      fbq('trackCustom', 'LandingVariant_<%= variant %>');
+    }
+  </script>
 </body>
 </html>

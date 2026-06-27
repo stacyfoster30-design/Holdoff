@@ -463,6 +463,8 @@
 
         const result = await response.json();
         if (result.success) {
+          // Mark onboarding complete
+          await fetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
           // Redirect to messaging app
           window.location.href = '/thread';
         } else {
@@ -493,7 +495,8 @@
 
     document.getElementById('skipBtn').addEventListener('click', () => {
       if (confirm('Skip personalization? You can complete this later in Settings.')) {
-        window.location.href = '/thread';
+        fetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
+        window.location.href = '/filter';
       }
     });
 

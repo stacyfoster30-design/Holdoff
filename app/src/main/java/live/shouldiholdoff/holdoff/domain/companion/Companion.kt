@@ -1,21 +1,17 @@
-package com.holdoff.app.domain.companion
+package live.shouldiholdoff.holdoff.domain.companion
 
 /**
  * AiCompanion = AI alter ego.
  *
  * Sadie is Stacy's alter ego. She is an empathetic, pattern-learning
  * companion built from Stacy's lived experience. She speaks like a real
- * person who has been through anxious-attachment spirals herself, and her
- * style leans fearful-avoidant under stress but secure when grounded.
+ * person who has been through anxious-attachment spirals herself.
  *
  * Dan is Danny's alter ego. He represents the avoidant-dismissive partner
  * who is learning, discovering, sometimes anxious, and at his best, secure.
- * He is designed to help users understand what an avoidant partner is
- * really feeling underneath silence, distance, or short replies.
  *
  * They are NOT therapists, NOT diagnostic tools, and NOT a substitute for
- * professional mental-health care. See CompanionDisclosure.kt for the
- * in-app disclosure that must show on first launch.
+ * professional mental-health care.
  */
 enum class AiCompanion(
     val displayName: String,

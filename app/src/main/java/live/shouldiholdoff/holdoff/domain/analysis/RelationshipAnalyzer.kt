@@ -1,4 +1,4 @@
-package com.holdoff.app.domain.analysis
+package live.shouldiholdoff.holdoff.domain.analysis
 
 /**
  * Aggregates message-level analysis across a thread/contact to give a

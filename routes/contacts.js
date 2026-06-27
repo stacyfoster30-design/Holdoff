@@ -73,6 +73,23 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!contact) return res.status(404).json({ error: 'Not found' });
     const analysis = await getLatestAnalysis(req.user.id, contact.id).catch(() => null);
     const stats = await getMessageStats(req.user.id, contact.id).catch(() => null);
+
+    // Trigger async re-analysis if data is stale (>7 days old)
+    const STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const analyzedAt = analysis?.analyzed_at ? new Date(analysis.analyzed_at) : null;
+    if (!analyzedAt || Date.now() - analyzedAt.getTime() > STALE_MS) {
+      setImmediate(() => {
+        const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+        fetch(`${baseUrl}/api/contact-insights/${contact.id}/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: `holdoff_token=${req.cookies?.holdoff_token || ''}`,
+          },
+        }).catch(err => console.error('[contacts] stale re-analysis error:', err.message));
+      });
+    }
+
     res.json({ ...contact, analysis, stats });
   } catch (e) {
     console.error('[contacts] get error:', e.message);

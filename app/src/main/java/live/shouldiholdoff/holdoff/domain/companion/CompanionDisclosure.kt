@@ -1,11 +1,11 @@
-package com.holdoff.app.domain.companion
+package live.shouldiholdoff.holdoff.domain.companion
 
 /**
  * First-launch disclosure that explains who Sadie and Dan are, why they
  * exist inside HoldOff, and what they are NOT.
  *
  * This MUST be shown before the user can interact with either companion.
- * The acknowledgement is persisted in PrefsRepository.
+ * The acknowledgement is persisted in DataStore.
  */
 object CompanionDisclosure {
 

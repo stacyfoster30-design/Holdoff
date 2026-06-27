@@ -1,4 +1,4 @@
-package com.holdoff.app.domain.quiz
+package live.shouldiholdoff.holdoff.domain.quiz
 
 /**
  * Attachment-style quiz. 16 short questions, four scales:
@@ -8,7 +8,7 @@ package com.holdoff.app.domain.quiz
  *  - Disorganized (D)
  *
  * Used to personalize verdicts, companion tone, and mood-color baseline.
- * Result feeds into PrefsRepository and is editable in Settings.
+ * Result feeds into DataStore and is editable in Settings.
  */
 data class QuizQuestion(
     val id: Int,
