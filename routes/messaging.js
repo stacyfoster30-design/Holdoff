@@ -26,7 +26,7 @@ const syncLimit = rateLimit({
  * Upserts contacts from thread data, inserts new message_history rows,
  * returns { ok: true, syncedAt: timestamp } for the app to store as lastSyncAt.
  */
-router.post('/threads', requireAuth, syncLimit, async (req, res) => {
+router.post('/threads', syncLimit, requireAuth, async (req, res) => {
   const { threads, lastSyncAt = 0 } = req.body || {};
   const userId = req.user.id;
 
