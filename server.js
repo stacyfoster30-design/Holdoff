@@ -244,7 +244,8 @@ app.get('/robots.txt', (_req, res) => {
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
-app.get('/healthz', async (_req, res) => {
+const healthzLimit = rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false });
+app.get('/healthz', healthzLimit, async (_req, res) => {
   const result = { ok: true, db: false, ai: false, ts: new Date().toISOString() };
   try {
     const { pool } = require('./db/index');

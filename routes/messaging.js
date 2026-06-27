@@ -4,8 +4,20 @@
  */
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const { requireAuth } = require('../lib/auth');
 const { pool } = require('../db/index');
+
+// Rate limit: 20 syncs per hour per user (Android background sync fires every 15 min)
+const syncLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `sync:${req.user?.id || req.ip}`,
+  message: { error: 'Sync rate limit exceeded. Try again later.', code: 'RATE_LIMITED' },
+  skip: (req) => req.method === 'GET',
+});
 
 /**
  * POST /api/sync/threads
@@ -14,7 +26,7 @@ const { pool } = require('../db/index');
  * Upserts contacts from thread data, inserts new message_history rows,
  * returns { ok: true, syncedAt: timestamp } for the app to store as lastSyncAt.
  */
-router.post('/threads', requireAuth, async (req, res) => {
+router.post('/threads', requireAuth, syncLimit, async (req, res) => {
   const { threads, lastSyncAt = 0 } = req.body || {};
   const userId = req.user.id;
 
@@ -82,11 +94,21 @@ router.post('/threads', requireAuth, async (req, res) => {
   });
 });
 
+// Read rate limit: 60/hour
+const readLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `threads:${req.user?.id || req.ip}`,
+  message: { error: 'Too many requests. Try again later.', code: 'RATE_LIMITED' },
+});
+
 /**
  * GET /api/messaging/threads
  * Returns cached thread list for the logged-in user.
  */
-router.get('/threads', requireAuth, async (req, res) => {
+router.get('/threads', requireAuth, readLimit, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT c.id, c.display_name AS contact_name, c.phone_number,

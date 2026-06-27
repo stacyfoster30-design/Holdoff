@@ -117,7 +117,7 @@ This was sent by ${referrerName} via HoldOff. Reply STOP if you don't want to he
         await sendEmail({ to: recipientEmail, subject, text, html });
         sent++;
       } catch (err) {
-        console.error(`[quiz-invites] email failed for ${recipientEmail}:`, err.message);
+        console.error('[quiz-invites] email failed for recipient:', err.message);
         failed++;
       }
     }
