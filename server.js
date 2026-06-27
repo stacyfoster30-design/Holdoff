@@ -733,7 +733,6 @@ app.get('/companion', async (req, res) => {
       greeting: "Okay. What's actually going on here?"
     }
   };
-  const user = await getUserFromCookies(req).catch(() => null);
   const userContext = {
     name: (user && (user.name || user.firstName)) || null,
     isPremium: !!(user && (user.isPremium || user.premium)),
