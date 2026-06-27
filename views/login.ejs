@@ -14,6 +14,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    .forgot-links {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+      margin-top: .25rem; margin-bottom: 1rem;
+    }
+    .forgot-links a {
+      color: var(--accent); font-size: .8rem; text-decoration: none;
+      padding: 4px 0; min-height: 44px; display: flex; align-items: center;
+    }
+    .forgot-links a:hover { text-decoration: underline; }
+  </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     .auth-wrap { max-width: 420px; margin: 6rem auto 4rem; padding: 0 1.5rem; }
@@ -57,7 +68,10 @@
       </div>
       <div class="auth-field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+        <div style="position:relative;">
+          <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••" style="padding-right:3rem;">
+          <button type="button" onclick="togglePassword()" id="togglePwBtn" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;font-size:1.1rem;padding:0;" title="Show password">👁</button>
+        </div>
       </div>
       <div class="auth-error" id="loginError"><%
         try {
@@ -67,8 +81,12 @@
       <button type="submit" class="auth-submit">Log in</button>
     </form>
 
+    <div class="forgot-links">
+      <a href="/forgot-email">Forgot your email?</a>
+      <a href="/forgot-password">Forgot password?</a>
+    </div>
+
     <div class="auth-footer">
-      <a href="/reset-password">Forgot password?</a> &nbsp;·&nbsp;
       Do not have an account? <a href="/signup">Sign up</a>
     </div>
   </div>
@@ -149,6 +167,21 @@
           btn.textContent = "Log in"; btn.disabled = false;
         }
       } catch(ex) { err.textContent = "Network error — try again"; err.style.display = "block"; btn.textContent = "Log in"; btn.disabled = false; }
+    }
+
+    // Password visibility toggle
+    function togglePassword() {
+      const pw = document.getElementById("password");
+      const btn = document.getElementById("togglePwBtn");
+      if (pw.type === "password") {
+        pw.type = "text";
+        btn.textContent = "🙈";
+        btn.title = "Hide password";
+      } else {
+        pw.type = "password";
+        btn.textContent = "👁";
+        btn.title = "Show password";
+      }
     }
   </script>
   <script src="/js/floating-companions.js" defer></script>

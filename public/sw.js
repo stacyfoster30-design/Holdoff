@@ -4,10 +4,10 @@
  * Does NOT own: VAPID key management, subscription storage (server-side), reminder copy rotation.
  */
 
-const CACHE_NAME = 'holdoff-v5';
+const CACHE_NAME = 'holdoff-v6';
 
 // Increment CACHE_VERSION every bump to force cache refresh
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 
 const REMINDER_COPY = [
   "You haven't checked in today. How's your last draft sitting?",

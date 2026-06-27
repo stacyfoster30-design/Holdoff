@@ -104,16 +104,24 @@
 
     runCountdown(function () {
       // Show behavioral profile
-      modalBody.innerHTML = `
-        <div class="sandbox-modal__profile">
-          <div class="sandbox-modal__badge">Anxious-Preoccupied pattern detected</div>
-          <p class="sandbox-modal__profile-text">
-            Your texting spikes at night.<br>
-            You overexplain. You send when you should wait.
-          </p>
-        </div>
-        <p class="sandbox-modal__final">Send it? Or wait until morning?</p>
-      `;
+      var profile = document.createElement('div');
+      profile.className = 'sandbox-modal__profile';
+      var badge = document.createElement('div');
+      badge.className = 'sandbox-modal__badge';
+      badge.textContent = 'Anxious-Preoccupied pattern detected';
+      var profileText = document.createElement('p');
+      profileText.className = 'sandbox-modal__profile-text';
+      profileText.appendChild(document.createTextNode('Your texting spikes at night.'));
+      profileText.appendChild(document.createElement('br'));
+      profileText.appendChild(document.createTextNode('You overexplain. You send when you should wait.'));
+      profile.appendChild(badge);
+      profile.appendChild(profileText);
+      var finalP = document.createElement('p');
+      finalP.className = 'sandbox-modal__final';
+      finalP.textContent = 'Send it? Or wait until morning?';
+      modalBody.textContent = '';
+      modalBody.appendChild(profile);
+      modalBody.appendChild(finalP);
       modalCta.textContent = 'Wait until morning';
       modalCta.style.display = 'inline-block';
 
@@ -138,13 +146,21 @@
       textarea.disabled = true;
       testBtn.disabled = true;
       verdictZone.style.display = 'block';
-      verdictZone.innerHTML = `
-        <div class="sandbox-verdict sandbox-verdict--safe">
-          <div class="sandbox-verdict__icon">✓</div>
-          <p class="sandbox-verdict__label">Low urgency — you're good to send.</p>
-          <p class="sandbox-verdict__note">Want to see what high-urgency looks like? Try: "Hey, are you mad at me? I'm sorry, I can't stop thinking about this. Please tell me something. What did I do??"</p>
-        </div>
-      `;
+      var verdict = document.createElement('div');
+      verdict.className = 'sandbox-verdict sandbox-verdict--safe';
+      var icon = document.createElement('div');
+      icon.className = 'sandbox-verdict__icon';
+      icon.textContent = '\u2713';
+      var label = document.createElement('p');
+      label.className = 'sandbox-verdict__label';
+      label.textContent = 'Low urgency \u2014 you\u2019re good to send.';
+      var note = document.createElement('p');
+      note.className = 'sandbox-verdict__note';
+      note.textContent = 'Want to see what high-urgency looks like? Try: \u201cHey, are you mad at me? I\u2019m sorry, I can\u2019t stop thinking about this. Please tell me something. What did I do??\u201d';
+      verdict.appendChild(icon);
+      verdict.appendChild(label);
+      verdict.appendChild(note);
+      verdictZone.appendChild(verdict);
       try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now(), intercepted: false })); } catch (e) {}
     }
   });

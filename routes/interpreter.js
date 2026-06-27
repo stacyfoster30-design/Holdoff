@@ -12,12 +12,14 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../lib/auth');
-const anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const db = require('../db/messages');
+const { buildInterpretFallback } = require('../services/resilient-ai');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
-const client = new anthropic.Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const client = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 /**
  * POST /api/interpreter
@@ -134,24 +136,24 @@ Format as JSON with these keys:
   ]
 }`;
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+    const aiResult = await callAI({
+      systemPrompt: prompt,
+      userContent: 'Analyze the message above and return the JSON response.',
+      maxTokens: 2000
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
+    if (!aiResult) {
+      return res.json({
+        message,
+        senderName,
+        analysis: buildInterpretFallback(message),
+      });
     }
 
+    const aiContent = aiResult.content;
+
     // Parse JSON from response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Could not parse JSON from Claude response');
     }
@@ -165,8 +167,13 @@ Format as JSON with these keys:
     });
   } catch (err) {
     console.error('[API /interpreter] Error:', err.message);
-    res.status(500).json({ error: 'Failed to analyze message', details: err.message });
+    res.status(200).json({
+      message: req.body?.message || '',
+      senderName: req.body?.senderName || '',
+      analysis: buildInterpretFallback(req.body?.message || ''),
+    });
   }
 });
 
 module.exports = router;
+

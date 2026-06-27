@@ -7,7 +7,8 @@
  */
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../lib/auth');
+const rateLimit = require('express-rate-limit');
+const { requireAuth } = require('../lib/auth');
 const {
   buildCompanionPrompt,
   listSouls,
@@ -15,6 +16,16 @@ const {
   listCompanionVariants,
   STYLE_ORDER,
 } = require('../lib/companion-ai');
+const { buildCompanionFallback } = require('../services/resilient-ai');
+const { callAI } = require('../services/ai-provider');
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages. Please slow down.', code: 'RATE_LIMITED' },
+});
 
 // Legacy → canonical
 function canonicalSoul(name) {
@@ -43,7 +54,7 @@ router.get('/variants', (_req, res) => {
 });
 
 // POST /api/companion/chat — chat with a soul in a chosen attachment style
-router.post('/chat', verifyToken, async (req, res) => {
+router.post('/chat', chatLimiter, requireAuth, async (req, res) => {
   const user = req.user;
   if (!user) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -74,34 +85,46 @@ router.post('/chat', verifyToken, async (req, res) => {
       { attachmentStyle: style }
     );
 
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    // Build full message history for companion
+    const messages = [
+      ...prompt.conversationMessages.map(m => m.role === 'system' ? '' : m.content).filter(Boolean),
+      message
+    ].join('\n\n');
 
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1024,
-      system: prompt.system,
-      messages: [
-        ...prompt.conversationMessages,
-        { role: 'user', content: message },
-      ],
+    const aiResult = await callAI({
+      systemPrompt: prompt.system,
+      userContent: message,
+      maxTokens: 1024
     });
 
-    const reply = response.content[0].type === 'text' ? response.content[0].text : '';
+    if (!aiResult) {
+      const fallback = buildCompanionFallback({ soul: prompt.soul.key, style: prompt.style.key, message });
+      return res.json({
+        ...fallback,
+        soul: prompt.soul.key,
+        style: prompt.style.key,
+        styleLabel: prompt.style.label,
+      });
+    }
 
     return res.json({
-      reply,
+      reply: aiResult.content,
       soul: prompt.soul.key,
       style: prompt.style.key,
       styleLabel: prompt.style.label,
+      source: aiResult.source,
     });
   } catch (error) {
     console.error('[companion] Error:', error.message);
-    return res.status(500).json({
-      error: 'Failed to generate response',
-      message: error.message,
+    const fallback = buildCompanionFallback({ soul, style, message });
+    return res.status(200).json({
+      ...fallback,
+      soul: soul || 'Sadie',
+      style: style || null,
+      styleLabel: style || null,
     });
   }
 });
 
 module.exports = router;
+

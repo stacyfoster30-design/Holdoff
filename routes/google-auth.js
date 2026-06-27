@@ -7,6 +7,7 @@ const { findUserByEmail, createUser } = require('../db/users');
 const { signAccessToken, signRefreshToken, holdoffTokenCookieOpts, refreshCookieOpts } = require('../lib/auth');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
 
 module.exports = async function googleAuthHandler(req, res) {
   try {
@@ -16,8 +17,8 @@ module.exports = async function googleAuthHandler(req, res) {
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      return res.status(500).json({ success: false, error: 'Google sign-in not configured yet' });
+    if (!clientId || !isCapabilityAvailable('auth.google')) {
+      return res.status(503).json({ success: false, error: 'Google sign-in temporarily unavailable. Use email sign-in.' });
     }
 
     // Verify Google ID token

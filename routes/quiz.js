@@ -18,6 +18,7 @@ const {
   getAttachmentProfile,
 } = require('../db/quiz');
 const { clearAttachmentProfile } = require('../db/users');
+const { enqueueNurtureEmail } = require('../db/nurture-queue');
 
 /**
  * Render the quiz page (start, quiz, or results screen handled client-side).
@@ -49,6 +50,12 @@ router.post('/save-result', requireAuth, async (req, res) => {
 
     await saveQuizResult({ userId: req.user.id, primaryStyle, secondaryStyle, scores, answerData });
     await updateUsersAttachmentStyle(req.user.id, primaryStyle);
+
+    // Enqueue nurture email step 1 for quiz completers (high-intent trigger).
+    // Idempotent INSERT — won't duplicate if they signed up via another source.
+    enqueueNurtureEmail(req.user.email, 1, new Date()).catch(err =>
+      console.error('[quiz] nurture enqueue error:', err.message)
+    );
 
     res.json({ ok: true });
   } catch (err) {

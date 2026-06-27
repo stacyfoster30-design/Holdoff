@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Redirect build output to app/build/ so the CI workflow can find artifacts
+// at the expected path: app/build/outputs/...
+layout.buildDirectory.set(rootProject.layout.projectDirectory.dir("app/build"))
+
 android {
     namespace = "com.holdoff.app"
     compileSdk = 34
@@ -11,8 +15,8 @@ android {
         applicationId = "com.holdoff.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -23,7 +27,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Codemagic injects the release signing config at build time
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -32,7 +35,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi"
+        )
+    }
 
     buildFeatures { compose = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.3" }
@@ -63,9 +73,8 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Networking (for shouldiholdoff.live API)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Networking — OkHttp (used by HoldOffApi for auth + companion chat)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // Google Sign-In + Play Billing

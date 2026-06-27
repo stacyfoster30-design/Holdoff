@@ -31,7 +31,7 @@ const {
   consumePasswordResetToken,
   invalidatePasswordResetTokens,
 } = require('../db/users');
-const { markConverted } = require('../db/referrals');
+const { markConverted, checkRewardTiers, getReferralByToken } = require('../db/referrals');
 const {
   signAccessToken,
   signRefreshToken,
@@ -47,6 +47,17 @@ const { logExitIntentEvent } = require('../db/exit-intent');
 
 const BASE_URL = process.env.APP_URL || 'https://shouldiholdoff.live';
 const SALT_ROUNDS = 12;
+const GOOGLE_CLIENT_ID_FALLBACK = '251734222269-l5fn6rbfcmtmm161q3g7e7k840lavf3f.apps.googleusercontent.com';
+
+// ─── Password strength validation ──────────────────────────────────────────
+
+function validatePassword(password) {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter.';
+  if (!/[0-9]/.test(password)) return 'Password must include at least one number.';
+  return null; // valid
+}
+
 
 // ─── Rate limiting (in-memory per IP) ───────────────────────────────────────
 
@@ -164,8 +175,9 @@ router.post('/signup', async (req, res) => {
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     return res.status(400).json({ error: 'Valid email is required.', code: 'VALIDATION_ERROR' });
   }
-  if (!password || password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters.', code: 'VALIDATION_ERROR' });
+  const pwError = validatePassword(password);
+  if (pwError) {
+    return res.status(400).json({ error: pwError, code: 'VALIDATION_ERROR' });
   }
 
   // Check duplicate
@@ -220,8 +232,31 @@ router.post('/signup', async (req, res) => {
   // Track referral conversion if ref= param was present
   const refToken = req.cookies && req.cookies.ref;
   if (refToken) {
-    markConverted(refToken).catch(err => console.error('[auth] referral markConverted error:', err.message));
-    res.clearCookie('ref');
+    // Run referral processing async — don't block signup response
+    (async () => {
+      try {
+        // Get sender email before marking converted (needed for checkRewardTiers)
+        const referral = await getReferralByToken(refToken);
+        await markConverted(refToken);
+        res.clearCookie('ref');
+
+        if (referral?.sender_email) {
+          const rewards = await checkRewardTiers(referral.sender_email);
+          if (rewards.lifetime) {
+            // Grant lifetime subscription to the sender
+            const { upsertSubscription } = require('../db/subscriptions');
+            await upsertSubscription({
+              email: referral.sender_email,
+              status: 'active',
+              membershipType: 'lifetime',
+            });
+            console.log(`[auth] Lifetime subscription granted to referrer ${referral.sender_email}`);
+          }
+        }
+      } catch (err) {
+        console.error('[auth] referral processing error:', err.message);
+      }
+    })();
   }
 
   // Generate and store email verification token (1h expiry)
@@ -569,8 +604,9 @@ router.put('/account', requireAuth, async (req, res) => {
   }
 
   if (action === 'change_password') {
-    if (!new_password || new_password.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters.', code: 'VALIDATION_ERROR' });
+    const pwErr = validatePassword(new_password);
+    if (pwErr) {
+      return res.status(400).json({ error: pwErr, code: 'VALIDATION_ERROR' });
     }
     const user = await findUserById(userId);
     if (user.password_hash) {
@@ -674,9 +710,9 @@ router.post('/google', async (req, res) => {
     return res.status(400).json({ error: 'Missing Google credential.', code: 'VALIDATION_ERROR' });
   }
 
-  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID_FALLBACK;
   if (!GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ error: 'Google sign-in is not configured.', code: 'CONFIG_ERROR' });
+    return res.status(503).json({ error: 'Google sign-in is temporarily unavailable. Use email sign-in.', code: 'GOOGLE_AUTH_UNAVAILABLE' });
   }
 
   // Verify the ID token with Google's tokeninfo endpoint
@@ -758,6 +794,26 @@ router.post('/google', async (req, res) => {
     user: { id: user.id, email, name: user.name || name },
     isNewUser: !user.password_hash && !user.created_at,
   });
+});
+
+// ─── POST /api/auth/complete-onboarding ─────────────────────────────────────
+// Mark onboarding as complete for the authenticated user.
+// Stamped once; subsequent calls are idempotent.
+
+router.post('/complete-onboarding', requireAuth, async (req, res) => {
+  try {
+    const { pool } = require('../db/index');
+    await pool.query(
+      `UPDATE users
+       SET onboarding_completed_at = COALESCE(onboarding_completed_at, NOW())
+       WHERE id = $1`,
+      [req.user.id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[auth] complete-onboarding error:', err.message);
+    res.status(500).json({ error: 'Failed to save onboarding status.', code: 'INTERNAL_ERROR' });
+  }
 });
 
 

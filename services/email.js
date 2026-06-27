@@ -7,6 +7,8 @@
  * Falls back to console logging when neither Postmark nor HoldOff proxy is configured.
  */
 const postmark = require('postmark');
+const { isCapabilityAvailable } = require('../config/dependency-policy');
+const { appendFailedWork } = require('./degraded-queue');
 
 const FROM_NAME = 'HoldOff';
 const FROM_EMAIL = 'hello@shouldiholdoff.live';
@@ -29,21 +31,26 @@ function createClient() {
 async function sendEmail({ to, subject, text, html, replyTo }) {
   const client = createClient();
 
-  if (client) {
-    const result = await client.sendEmail({
-      From: `${FROM_NAME} <${FROM_EMAIL}>`,
-      To: to,
-      Subject: subject,
-      TextBody: text,
-      HtmlBody: html || undefined,
-      ReplyTo: replyTo || undefined,
-    });
+  if (client && isCapabilityAvailable('email.postmark')) {
+    try {
+      const result = await client.sendEmail({
+        From: `${FROM_NAME} <${FROM_EMAIL}>`,
+        To: to,
+        Subject: subject,
+        TextBody: text,
+        HtmlBody: html || undefined,
+        ReplyTo: replyTo || undefined,
+      });
 
-    if (!result || result.ErrorCode !== 0) {
-      throw new Error(`Postmark error: ${result?.Message || 'unknown'}`);
+      if (!result || result.ErrorCode !== 0) {
+        throw new Error(`Postmark error: ${result?.Message || 'unknown'}`);
+      }
+
+      return { id: result.MessageID };
+    } catch (err) {
+      console.error('[email] postmark send failed:', err.message);
+      appendFailedWork('email', { to, subject }, err.message);
     }
-
-    return { id: result.MessageID };
   }
 
   // HoldOff email service fallback when POSTMARK_API_KEY is not provisioned
@@ -54,37 +61,44 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
       : null);
   const proxyToken = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
 
-  if (!proxyUrl || !proxyToken) {
+  if (!proxyUrl || !proxyToken || !isCapabilityAvailable('email.proxy')) {
     // Last-resort: log to console so devs can see emails in dev
     console.log(`[email] ${subject} → ${to}`);
     console.log(`[email] text: ${text.slice(0, 200)}`);
-    return { id: null };
+    appendFailedWork('email', { to, subject }, 'No email provider configured');
+    return { id: null, degraded: true };
   }
 
-  const resp = await fetch(proxyUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${proxyToken}`,
-    },
-    body: JSON.stringify({
-      to,
-      subject,
-      text,
-      html: html || undefined,
-      from_name: FROM_NAME,
-      from: FROM_EMAIL,
-      reply_to: replyTo || undefined,
-    }),
-  });
+  try {
+    const resp = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + proxyToken,
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        text,
+        html: html || undefined,
+        from_name: FROM_NAME,
+        from: FROM_EMAIL,
+        reply_to: replyTo || undefined,
+      }),
+    });
 
-  if (!resp.ok) {
-    const body = await resp.text();
-    throw new Error(`HoldOff proxy error ${resp.status}: ${body}`);
+    if (!resp.ok) {
+      const body = await resp.text();
+      throw new Error(`HoldOff proxy error ${resp.status}: ${body}`);
+    }
+
+    const data = await resp.json().catch(() => ({}));
+    return { id: data?.id || null };
+  } catch (err) {
+    console.error('[email] proxy send failed:', err.message);
+    appendFailedWork('email', { to, subject }, err.message);
+    return { id: null, degraded: true };
   }
-
-  const data = await resp.json().catch(() => ({}));
-  return { id: data?.id || null };
 }
 
 /**

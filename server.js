@@ -7,18 +7,23 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const { buildLandingContext } = require(path.join(__dirname, 'lib', 'landing-context'));
 const rateLimit = require('express-rate-limit');
+const { getDependencyStatus, isCapabilityAvailable } = require(path.join(__dirname, 'config', 'dependency-policy'));
 
 // Sentry error tracking — initialized before any other middleware so all downstream errors are captured.
 const Sentry = require('@sentry/node');
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV || 'development',
-  sampleRate: 0.1,
-  tracesSampler: (ctx) => {
-    if (ctx.tag?.request?.status === 200) return 0.1;
-    return 1.0;
-  },
-});
+if (isCapabilityAvailable('observability.sentry')) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    sampleRate: 0.1,
+    tracesSampler: (ctx) => {
+      if (ctx.tag?.request?.status === 200) return 0.1;
+      return 1.0;
+    },
+  });
+} else {
+  console.warn('[startup] Sentry DSN missing — running without external observability');
+}
 const { verifyToken, getCookieTokens } = require(path.join(__dirname, 'lib', 'auth'));
 const authRouter = require(path.join(__dirname, 'routes', 'auth'));
 const { mountSharePages } = require(path.join(__dirname, 'routes', 'share'));
@@ -96,19 +101,81 @@ app.use('/api/verdict', rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
 }));
+// Secondary per-user rate limit (60/hour) — prevents authenticated VPN bypass
+const { requireAuth: _requireAuthForRateLimit } = require('./lib/auth');
+const perUserVerdictLimit = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use user ID from JWT if present, fall back to IP
+    try {
+      const jwt = require('jsonwebtoken');
+      const token = req.cookies?.holdoff_token;
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'holdoff_jwt_secret_dev_only');
+        if (decoded?.id) return `user:${decoded.id}`;
+      }
+    } catch (_) { /* fall through to IP */ }
+    return `ip:${req.ip}`;
+  },
+  message: { error: 'Hourly limit reached. Try again later.', code: 'RATE_LIMITED' },
+  skip: (req) => req.method === 'GET',
+});
+app.use('/api/verdict', perUserVerdictLimit);
+app.use('/api/filter/interpret', perUserVerdictLimit);
 
 // Additional API endpoints
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_req, res) => {
+  const deps = getDependencyStatus();
+  res.json({ status: 'ok', mode: deps.mode, dependencies: deps.status });
+});
 
 // Mount SEO routes at root
 app.use('/', require(path.join(__dirname, 'routes', 'seo')));
 
 // Main API router
 app.use('/api/auth', authRouter);
+app.post('/api/auth/google', googleAuthHandler);
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+// Google auth handler — POST /api/google-auth (standalone, complements /api/auth/google in authRouter)
+app.post('/api/google-auth', rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}), googleAuthHandler);
 app.use('/api/spiral-lock', require(path.join(__dirname, 'routes', 'spiral-lock')));
+app.use('/api/stripe-webhook', require(path.join(__dirname, 'routes', 'stripe-webhook')));
 app.use('/api/checkout', checkoutRouter);
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
 app.use('/api/community', require(path.join(__dirname, 'routes', 'community')));
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.post('/api/interpret', require(path.join(__dirname, 'routes', 'interpret')));
+app.use('/api/meta', require(path.join(__dirname, 'routes', 'meta')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
 app.use('/api/contacts', require(path.join(__dirname, 'routes', 'contacts')));
+app.use('/api/contact-insights', rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment.', code: 'RATE_LIMITED' },
+}));
 app.use('/api/contact-insights', require(path.join(__dirname, 'routes', 'contact-insights')));
 app.use('/api/questionnaire', require(path.join(__dirname, 'routes', 'questionnaire')));
 app.use('/api/quiz-invites', require(path.join(__dirname, 'routes', 'quiz-invites')));
@@ -150,6 +217,48 @@ app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
 app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
 // Internal outreach
 app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+// Previously unmounted routes — now wired up:
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+app.use('/api/stripe-webhook', require(path.join(__dirname, 'routes', 'stripe-webhook')));
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.use('/api/health-check', require(path.join(__dirname, 'routes', 'health')));
+app.use('/api/meta', require(path.join(__dirname, 'routes', 'meta')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+// Interpret handler — mounted at /api/interpret (complements /api/filter/interpret)
+app.post('/api/interpret', require(path.join(__dirname, 'routes', 'interpret')));
+
+// Additional API routes (previously unmounted)
+app.use('/api/filter', require(path.join(__dirname, 'routes', 'filter')));
+app.use('/api/waitlist', require(path.join(__dirname, 'routes', 'waitlist')));
+app.use('/api/share', require(path.join(__dirname, 'routes', 'share')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/detox', require(path.join(__dirname, 'routes', 'detox')));
+app.use('/api/contact', require(path.join(__dirname, 'routes', 'contact')));
+app.use('/api/outreach', require(path.join(__dirname, 'routes', 'outreach')));
+app.use('/api/download', require(path.join(__dirname, 'routes', 'download')));
+app.use('/api/referral', require(path.join(__dirname, 'routes', 'referral')));
+app.use('/api/affiliates', require(path.join(__dirname, 'routes', 'affiliates')));
+app.use('/api/journal', require(path.join(__dirname, 'routes', 'journal')));
+app.use('/api/quiz', require(path.join(__dirname, 'routes', 'quiz')));
+app.use('/api/push', require(path.join(__dirname, 'routes', 'push')));
+app.use('/api/abandoned-checkout', require(path.join(__dirname, 'routes', 'abandoned-checkout')));
+app.use('/api/blast', require(path.join(__dirname, 'routes', 'blast')));
+app.use('/api/chronicle', require(path.join(__dirname, 'routes', 'chronicle')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
+app.use('/api', require(path.join(__dirname, 'routes', 'meta')));
+app.use('/api', require(path.join(__dirname, 'routes', 'stripe-webhook')));
 
 // EJS view engine
 app.set('view engine', 'ejs');
@@ -162,7 +271,6 @@ app.get('/interpret', (_req, res) => res.redirect(301, '/filter'));
 app.get('/verdict', (_req, res) => res.redirect(301, '/filter'));
 app.get('/referral', (_req, res) => res.redirect(301, '/referrals'));
 app.get('/share', (_req, res) => res.redirect(301, '/filter'));
-app.get('/checkout', (_req, res) => res.redirect(301, '/filter#pricing'));
 
 // Health check
 app.get('/robots.txt', (_req, res) => {
@@ -170,11 +278,27 @@ app.get('/robots.txt', (_req, res) => {
   res.send('User-agent: *\nAllow: /\n\nSitemap: https://shouldiholdoff.live/sitemap.xml');
 });
 app.get('/health', (_req, res) => res.json({ status: 'healthy' }));
-app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
-app.get('/notifications', async (_req, res) => {
-  res.render('notifications', { user: null });
+const healthzLimit = rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false });
+app.get('/healthz', healthzLimit, async (_req, res) => {
+  const result = { ok: true, db: false, ai: false, ts: new Date().toISOString() };
+  try {
+    const { pool } = require('./db/index');
+    await pool.query('SELECT 1');
+    result.db = true;
+  } catch (_) { result.ok = false; }
+  result.ai = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENAI_DIRECT_API_KEY);
+  if (!result.ai) result.ok = false;
+  res.status(result.ok ? 200 : 503).json(result);
 });
-app.get('/onboarding', (_req, res) => res.render('onboarding'));
+app.get('/favicon.ico', (_req, res) => res.redirect(302, '/icon.svg'));
+app.get('/notifications', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('notifications', { user: user || null });
+});
+app.get('/onboarding', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('onboarding', { user: user || null });
+});
 
 // Digital Asset Links — verifies the Android app (TWA) owns this domain.
 // Served explicitly because express.static ignores dot-folders like /.well-known.
@@ -246,7 +370,7 @@ app.get('/', async (req, res) => {
       maxAge: 90 * 24 * 60 * 60 * 1000,
     });
   }
-  res.render('index', { user });
+  res.render('index', { user, variant: (process.env.LANDING_VARIANT || 'A').toUpperCase() });
 });
 
 // Inbox
@@ -262,6 +386,137 @@ app.get('/contacts', async (req, res) => {
   if (!user) return res.redirect('/login?returnTo=/contacts');
   res.render('contacts', { user });
 });
+
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
+});
+
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/community');
+  res.render('community', { user });
+});
+
+app.get('/quiz', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('quiz', { user: user || null });
+});
+
+app.get('/quiz-invites', (_req, res) => res.redirect('/quiz'));
+
+app.get('/journal', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/journal');
+  res.render('journal', { user });
+});
+
+app.get('/detox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('detox', { user: user || null });
+});
+
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/referrals');
+  res.render('referrals', { user });
+});
+
+app.get('/history', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+app.get('/spirals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('spirals', { user: user || null });
+});
+
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user });
+});
+
+app.get('/examples', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('examples', { user: user || null });
+});
+
+app.get('/prologue', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('prologue', { user: user || null });
+});
+
+app.get('/upgrade', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/upgrade');
+  res.render('upgrade', { user });
+});
+
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
+app.get('/affiliates', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliates', { user: user || null });
+});
+
+app.get('/cancel', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('cancel', { user: user || null });
+});
+
+app.get('/success', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('success', { user: user || null });
+});
+
+app.get('/checkout', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('checkout', { user: user || null });
+});
+
+app.get('/thread/:id', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+  res.render('thread', { user, threadId: req.params.id });
+});
+
+app.get('/compose', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/compose');
+  res.render('compose', { user });
+});
+
+app.get('/compare/:page', async (req, res, next) => {
+  const user = await getUserFromCookies(req);
+  const page = (req.params.page || '').toLowerCase();
+  const allowedPages = new Set(['index', 'character-ai', 'chatgpt', 'replika']);
+  if (!allowedPages.has(page)) return next();
+  res.render(`compare/${page}`, { user: user || null });
+});
+
+app.get('/compare', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('compare/index', { user: user || null });
+});
+
+app.get('/account/:page', async (req, res, next) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+  const page = (req.params.page || '').toLowerCase();
+  const allowedPages = new Set(['attachment-research', 'personality', 'portrait', 'trusted-contacts']);
+  if (!allowedPages.has(page)) return next();
+  res.render(`account/${page}`, { user });
+});
+
+app.use('/download', require(path.join(__dirname, 'routes', 'download')));
 
 // Filter page
 app.get('/filter', async (req, res) => {
@@ -292,6 +547,15 @@ app.get('/settings', async (req, res) => {
     return res.redirect('/login?next=/settings');
   }
   res.render('settings', { user });
+});
+
+// Profile page
+app.get('/profile', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/profile');
+  const { findUserById } = require(path.join(__dirname, 'db', 'users'));
+  const fullUser = await findUserById(user.id).catch(() => null);
+  res.render('profile', { user, fullUser });
 });
 
 // Redeem page
@@ -351,6 +615,64 @@ app.get('/partnerships', async (req, res) => {
   res.render('partnerships', { user: user || null });
 });
 
+// Partnership application endpoint
+app.post('/api/partnership-apply', async (req, res) => {
+  try {
+    const { name, email, phone, organization, type, details, website } = req.body || {};
+    if (!name || !name.trim()) {
+      return res.status(400).json({ ok: false, error: 'Name is required.' });
+    }
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ ok: false, error: 'Valid email is required.' });
+    }
+    if (!organization || !organization.trim()) {
+      return res.status(400).json({ ok: false, error: 'Organization is required.' });
+    }
+
+    const HOLDOFF_API_BASE_URL = process.env.HOLDOFF_API_BASE_URL;
+    const HOLDOFF_API_TOKEN = process.env.HOLDOFF_API_TOKEN || process.env.HOLDOFF_API_KEY;
+    const SUPPORT_EMAIL = 'company@shouldiholdoff.live';
+
+    const body = [
+      `Name: ${name.trim()}`,
+      `Email: ${email.trim()}`,
+      phone ? `Phone: ${phone.trim()}` : null,
+      `Organization: ${organization.trim()}`,
+      type ? `Type: ${type}` : null,
+      details ? `Details: ${details.trim()}` : null,
+      website ? `Website: ${website.trim()}` : null,
+    ].filter(Boolean).join('\n');
+
+    if (HOLDOFF_API_BASE_URL && HOLDOFF_API_TOKEN) {
+      try {
+        const proxyUrl = `${HOLDOFF_API_BASE_URL}/api/proxy/email/send`;
+        await fetch(proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + HOLDOFF_API_TOKEN
+          },
+          body: JSON.stringify({
+            to: SUPPORT_EMAIL,
+            subject: `Partnership Application: ${name.trim()} — ${organization.trim()}`,
+            text: body,
+            from_name: name.trim(),
+            reply_to: email.trim(),
+          }),
+        });
+      } catch (emailErr) {
+        console.warn('[partnership-apply] email send failed:', emailErr.message);
+      }
+    }
+
+    console.log(`[partnership-apply] ${name.trim()} <${email.trim()}> — ${organization.trim()}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[partnership-apply] error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
 // Suggest
 app.get('/suggest', async (req, res) => {
   const user = await getUserFromCookies(req);
@@ -390,6 +712,10 @@ app.get('/story-experience', async (req, res) => {
 
 // Companion chat page — Sadie or Dan
 app.get('/companion', async (req, res) => {
+  const user = await getUserFromCookies(req).catch(() => null);
+  if (!user) {
+    return res.redirect('/login?returnTo=' + encodeURIComponent(req.originalUrl));
+  }
   const soul = req.query.soul === 'Dan' ? 'Dan' : 'Sadie';
   const CHARACTERS = {
     Sadie: {
@@ -489,6 +815,13 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Forgot email / account recovery page
+app.get('/forgot-email', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (user) return res.redirect('/inbox');
+  res.render('forgot-email', { user: null });
+});
+
 // Forgot password page
 app.get('/forgot-password', async (req, res) => {
   const user = await getUserFromCookies(req);
@@ -510,7 +843,9 @@ app.get('/signup', async (req, res) => {
 });
 
 app.get('/dashboard', async (req, res) => {
-  return res.redirect('/inbox');
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/dashboard');
+  return res.render('dashboard', { user });
 });
 
 // Share pages
@@ -688,6 +1023,116 @@ app.post('/api/beta-signup', async (req, res) => {
   }
 });
 
+// ─── Missing page routes ──────────────────────────────────────────────────────
+
+app.get('/chronicle', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/chronicle');
+  res.render('chronicle', { user });
+});
+
+app.get('/journal', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/journal');
+  res.render('journal', { user });
+});
+
+app.get('/quiz', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('quiz', { user: user || null });
+});
+
+app.get('/referrals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('referrals', { user: user || null });
+});
+
+app.get('/history', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/history');
+  res.render('history', { user });
+});
+
+app.get('/spirals', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('spirals', { user: user || null });
+});
+
+app.get('/insights', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/insights');
+  res.render('insights', { user });
+});
+
+app.get('/examples', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('examples', { user: user || null });
+});
+
+app.get('/prologue', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('prologue', { user: user || null });
+});
+
+app.get('/upgrade', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('upgrade', { user: user || null });
+});
+
+app.get('/account', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/account');
+  res.render('account', { user });
+});
+
+app.get('/affiliates', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('affiliates', { user: user || null });
+});
+
+app.get('/cancel', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('cancel', { user: user || null });
+});
+
+app.get('/success', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('success', { user: user || null });
+});
+
+app.get('/community', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('community', { user: user || null });
+});
+
+app.get('/detox', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('detox', { user: user || null });
+});
+
+app.get('/download', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  res.render('download', { user: user || null });
+});
+
+app.get('/thread', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/thread');
+  res.render('thread', { user });
+});
+
+app.get('/compose', async (req, res) => {
+  const user = await getUserFromCookies(req);
+  if (!user) return res.redirect('/login?returnTo=/compose');
+  res.render('compose', { user });
+});
+
+// ─── Global error handler ─────────────────────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error('[unhandled]', err);
+  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+});
+
 // Ensure tables exist
 ensureCommunityTables().catch(e => console.warn('[startup] community tables:', e.message));
 
@@ -699,5 +1144,10 @@ runMigrations().catch(e => console.warn('[startup] migrations:', e.message));
 
 const { ensureBetaTestersTable } = require(path.join(__dirname, 'db', 'beta-testers'));
 ensureBetaTestersTable().catch(e => console.warn('[startup] beta_testers table:', e.message));
+
+app.use((err, req, res, _next) => {
+  console.error('[unhandled error]', err);
+  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+});
 
 app.listen(port, () => console.log(`HoldOff running on port ${port}`));

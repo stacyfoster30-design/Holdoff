@@ -20,9 +20,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.android.billingclient.api.ProductDetails
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import kotlinx.coroutines.launch
+import live.shouldiholdoff.holdoff.billing.BillingManager
+import live.shouldiholdoff.holdoff.sync.SyncWorker
 import live.shouldiholdoff.holdoff.ui.screens.*
 import live.shouldiholdoff.holdoff.ui.theme.*
 
@@ -32,11 +35,19 @@ sealed class Screen(val route: String, val label: String, val icon: androidx.com
     object Settings  : Screen("settings", "Settings", Icons.Default.Settings)
 }
 
+private object Routes {
+    const val COMPANION_INTRO = "companion_intro"
+    const val QUIZ            = "quiz"
+    const val PAYWALL         = "paywall"
+    const val STORY           = "story"
+}
+
 val bottomNavItems = listOf(Screen.Home, Screen.Companion, Screen.Settings)
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+    private lateinit var billingManager: BillingManager
 
     // Permission launcher
     private val permissionLauncher = registerForActivityResult(
@@ -45,6 +56,8 @@ class MainActivity : ComponentActivity() {
         val smsGranted = permissions[Manifest.permission.READ_SMS] == true
         if (smsGranted) {
             viewModel.loadThreads()
+            // Start background SMS sync once permission is granted
+            SyncWorker.enqueue(this)
         }
     }
 
@@ -68,6 +81,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Connect Play Billing
+        billingManager = BillingManager(this)
+        billingManager.connect()
+
         // Request SMS + contacts permission on launch
         permissionLauncher.launch(
             arrayOf(
@@ -78,13 +95,27 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             HoldOffTheme {
+                val billingProducts by billingManager.products.collectAsState()
                 HoldOffApp(
                     viewModel = viewModel,
+                    billingProducts = billingProducts,
                     onSignIn = { launchGoogleSignIn() },
-                    onOpenUrl = { url -> openUrl(url) }
+                    onOpenUrl = { url -> openUrl(url) },
+                    onSubscribe = { product -> billingManager.launchPurchaseFlow(this, product) }
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh entitlement on every resume (handles restored subscriptions)
+        billingManager.refreshEntitlement()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        billingManager.disconnect()
     }
 
     private fun launchGoogleSignIn() {
@@ -105,16 +136,31 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HoldOffApp(
     viewModel: MainViewModel,
+    billingProducts: List<ProductDetails>,
     onSignIn: () -> Unit,
-    onOpenUrl: (String) -> Unit
+    onOpenUrl: (String) -> Unit,
+    onSubscribe: (ProductDetails) -> Unit
 ) {
     val navController = rememberNavController()
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // Load companion messages when on companion tab
+    // Load companion messages on first composition
     LaunchedEffect(Unit) {
         viewModel.loadCompanionMessages()
+    }
+
+    // Show paywall dialog when gate fires
+    if (uiState.showPaywall) {
+        PaywallScreen(
+            products = billingProducts,
+            onSubscribe = { product ->
+                viewModel.dismissPaywall()
+                onSubscribe(product)
+            },
+            onDismiss = { viewModel.dismissPaywall() }
+        )
+        return
     }
 
     Scaffold(
@@ -177,14 +223,21 @@ fun HoldOffApp(
             }
 
             composable(Screen.Companion.route) {
-                CompanionScreen(
-                    messages = uiState.companionMessages,
-                    isPremium = viewModel.isPremium,
-                    isLoading = uiState.isCompanionLoading,
-                    onSendMessage = { text -> viewModel.sendCompanionMessage(text) },
-                    onStoryClick = { onOpenUrl("https://shouldiholdoff.live/story") },
-                    onUpgrade = { onOpenUrl("https://shouldiholdoff.live/pricing") }
-                )
+                // Show disclosure first if not acknowledged
+                if (!uiState.companionDisclosureAcknowledged) {
+                    CompanionIntroScreen(
+                        onAcknowledge = { viewModel.acknowledgeCompanionDisclosure() }
+                    )
+                } else {
+                    CompanionScreen(
+                        messages = uiState.companionMessages,
+                        isPremium = viewModel.isPremium,
+                        isLoading = uiState.isCompanionLoading,
+                        onSendMessage = { text -> viewModel.sendCompanionMessage(text) },
+                        onStoryClick = { navController.navigate(Routes.STORY) },
+                        onUpgrade = { navController.navigate(Routes.PAYWALL) }
+                    )
+                }
             }
 
             composable(Screen.Settings.route) {
@@ -192,11 +245,46 @@ fun HoldOffApp(
                     user = uiState.user,
                     onSignIn = onSignIn,
                     onSignOut = { viewModel.signOut() },
-                    onSubscribe = { onOpenUrl("https://shouldiholdoff.live/pricing") },
+                    onSubscribe = { navController.navigate(Routes.PAYWALL) },
                     onManageSubscription = { onOpenUrl("https://shouldiholdoff.live/account") },
                     onSuggestionBox = { onOpenUrl("https://shouldiholdoff.live/suggest") }
+                )
+            }
+
+            composable(Routes.QUIZ) {
+                var quizResult by remember { mutableStateOf<live.shouldiholdoff.holdoff.domain.quiz.QuizResult?>(null) }
+                if (quizResult == null) {
+                    QuizScreen(onComplete = { result -> quizResult = result })
+                } else {
+                    QuizResultScreen(
+                        result = quizResult!!,
+                        onContinue = {
+                            viewModel.saveQuizResult(quizResult!!)
+                            navController.popBackStack()
+                        }
+                    )
+                }
+            }
+
+            composable(Routes.PAYWALL) {
+                PaywallScreen(
+                    products = billingProducts,
+                    onSubscribe = { product ->
+                        onSubscribe(product)
+                        navController.popBackStack()
+                    },
+                    onDismiss = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.STORY) {
+                PremiumStoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onUpgrade = { navController.navigate(Routes.PAYWALL) },
+                    isPremium = viewModel.isPremium
                 )
             }
         }
     }
 }
+

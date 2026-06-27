@@ -194,19 +194,41 @@
 
         data.tips.forEach((tip, index) => {
           const card = document.createElement('div');
-          card.className = `tip-card priority-${tip.priority}`;
+          const safePriority = ['high', 'medium', 'low'].includes(tip.priority) ? tip.priority : 'medium';
+          card.className = `tip-card priority-${safePriority}`;
           card.style.animationDelay = `${index * 0.1}s`;
-          
-          card.innerHTML = `
-            <div class="tip-header">
-              <div class="tip-icon">${tip.icon}</div>
-              <div class="tip-title">${tip.title}</div>
-              <div class="tip-badge ${tip.priority}">${tip.priority}</div>
-            </div>
-            <div class="tip-message">${tip.message}</div>
-            <div class="tip-action">💡 ${tip.action}</div>
-          `;
-          
+
+          const header = document.createElement('div');
+          header.className = 'tip-header';
+
+          const iconEl = document.createElement('div');
+          iconEl.className = 'tip-icon';
+          iconEl.textContent = tip.icon || '';
+
+          const titleEl = document.createElement('div');
+          titleEl.className = 'tip-title';
+          titleEl.textContent = tip.title || '';
+
+          const badgeEl = document.createElement('div');
+          badgeEl.className = `tip-badge ${safePriority}`;
+          badgeEl.textContent = tip.priority || '';
+
+          header.appendChild(iconEl);
+          header.appendChild(titleEl);
+          header.appendChild(badgeEl);
+
+          const msgEl = document.createElement('div');
+          msgEl.className = 'tip-message';
+          msgEl.textContent = tip.message || '';
+
+          const actionEl = document.createElement('div');
+          actionEl.className = 'tip-action';
+          actionEl.textContent = '💡 ' + (tip.action || '');
+
+          card.appendChild(header);
+          card.appendChild(msgEl);
+          card.appendChild(actionEl);
+
           container.appendChild(card);
         });
 

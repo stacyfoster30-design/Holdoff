@@ -1,6 +1,7 @@
 package com.holdoff.app.ui.screens
 
 import android.Manifest
+import android.os.Build
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,14 +52,23 @@ fun HomeScreen(
     ) { results -> if (results.values.all { it }) vm.onPermissionGranted() }
 
     LaunchedEffect(Unit) {
-        val perms = listOf(Manifest.permission.READ_SMS, Manifest.permission.READ_CONTACTS)
+        val perms = mutableListOf(Manifest.permission.READ_SMS, Manifest.permission.READ_CONTACTS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            perms.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
         val granted = perms.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
         if (granted) vm.onPermissionGranted()
-        else permLauncher.launch(arrayOf(
-            Manifest.permission.READ_SMS,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.RECEIVE_SMS
-        ))
+        else {
+            val reqPerms = mutableListOf(
+                Manifest.permission.READ_SMS,
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.RECEIVE_SMS
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                reqPerms.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            permLauncher.launch(reqPerms.toTypedArray())
+        }
     }
 
     Scaffold(
@@ -185,3 +195,4 @@ private fun formatTime(t: Long): String {
         else -> SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(t))
     }
 }
+
