@@ -6,9 +6,14 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../lib/auth');
-const db = require('../db/messages');
 const { callWithFallback } = require('../lib/verdict-ai');
-const { getMessageHistory, getMessageStats } = require('../db/contacts');
+const {
+  getContact,
+  getContactInsights,
+  upsertContactInsights,
+  getMessageHistory,
+  getMessageStats,
+} = require('../db/contacts');
 
 const RELATIONSHIP_ANALYSIS_PROMPT = `You are HoldOff's relationship analyst. Given a contact's communication patterns and message history metadata, generate a structured relationship analysis.
 
@@ -30,6 +35,17 @@ Yellow flags: areas to watch (e.g. slow replies only when busy, mixed signals un
 Green flags: genuinely positive signs (e.g. consistent communication, respects boundaries).
 Keep each flag to one clear, specific sentence. Return 2-5 items per category.`;
 
+function parseJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * GET /api/contact-insights/:contactId
  * Fetch full insights profile for a contact
@@ -39,14 +55,12 @@ router.get('/:contactId', requireAuth, async (req, res) => {
     const { contactId } = req.params;
     const userId = req.user.id;
 
-    // Verify contact belongs to this user
-    const contact = await db.getContactById(contactId);
+    const contact = await getContact(contactId, userId);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
-    // Fetch insights
-    const insights = await db.getContactInsights(contactId);
+    const insights = await getContactInsights(userId, contactId);
 
     if (!insights) {
       // Return empty profile if no insights yet
@@ -54,7 +68,7 @@ router.get('/:contactId', requireAuth, async (req, res) => {
         contactId,
         contact: {
           id: contact.id,
-          name: contact.name,
+          name: contact.display_name,
           phoneNumber: contact.phone_number,
         },
         insights: {
@@ -77,18 +91,19 @@ router.get('/:contactId', requireAuth, async (req, res) => {
       contactId,
       contact: {
         id: contact.id,
-        name: contact.name,
+        name: contact.display_name,
         phoneNumber: contact.phone_number,
       },
       insights: {
-        redFlags: JSON.parse(insights.red_flags || '[]'),
-        yellowFlags: JSON.parse(insights.yellow_flags || '[]'),
-        greenFlags: JSON.parse(insights.green_flags || '[]'),
+        redFlags: parseJsonArray(insights.red_flags),
+        yellowFlags: parseJsonArray(insights.yellow_flags),
+        greenFlags: parseJsonArray(insights.green_flags),
         riskLevel: insights.risk_level,
         trustLevel: insights.trust_level,
         attachmentStyleFit: insights.attachment_style_fit,
         communicationStyleMatch: insights.communication_style_match,
         compatibilityScore: insights.compatibility_score,
+        compatibilitySummary: insights.compatibility_summary || '',
         lastAnalyzedMessage: insights.last_analyzed_message,
         analysisCount: insights.analysis_count,
         updatedAt: insights.updated_at,
@@ -107,28 +122,28 @@ router.get('/:contactId', requireAuth, async (req, res) => {
 router.post('/:contactId', requireAuth, async (req, res) => {
   try {
     const { contactId } = req.params;
+    const userId = req.user.id;
     const insights = req.body;
 
-    // Verify contact exists
-    const contact = await db.getContactById(contactId);
+    const contact = await getContact(contactId, userId);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
-    // Store insights
-    const updated = await db.upsertContactInsights(contactId, insights);
+    const updated = await upsertContactInsights(userId, contactId, insights);
 
     res.json({
       contactId,
       insights: {
-        redFlags: JSON.parse(updated.red_flags || '[]'),
-        yellowFlags: JSON.parse(updated.yellow_flags || '[]'),
-        greenFlags: JSON.parse(updated.green_flags || '[]'),
+        redFlags: parseJsonArray(updated.red_flags),
+        yellowFlags: parseJsonArray(updated.yellow_flags),
+        greenFlags: parseJsonArray(updated.green_flags),
         riskLevel: updated.risk_level,
         trustLevel: updated.trust_level,
         attachmentStyleFit: updated.attachment_style_fit,
         communicationStyleMatch: updated.communication_style_match,
         compatibilityScore: updated.compatibility_score,
+        compatibilitySummary: updated.compatibility_summary || '',
         analysisCount: updated.analysis_count,
         updatedAt: updated.updated_at,
       },
@@ -148,8 +163,7 @@ router.post('/:contactId/analyze', requireAuth, async (req, res) => {
     const { contactId } = req.params;
     const userId = req.user.id;
 
-    // Verify contact belongs to this user
-    const contact = await db.getContactById(contactId);
+    const contact = await getContact(contactId, userId);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
@@ -173,7 +187,7 @@ router.post('/:contactId/analyze', requireAuth, async (req, res) => {
         ).join('\n')
       : 'No message history available yet.';
 
-    const userContent = `Contact: ${contact.name || 'Unknown'} (relationship: ${contact.relationship || 'unspecified'})
+    const userContent = `Contact: ${contact.display_name || 'Unknown'} (relationship: ${contact.relationship || 'unspecified'})
 Duration: ${contact.duration_days ? contact.duration_days + ' days' : 'unknown'}
 Total messages tracked: ${totalMessages}
 Messages sent by user: ${stats?.sent_count || 0}
@@ -213,7 +227,7 @@ Analyze this relationship and return the JSON.`;
     }
 
     // Save to contact_insights table
-    const saved = await db.upsertContactInsights(contactId, {
+    const saved = await upsertContactInsights(userId, contactId, {
       redFlags: parsed.redFlags || [],
       yellowFlags: parsed.yellowFlags || [],
       greenFlags: parsed.greenFlags || [],
@@ -222,6 +236,7 @@ Analyze this relationship and return the JSON.`;
       attachmentStyleFit: parsed.attachmentStyleFit || null,
       communicationStyleMatch: parsed.communicationStyleMatch || 0,
       compatibilityScore: parsed.compatibilityScore || 0,
+      compatibilitySummary: parsed.compatibilitySummary || '',
       lastAnalyzedMessage: null,
       analysisTimestamp: new Date(),
     });

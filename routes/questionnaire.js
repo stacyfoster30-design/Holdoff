@@ -8,6 +8,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const db = require('../db/messages');
 const { requireAuth } = require('../lib/auth');
+const { pool } = require('../db/index');
 
 const submitLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -35,7 +36,7 @@ router.post('/submit', submitLimiter, requireAuth, async (req, res) => {
   try {
     // Accept userId from body for legacy callers; prefer the authenticated user id.
     const userId = req.user?.id || req.body.userId;
-    const { conditions = [], attachment_style } = req.body;
+    const { conditions = [], attachment_style, pattern_tracking_enabled, spiral_tracking_enabled } = req.body;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId required' });
@@ -48,6 +49,22 @@ router.post('/submit', submitLimiter, requireAuth, async (req, res) => {
     // Replace existing conditions atomically (delete-all then re-insert),
     // so deselected conditions are actually removed on save.
     await db.setUserConditions(userId, sanitizedConditions);
+
+    await pool.query(
+      `INSERT INTO user_preferences (
+         user_id, pattern_tracking_enabled, spiral_tracking_enabled, onboarded, created_at, updated_at
+       )
+       VALUES ($1, $2, $3, true, NOW(), NOW())
+       ON CONFLICT (user_id) DO UPDATE
+       SET pattern_tracking_enabled = EXCLUDED.pattern_tracking_enabled,
+           spiral_tracking_enabled = EXCLUDED.spiral_tracking_enabled,
+           updated_at = NOW()`,
+      [
+        userId,
+        pattern_tracking_enabled !== false,
+        spiral_tracking_enabled !== false,
+      ]
+    );
 
     // Store attachment style if provided
     if (attachment_style) {
@@ -62,7 +79,9 @@ router.post('/submit', submitLimiter, requireAuth, async (req, res) => {
       success: true,
       message: 'Conditions saved successfully',
       conditions: sanitizedConditions,
-      attachment_style
+      attachment_style,
+      pattern_tracking_enabled: pattern_tracking_enabled !== false,
+      spiral_tracking_enabled: spiral_tracking_enabled !== false,
     });
   } catch (err) {
     console.error('Error submitting questionnaire:', err);
@@ -74,15 +93,24 @@ router.post('/submit', submitLimiter, requireAuth, async (req, res) => {
  * GET /api/questionnaire/user-conditions/:userId
  * Get user's selected conditions
  */
-router.get('/user-conditions/:userId', async (req, res) => {
+router.get('/user-conditions/:userId', requireAuth, async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const conditions = await db.getUserConditions(userId);
+    const prefs = await pool.query(
+      `SELECT pattern_tracking_enabled, spiral_tracking_enabled
+       FROM user_preferences
+       WHERE user_id = $1`,
+      [userId]
+    );
+    const settings = prefs.rows[0] || {};
     
     res.json({
       userId,
       conditions,
-      count: conditions.length
+      count: conditions.length,
+      pattern_tracking_enabled: settings.pattern_tracking_enabled !== false,
+      spiral_tracking_enabled: settings.spiral_tracking_enabled !== false,
     });
   } catch (err) {
     console.error('Error fetching user conditions:', err);

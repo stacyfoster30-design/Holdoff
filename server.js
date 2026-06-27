@@ -544,7 +544,7 @@ app.get('/pricing', async (req, res) => {
 app.get('/settings', async (req, res) => {
   const user = await getUserFromCookies(req);
   if (!user) {
-    return res.redirect('/login?next=/settings');
+    return res.redirect('/login?returnTo=/settings');
   }
   res.render('settings', { user });
 });
