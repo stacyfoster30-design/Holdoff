@@ -270,3 +270,92 @@ export async function upsertContactInsights(data: InsertContactInsight) {
   if (!db) return;
   await db.insert(contactInsights).values(data).onDuplicateKeyUpdate({ set: data });
 }
+
+// ─── Spiral Lock ──────────────────────────────────────────────────────────────
+
+const SPIRAL_WINDOW_MS = 30 * 60 * 1000; // 30-minute rolling window
+const SPIRAL_THRESHOLD = 3; // 3 consecutive DO NOT SEND triggers lock
+const SPIRAL_LOCK_DURATION_MS = 60 * 60 * 1000; // 1-hour cooldown
+
+/** Record a DO NOT SEND event and return lock state */
+export async function recordSpiralEvent(userId: number | null, sessionKey: string): Promise<{
+  locked: boolean;
+  lockedUntil: Date | null;
+  consecutiveCount: number;
+}> {
+  const db = await getDb();
+  if (!db) return { locked: false, lockedUntil: null, consecutiveCount: 0 };
+
+  // Check if already locked
+  const existing = await getSpiralLock(userId, sessionKey);
+  if (existing?.locked && existing.lockedUntil && existing.lockedUntil > new Date()) {
+    return { locked: true, lockedUntil: existing.lockedUntil, consecutiveCount: SPIRAL_THRESHOLD };
+  }
+
+  // Insert new event
+  await db.insert(spiralEvents).values({
+    userId: userId ?? undefined,
+    sessionKey,
+    eventType: "DO_NOT_SEND",
+    locked: false,
+  });
+
+  // Count recent DO NOT SEND events in the rolling window
+  const windowStart = new Date(Date.now() - SPIRAL_WINDOW_MS);
+  const recentEvents = await db.select().from(spiralEvents)
+    .where(
+      userId
+        ? and(eq(spiralEvents.userId, userId), sql`${spiralEvents.createdAt} >= ${windowStart}`)
+        : and(eq(spiralEvents.sessionKey, sessionKey), sql`${spiralEvents.createdAt} >= ${windowStart}`)
+    )
+    .orderBy(desc(spiralEvents.createdAt));
+
+  const count = recentEvents.length;
+
+  if (count >= SPIRAL_THRESHOLD) {
+    const lockedUntil = new Date(Date.now() + SPIRAL_LOCK_DURATION_MS);
+    // Update the most recent event to be the lock record
+    await db.update(spiralEvents)
+      .set({ locked: true, lockedUntil })
+      .where(eq(spiralEvents.id, recentEvents[0].id));
+    return { locked: true, lockedUntil, consecutiveCount: count };
+  }
+
+  return { locked: false, lockedUntil: null, consecutiveCount: count };
+}
+
+/** Check if a user/session is currently locked */
+export async function getSpiralLock(userId: number | null, sessionKey: string): Promise<{
+  locked: boolean;
+  lockedUntil: Date | null;
+} | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const rows = await db.select().from(spiralEvents)
+    .where(
+      userId
+        ? and(eq(spiralEvents.userId, userId), eq(spiralEvents.locked, true))
+        : and(eq(spiralEvents.sessionKey, sessionKey), eq(spiralEvents.locked, true))
+    )
+    .orderBy(desc(spiralEvents.createdAt))
+    .limit(1);
+
+  if (!rows.length) return { locked: false, lockedUntil: null };
+  const row = rows[0];
+  const isStillLocked = row.locked && row.lockedUntil ? row.lockedUntil > new Date() : false;
+  return { locked: isStillLocked, lockedUntil: row.lockedUntil ?? null };
+}
+
+/** Clear a spiral lock (e.g. after cooldown or manual unlock) */
+export async function clearSpiralLock(userId: number | null, sessionKey: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(spiralEvents)
+    .set({ locked: false, lockedUntil: null })
+    .where(
+      userId
+        ? and(eq(spiralEvents.userId, userId), eq(spiralEvents.locked, true))
+        : and(eq(spiralEvents.sessionKey, sessionKey), eq(spiralEvents.locked, true))
+    );
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -18,52 +18,115 @@ type VerdictResult = {
   patternName: string;
   reframe: string | null;
   rewrite: string | null;
+  spiralLock?: {
+    locked: boolean;
+    lockedUntil: Date | null;
+    consecutiveCount: number;
+  } | null;
 };
 
 const VERDICT_CONFIG = {
   "SEND": {
-    color: "verdict-send",
     icon: "✓",
     bg: "bg-emerald-500/10 border-emerald-500/30",
     text: "text-emerald-400",
-    label: "SEND",
   },
   "WAIT": {
-    color: "verdict-wait",
     icon: "⏸",
     bg: "bg-amber-500/10 border-amber-500/30",
     text: "text-amber-400",
-    label: "WAIT",
   },
   "DO NOT SEND": {
-    color: "verdict-nosend",
     icon: "✕",
     bg: "bg-rose-500/10 border-rose-500/30",
     text: "text-rose-400",
-    label: "DO NOT SEND",
   },
 };
 
+// Format milliseconds remaining as "Xh Ym"
+function formatTimeRemaining(until: Date | null): string {
+  if (!until) return "";
+  const ms = new Date(until).getTime() - Date.now();
+  if (ms <= 0) return "soon";
+  const minutes = Math.floor(ms / 60000);
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export default function FilterPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [message, setMessage] = useState("");
   const [context, setContext] = useState("");
   const [attachmentStyle, setAttachmentStyle] = useState("");
   const [result, setResult] = useState<VerdictResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [spiralLocked, setSpiralLocked] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState("");
+
+  // Check spiral lock status on mount
+  const lockQuery = trpc.spiral.checkLock.useQuery({ sessionKey: "anon" }, {
+    refetchInterval: spiralLocked ? 30000 : false,
+  });
+
+  useEffect(() => {
+    if (lockQuery.data?.locked && lockQuery.data.lockedUntil) {
+      const until = new Date(lockQuery.data.lockedUntil);
+      if (until > new Date()) {
+        setSpiralLocked(true);
+        setLockedUntil(until);
+      } else {
+        setSpiralLocked(false);
+        setLockedUntil(null);
+      }
+    } else {
+      setSpiralLocked(false);
+    }
+  }, [lockQuery.data]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!spiralLocked || !lockedUntil) return;
+    const interval = setInterval(() => {
+      const remaining = formatTimeRemaining(lockedUntil);
+      setTimeRemaining(remaining);
+      if (new Date(lockedUntil) <= new Date()) {
+        setSpiralLocked(false);
+        setLockedUntil(null);
+        clearInterval(interval);
+      }
+    }, 10000);
+    setTimeRemaining(formatTimeRemaining(lockedUntil));
+    return () => clearInterval(interval);
+  }, [spiralLocked, lockedUntil]);
 
   const analyzeMutation = trpc.filter.analyze.useMutation({
     onSuccess: (data) => {
-      setResult(data as VerdictResult);
+      const typedData = data as VerdictResult;
+      setResult(typedData);
       setLoading(false);
+
+      // Handle spiral lock from response
+      if (typedData.spiralLock?.locked && typedData.spiralLock.lockedUntil) {
+        const until = new Date(typedData.spiralLock.lockedUntil);
+        setSpiralLocked(true);
+        setLockedUntil(until);
+        setTimeRemaining(formatTimeRemaining(until));
+      }
     },
-    onError: (err) => {
+    onError: () => {
       toast.error("Something went wrong. Try again.");
       setLoading(false);
     },
   });
 
   const handleAnalyze = () => {
+    if (spiralLocked) {
+      toast.error("You're in a Spiral Lock cooldown. Take a breath.");
+      return;
+    }
     if (!message.trim()) {
       toast.error("Paste your message first.");
       return;
@@ -111,6 +174,27 @@ export default function FilterPage() {
       </div>
 
       <div className="page-body">
+        {/* ── Spiral Lock Banner ── */}
+        {spiralLocked && (
+          <div className="holdoff-card border-rose-500/40 bg-rose-500/10 mb-4 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">🔒</div>
+              <div className="flex-1">
+                <h3 className="font-display font-bold text-rose-400 text-base mb-1">Spiral Lock Active</h3>
+                <p className="text-sm text-foreground/80 leading-relaxed mb-2">
+                  You've gotten 3 DO NOT SEND verdicts in a row. HoldOff is locking the filter for <strong>{timeRemaining || "1 hour"}</strong> to protect you from yourself.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This is the pause you didn't ask for but needed. Step away. Breathe. Talk to a companion instead.
+                </p>
+                <Link href="/companions" className="inline-block mt-3 text-sm text-primary hover:underline">
+                  Talk to a companion →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {!result ? (
           <div className="space-y-4">
             {/* Message input */}
@@ -118,67 +202,74 @@ export default function FilterPage() {
               <label className="input-label">What are you about to send?</label>
               <p className="text-xs text-muted-foreground mb-2">Paste it. Be honest. No one's watching.</p>
               <textarea
-                className="holdoff-textarea"
-                placeholder="Type or paste the message here..."
+                className={`holdoff-textarea ${spiralLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+                placeholder={spiralLocked ? "Spiral Lock is active. Take a breath." : "Type or paste the message here..."}
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => !spiralLocked && setMessage(e.target.value)}
                 rows={5}
                 maxLength={3000}
+                disabled={spiralLocked}
               />
               <div className="text-right text-xs text-muted-foreground mt-1">{message.length} / 3000</div>
             </div>
 
             {/* Context */}
-            <div>
-              <label className="input-label">What's going on? <span className="text-muted-foreground font-normal">(optional but helps)</span></label>
-              <textarea
-                className="holdoff-textarea"
-                placeholder="Their last message, how long they've been quiet, what you're feeling..."
-                value={context}
-                onChange={(e) => setContext(e.target.value)}
-                rows={3}
-                maxLength={500}
-              />
-            </div>
+            {!spiralLocked && (
+              <div>
+                <label className="input-label">What's going on? <span className="text-muted-foreground font-normal">(optional but helps)</span></label>
+                <textarea
+                  className="holdoff-textarea"
+                  placeholder="Their last message, how long they've been quiet, what you're feeling..."
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                />
+              </div>
+            )}
 
             {/* Attachment style */}
-            <div>
-              <label className="input-label">Your attachment style <span className="text-muted-foreground font-normal">(optional)</span></label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {ATTACHMENT_STYLES.map((style) => (
-                  <button
-                    key={style.value}
-                    onClick={() => setAttachmentStyle(attachmentStyle === style.value ? "" : style.value)}
-                    className={`pill-btn ${attachmentStyle === style.value ? "pill-btn-active" : ""}`}
-                  >
-                    {style.label}
-                  </button>
-                ))}
+            {!spiralLocked && (
+              <div>
+                <label className="input-label">Your attachment style <span className="text-muted-foreground font-normal">(optional)</span></label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {ATTACHMENT_STYLES.map((style) => (
+                    <button
+                      key={style.value}
+                      onClick={() => setAttachmentStyle(attachmentStyle === style.value ? "" : style.value)}
+                      className={`pill-btn ${attachmentStyle === style.value ? "pill-btn-active" : ""}`}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+                {!isAuthenticated && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    <a href={getLoginUrl()} className="text-primary hover:underline">Sign in</a> to save your attachment style and track your history.
+                  </p>
+                )}
               </div>
-              {!isAuthenticated && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  <a href={getLoginUrl()} className="text-primary hover:underline">Sign in</a> to save your attachment style and track your history.
-                </p>
-              )}
-            </div>
+            )}
 
             {/* Submit */}
             <button
               onClick={handleAnalyze}
-              disabled={loading || !message.trim()}
-              className="holdoff-btn w-full"
+              disabled={loading || !message.trim() || spiralLocked}
+              className={`holdoff-btn w-full ${spiralLocked ? "opacity-40 cursor-not-allowed" : ""}`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full inline-block" />
                   Analyzing...
                 </span>
+              ) : spiralLocked ? (
+                `🔒 Locked for ${timeRemaining}`
               ) : (
                 "Get my verdict"
               )}
             </button>
 
-            {!isAuthenticated && (
+            {!isAuthenticated && !spiralLocked && (
               <p className="text-center text-xs text-muted-foreground">
                 3 free verdicts. <a href={getLoginUrl()} className="text-primary hover:underline">Sign in</a> to save history.
               </p>
@@ -201,6 +292,20 @@ export default function FilterPage() {
               )}
               <p className="text-sm leading-relaxed text-foreground">{result.explanation}</p>
             </div>
+
+            {/* Spiral Lock warning after DO NOT SEND */}
+            {result.verdict === "DO NOT SEND" && result.spiralLock && (
+              <div className="holdoff-card border-rose-500/30 bg-rose-500/5">
+                <p className="text-xs text-rose-400 font-medium uppercase tracking-wider mb-1">
+                  🌀 Spiral Watch — {result.spiralLock.consecutiveCount}/3
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {result.spiralLock.consecutiveCount >= 3
+                    ? "You've hit 3 DO NOT SEND verdicts. Spiral Lock is now active."
+                    : `${3 - result.spiralLock.consecutiveCount} more DO NOT SEND verdict${3 - result.spiralLock.consecutiveCount !== 1 ? "s" : ""} will trigger a 1-hour Spiral Lock.`}
+                </p>
+              </div>
+            )}
 
             {/* Reframe */}
             {result.reframe && (

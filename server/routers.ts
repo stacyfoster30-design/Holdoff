@@ -13,6 +13,7 @@ import {
   getContacts, createContact, getContact, updateContact, deleteContact,
   getContactInsights, upsertContactInsights,
   updateUserAttachmentStyle, incrementVerdictCount,
+  recordSpiralEvent, getSpiralLock,
 } from "./db";
 
 // ─── AI System Prompts ────────────────────────────────────────────────────────
@@ -176,7 +177,14 @@ export const appRouter = router({
           await incrementVerdictCount(ctx.user.id);
         }
 
-        return parsed;
+        // Spiral Lock: track consecutive DO NOT SEND verdicts
+        let spiralLock: { locked: boolean; lockedUntil: Date | null; consecutiveCount: number } | null = null;
+        if (parsed.verdict === "DO NOT SEND") {
+          const sessionKey = ctx.user ? `user_${ctx.user.id}` : (input as any)._sessionKey || "anon";
+          spiralLock = await recordSpiralEvent(ctx.user?.id ?? null, sessionKey);
+        }
+
+        return { ...parsed, spiralLock };
       }),
 
     history: protectedProcedure
@@ -510,6 +518,17 @@ Description: ${input.description}`;
 
       return { tips, stats };
     }),
+  }),
+  // ─── Spiral Lock ────────────────────────────────────────────────────────────
+
+  spiral: router({
+    checkLock: publicProcedure
+      .input(z.object({ sessionKey: z.string().optional().default("anon") }))
+      .query(async ({ ctx, input }) => {
+        const sessionKey = ctx.user ? `user_${ctx.user.id}` : input.sessionKey;
+        const lock = await getSpiralLock(ctx.user?.id ?? null, sessionKey);
+        return lock ?? { locked: false, lockedUntil: null };
+      }),
   }),
 });
 
