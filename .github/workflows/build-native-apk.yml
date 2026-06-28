@@ -95,7 +95,20 @@ jobs:
               echo "APK unchanged — nothing to commit"
             else
               git commit -m "ci: update holdoff.apk [skip ci]"
-              git push
+              # Retry push up to 5 times to handle concurrent workflow runs racing on main
+              for attempt in 1 2 3 4 5; do
+                if git push; then
+                  echo "Push succeeded on attempt $attempt"
+                  break
+                fi
+                echo "Push attempt $attempt failed — rebasing onto latest main and retrying"
+                git pull --rebase origin main
+                if [ "$attempt" = "5" ]; then
+                  echo "Push failed after 5 attempts"
+                  exit 1
+                fi
+                sleep $((RANDOM % 5 + 1))
+              done
             fi
           else
             echo "No APK found — skipping commit"
