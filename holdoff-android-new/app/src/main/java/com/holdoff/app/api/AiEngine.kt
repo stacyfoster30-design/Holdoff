@@ -84,8 +84,7 @@ class AiEngine @Inject constructor(
                 temperature = 0.7f
             }
             onDeviceModel = GenerativeModel(
-                generationConfig = config,
-                context = context
+                generationConfig = config
             )
             onDeviceAvailable = true
             Log.i(TAG, "On-device Gemini Nano initialized successfully")

@@ -14,7 +14,7 @@
         <item name="colorSurface">@color/holdoff_surface</item>
         <item name="colorOnSurface">@color/holdoff_text</item>
         <item name="colorSurfaceVariant">@color/holdoff_surface_variant</item>
-        <item name="colorBackground">@color/holdoff_bg</item>
+        <item name="android:colorBackground">@color/holdoff_bg</item>
         <item name="colorOnBackground">@color/holdoff_text</item>
         <item name="colorError">@color/holdoff_error</item>
         <item name="android:statusBarColor">@color/holdoff_bg</item>
@@ -26,8 +26,6 @@
     <!-- In-call screen theme — full-screen dark -->
     <style name="Theme.HoldOff.InCall" parent="Theme.HoldOff">
         <item name="android:windowFullscreen">true</item>
-        <item name="android:windowShowWhenLocked">true</item>
-        <item name="android:windowTurnScreenOn">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
@@ -37,7 +35,7 @@
         <item name="colorOnPrimary">@color/hc_on_primary</item>
         <item name="colorSurface">@color/hc_surface</item>
         <item name="colorOnSurface">@color/hc_on_surface</item>
-        <item name="colorBackground">@color/hc_background</item>
+        <item name="android:colorBackground">@color/hc_background</item>
         <item name="colorOnBackground">@color/hc_on_background</item>
     </style>
 
