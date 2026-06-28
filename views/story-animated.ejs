@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Story - HoldOff</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #0f1a2e 100%);
+            min-height: 100vh;
+            display: block;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .story-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+
+        .story-scene {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1.5s ease-out forwards;
+            padding: 40px;
+            background: rgba(30, 15, 60, 0.6);
+            border: 1px solid rgba(200, 150, 255, 0.2);
+            border-radius: 12px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .scene-1 { animation-delay: 0.5s; }
+        .scene-2 { animation-delay: 4s; }
+        .scene-3 { animation-delay: 8s; }
+        .scene-4 { animation-delay: 12s; }
+
+        .character-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .character-image {
+            height: 180px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 8px 24px rgba(139, 107, 183, 0.3);
+        }
+
+        .scene-narration p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #d4c4f0;
+            margin-bottom: 16px;
+        }
+
+        .scene-narration p:last-child {
+            margin-bottom: 0;
+        }
+
+        .strong-text {
+            color: #e8dcc8;
+            font-weight: 600;
+        }
+
+        h3 {
+            color: #b8a0ff;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #8b6bb7 0%, #6b4fa8 100%);
+            color: white;
+            border: 1px solid rgba(200, 150, 255, 0.3);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #9b7bc7 0%, #7b5fb8 100%);
+            box-shadow: 0 4px 12px rgba(139, 107, 183, 0.4);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .personalization-button {
+            background: linear-gradient(135deg, #9b7bc7 0%, #7b5fb8 100%);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a0033 0%, #2d1b4e 50%, #1a1a3e 100%);
+            border: 2px solid rgba(200, 150, 255, 0.3);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #d0c4e8;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(60, 40, 100, 0.4);
+            border: 1px solid rgba(200, 150, 255, 0.3);
+            border-radius: 6px;
+            color: #e0d4ff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: rgba(60, 40, 100, 0.6);
+            border-color: rgba(200, 150, 255, 0.6);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(200, 150, 255, 0.4);
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .modal-buttons button {
+            padding: 10px;
+        }
+
+        .modal-buttons .cancel-btn {
+            background: rgba(107, 94, 255, 0.2);
+            border: 1px solid rgba(200, 150, 255, 0.3);
+            color: #d0c4e8;
+        }
+
+        .modal-buttons .cancel-btn:hover {
+            background: rgba(107, 94, 255, 0.3);
+        }
+
+        .back-link {
+            color: rgba(200, 150, 255, 0.6);
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 20px;
+            display: inline-block;
+        }
+
+        .back-link:hover {
+            color: #d4c4f0;
+        }
+
+        @media (max-width: 600px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .story-scene {
+                padding: 25px;
+            }
+
+            h3 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="story-container">
+        <!-- Scene 1: The Beginning -->
+        <div class="story-scene scene-1">
+            <div class="character-container">
+                <img src="/assets/story-characters/stacy-cartoon-v2.png" alt="Stacy" class="character-image">
+            </div>
+            <div class="scene-narration">
+                <p>"I used to think my anxiety was a problem with me. Like something was broken."</p>
+                <p>"But it wasn't. It was actually trying to protect me."</p>
+            </div>
+        </div>
+
+        <!-- Scene 2: The Realization -->
+        <div class="story-scene scene-2">
+            <div class="character-container">
+                <img src="/assets/story-characters/danny-cartoon.png" alt="Danny" class="character-image">
+            </div>
+            <div class="scene-narration">
+                <p>"When Danny started pulling away, I went into overdrive. Double texts. Reading between the lines. Spiraling."</p>
+                <p>"I was convinced that if I just <span class="strong-text">understood</span> him better, I could fix it."</p>
+            </div>
+        </div>
+
+        <!-- Scene 3: The Pattern -->
+        <div class="story-scene scene-3">
+            <div class="character-container">
+                <img src="/assets/story-characters/stacy-cartoon-v2.png" alt="Stacy" class="character-image">
+            </div>
+            <div class="scene-narration">
+                <p>"The hardest part wasn't seeing what I was doing. It was understanding <span class="strong-text">why</span>."</p>
+                <p>"And that's where things started to shift."</p>
+                <p>"I realized that understanding my patterns wasn't about fixing myself. It was about becoming the person I wanted to be. For me."</p>
+            </div>
+        </div>
+
+        <!-- Scene 4: Invitation with Branching -->
+        <div class="story-scene scene-4">
+            <h3>Now It's Your Turn</h3>
+            <p style="color: #d4c4f0; margin-bottom: 15px;">Your story might look different, but maybe you recognize yourself here.</p>
+            <p style="color: #d4c4f0; margin-bottom: 25px;">What if you could understand your patterns the way Stacy understood hers?</p>
+            
+            <div class="button-group">
+                <button onclick="goToCompanion()">Continue with Insights →</button>
+                <button class="personalization-button" onclick="openPersonalization()">🧢 Put On My Shoes</button>
+            </div>
+            
+            <a href="/signup" class="back-link">← Back</a>
+        </div>
+    </div>
+
+    <!-- Personalization Modal -->
+    <div id="personalizationModal" class="modal">
+        <div class="modal-content">
+            <h3>Let's Make This Personal</h3>
+            <div class="form-group">
+                <label>What should we call you in this story?</label>
+                <input type="text" id="userNameInput" placeholder="Your Name">
+            </div>
+            
+            <div class="form-group">
+                <label>And who is this story about?</label>
+                <input type="text" id="poiNameInput" placeholder="Their Name (Person of Interest)">
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closePersonalization()">Cancel</button>
+                <button onclick="submitPersonalization()">Continue →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goToCompanion() {
+            window.location.href = '/companion';
+        }
+
+        function openPersonalization() {
+            document.getElementById('personalizationModal').classList.add('active');
+        }
+
+        function closePersonalization() {
+            document.getElementById('personalizationModal').classList.remove('active');
+        }
+
+        function submitPersonalization() {
+            const userName = document.getElementById('userNameInput').value.trim();
+            const poiName = document.getElementById('poiNameInput').value.trim();
+
+            if (!userName || !poiName) {
+                alert('Please enter both names to personalize your story');
+                return;
+            }
+
+            // Store in sessionStorage and redirect
+            sessionStorage.setItem('userName', userName);
+            sessionStorage.setItem('poiName', poiName);
+            window.location.href = '/story-experience?mode=personalized';
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.getElementById('personalizationModal').classList.contains('active')) {
+                submitPersonalization();
+            }
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePersonalization();
+            }
+        });
+    </script>
+  <script src="/js/floating-companions.js" defer></script>
+</body>
+</html>

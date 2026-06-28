@@ -59,10 +59,25 @@ const COMPANION_META: Record<string, {
       "How do I reach an avoidant without pushing them away?",
     ],
   },
+  dan: {
+    name: "Dan",
+    tagline: "Grounded. Direct. The resilience coach.",
+    accent: "text-sky-300",
+    border: "border-sky-500/30",
+    bgGradient: "from-sky-500/5 to-transparent",
+    avatarPersona: "dan",
+    introMessage: "Hey. Let's talk. What's the situation — give me the full picture.",
+    prompts: [
+      "I keep falling back into old patterns",
+      "How do I stop being so reactive?",
+      "I want to be more secure but I don't know how",
+      "I feel like I'm always the one who cares more",
+    ],
+  },
 };
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type Persona = "sadie" | "stacy" | "danny";
+type Persona = "sadie" | "stacy" | "danny" | "dan";
 
 export default function CompanionChatPage() {
   const params = useParams<{ persona: string }>();
@@ -117,7 +132,7 @@ export default function CompanionChatPage() {
     setIsLoading(true);
 
     chatMutation.mutate({
-      persona: persona as "sadie" | "stacy" | "danny",
+      persona: persona as "sadie" | "stacy" | "danny" | "dan",
       message: content,
       history: updatedMessages
         .slice(-10)
@@ -175,6 +190,18 @@ export default function CompanionChatPage() {
             isTyping={isLoading}
             size="xl"
           />
+        </div>
+
+        {/* Mental health disclaimer */}
+        <div className="px-4 py-2 bg-amber-500/5 border-b border-amber-500/20 flex items-start gap-2">
+          <svg className="flex-shrink-0 mt-0.5 text-amber-400/70" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="text-xs text-amber-400/70 leading-snug">
+            {meta.name} is an AI companion, not a licensed therapist. If you're in crisis, please reach out to a mental health professional or call/text 988 (Suicide & Crisis Lifeline).
+          </p>
         </div>
 
         {/* Messages */}

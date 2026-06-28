@@ -6,9 +6,9 @@ export type AvatarPersona = "sadie" | "stacy" | "danny" | "dan";
 // All expression image URLs per persona
 const AVATAR_IMAGES: Record<AvatarPersona, Record<AvatarExpression, string>> = {
   stacy: {
-    neutral: "/manus-storage/stacy-neutral_fcad50db.png",
-    happy: "/manus-storage/stacy-happy_e99c0c4f.png",
-    thinking: "/manus-storage/stacy-thinking_6519065e.png",
+    neutral: "/manus-storage/stacy-avatar_601d0e66.png",
+    happy: "/manus-storage/stacy-avatar_601d0e66.png",
+    thinking: "/manus-storage/stacy-avatar_601d0e66.png",
   },
   danny: {
     neutral: "/manus-storage/danny-neutral_6187e252.png",
@@ -29,7 +29,7 @@ const AVATAR_IMAGES: Record<AvatarPersona, Record<AvatarExpression, string>> = {
 
 // Base (original) avatar images for fallback / idle
 const BASE_IMAGES: Record<AvatarPersona, string> = {
-  stacy: "/manus-storage/stacy-avatar_47fe8a27.png",
+  stacy: "/manus-storage/stacy-avatar_601d0e66.png",
   danny: "/manus-storage/danny-avatar_74958fae.png",
   dan: "/manus-storage/dan-avatar_ce0d9d4d.png",
   sadie: "/manus-storage/sadie-avatar_b2e0f06d.png",

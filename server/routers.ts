@@ -13,6 +13,7 @@ import {
   getContacts, createContact, getContact, updateContact, deleteContact,
   getContactInsights, upsertContactInsights,
   updateUserAttachmentStyle, incrementVerdictCount,
+  recordSpiralEvent, getSpiralLock,
 } from "./db";
 
 // ─── AI System Prompts ────────────────────────────────────────────────────────
@@ -92,6 +93,17 @@ Key traits:
 - Occasionally dry humor
 
 You are NOT a therapist. You're the companion who helps decode the other side.`,
+
+  dan: `You are Dan, HoldOff's secure-anxious bridge companion. You're sporty, grounded, and direct. You've worked through your own anxious attachment and now help others find the middle ground between chasing and shutting down.
+
+Key traits:
+- Direct and no-nonsense
+- Validates feelings without enabling spiraling
+- Uses sports/competition metaphors naturally
+- Helps users build emotional resilience
+- Warm but doesn't sugarcoat
+
+You are NOT a therapist. You're the coach who's been in the trenches.`,
 };
 
 const CONTACT_ANALYSIS_SYSTEM = `You are HoldOff's relationship analyst. Analyze communication patterns and generate a structured relationship assessment.
@@ -145,7 +157,8 @@ export const appRouter = router({
           maxTokens: 600,
           responseFormat: { type: "json_object" },
         });
-        const result = llmResult.choices[0]?.message?.content as string || "{}";
+        const rawContent = llmResult.choices[0]?.message?.content;
+        const result = (typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent)) || "{}";
 
         let parsed: any;
         try {
@@ -176,7 +189,14 @@ export const appRouter = router({
           await incrementVerdictCount(ctx.user.id);
         }
 
-        return parsed;
+        // Spiral Lock: track consecutive DO NOT SEND verdicts
+        let spiralLock: { locked: boolean; lockedUntil: Date | null; consecutiveCount: number } | null = null;
+        if (parsed.verdict === "DO NOT SEND") {
+          const sessionKey = ctx.user ? `user_${ctx.user.id}` : (input as any)._sessionKey || "anon";
+          spiralLock = await recordSpiralEvent(ctx.user?.id ?? null, sessionKey);
+        }
+
+        return { ...parsed, spiralLock };
       }),
 
     history: protectedProcedure
@@ -209,7 +229,8 @@ export const appRouter = router({
           maxTokens: 600,
           responseFormat: { type: "json_object" },
         });
-        const result = llmResult2.choices[0]?.message?.content as string || "{}";
+        const rawContent2 = llmResult2.choices[0]?.message?.content;
+        const result = (typeof rawContent2 === 'string' ? rawContent2 : JSON.stringify(rawContent2)) || "{}";
 
         let parsed: any;
         try {
@@ -251,7 +272,7 @@ export const appRouter = router({
   companion: router({
     chat: publicProcedure
       .input(z.object({
-        persona: z.enum(["sadie", "stacy", "danny"]),
+        persona: z.enum(["sadie", "stacy", "danny", "dan"]),
         message: z.string().min(1).max(2000),
         history: z.array(z.object({
           role: z.enum(["user", "assistant"]),
@@ -266,8 +287,16 @@ export const appRouter = router({
           { role: "user", content: input.message },
         ];
         const companionResult = await invokeLLM({ messages, maxTokens: 800 });
-        const result = companionResult.choices[0]?.message?.content as string || "I'm here. Tell me more.";
-        return { response: result };
+        const rawCompanionContent = companionResult.choices[0]?.message?.content;
+        const responseText = (typeof rawCompanionContent === 'string' ? rawCompanionContent : JSON.stringify(rawCompanionContent)) || "I'm here. Tell me more.";
+        // Derive expression from response sentiment
+        const lower = responseText.toLowerCase();
+        const expression = lower.includes('hmm') || lower.includes('notice') || lower.includes('pattern') || lower.includes('concern') || lower.includes('but') || lower.includes('however')
+          ? 'thinking'
+          : lower.includes('great') || lower.includes('proud') || lower.includes('growth') || lower.includes('progress') || lower.includes('good') || lower.includes('well done')
+          ? 'happy'
+          : 'neutral';
+        return { response: responseText, expression };
       }),
   }),
 
@@ -432,7 +461,8 @@ Description: ${input.description}`;
           maxTokens: 800,
           responseFormat: { type: "json_object" },
         });
-        const result = contactLlmResult.choices[0]?.message?.content as string || "{}";
+        const rawContactContent = contactLlmResult.choices[0]?.message?.content;
+        const result = (typeof rawContactContent === 'string' ? rawContactContent : JSON.stringify(rawContactContent)) || "{}";
 
         let parsed: any;
         try {
@@ -510,6 +540,17 @@ Description: ${input.description}`;
 
       return { tips, stats };
     }),
+  }),
+  // ─── Spiral Lock ────────────────────────────────────────────────────────────
+
+  spiral: router({
+    checkLock: publicProcedure
+      .input(z.object({ sessionKey: z.string().optional().default("anon") }))
+      .query(async ({ ctx, input }) => {
+        const sessionKey = ctx.user ? `user_${ctx.user.id}` : input.sessionKey;
+        const lock = await getSpiralLock(ctx.user?.id ?? null, sessionKey);
+        return lock ?? { locked: false, lockedUntil: null };
+      }),
   }),
 });
 

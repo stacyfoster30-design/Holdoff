@@ -49,6 +49,18 @@ const COMPANIONS: {
     avatarPersona: "danny",
     route: "/companions/danny",
   },
+  {
+    id: "dan",
+    name: "Dan",
+    tagline: "Grounded. Direct. The resilience coach.",
+    description: "Dan has worked through his own anxious attachment and helps you find the middle ground between chasing and shutting down. Secure-anxious bridge.",
+    style: "Secure-Anxious Bridge",
+    gradient: "from-sky-500/15 to-blue-500/10",
+    border: "border-sky-500/30",
+    accent: "text-sky-300",
+    avatarPersona: "dan",
+    route: "/companions/dan",
+  },
 ];
 
 export default function CompanionsPage() {
@@ -61,7 +73,7 @@ export default function CompanionsPage() {
 
       <div className="page-body space-y-4">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Three AI companions, each with a different attachment lens. They're not therapists — they're the friends who've been there.
+          Four AI companions, each with a different attachment lens. They're not therapists — they're the friends who've been there.
         </p>
 
         {COMPANIONS.map((companion) => (
