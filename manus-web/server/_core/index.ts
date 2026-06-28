@@ -36,6 +36,42 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  // ── APK download redirect — points to latest GitHub Release APK ──────────
+  app.get(["/api/download/android", "/android-app.apk"], async (_req, res) => {
+    try {
+      const https = await import("https");
+      const options = {
+        hostname: "api.github.com",
+        path: "/repos/stacyfoster30-design/Holdoff/releases/latest",
+        headers: { "User-Agent": "HoldOff-App/1.0" },
+      };
+      https.default.get(options, (apiRes: any) => {
+        let data = "";
+        apiRes.on("data", (chunk: any) => (data += chunk));
+        apiRes.on("end", () => {
+          try {
+            const release = JSON.parse(data);
+            const apkAsset = (release.assets || []).find((a: any) => a.name.endsWith(".apk"));
+            if (apkAsset) {
+              res.redirect(301, apkAsset.browser_download_url);
+            } else {
+              res.redirect(302, "/?building=1");
+            }
+          } catch {
+            res.redirect(302, "/?building=1");
+          }
+        });
+      }).on("error", () => res.redirect(302, "/?building=1"));
+    } catch {
+      res.redirect(302, "/?building=1");
+    }
+  });
+
+  // ── Health check ──────────────────────────────────────────────────────────
+  app.get(["/health", "/api/health"], (_req, res) => {
+    res.json({ status: "healthy", version: process.env.npm_package_version || "1.0.0" });
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

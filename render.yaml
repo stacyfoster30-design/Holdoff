@@ -1,13 +1,14 @@
 services:
   - type: web
-    name: Holdoff-1
+    name: holdoff-app
     runtime: node
-    buildCommand: "npm install --production=false"
-    startCommand: "node server.js"
-    healthCheckPath: /health
+    rootDir: manus-web
+    buildCommand: "npm install -g pnpm && pnpm install && pnpm build"
+    startCommand: "node dist/index.js"
+    healthCheckPath: /api/trpc/auth.me?batch=1&input=%7B%7D
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
-        value: "20.11.1"
+        value: "22.13.0"
 

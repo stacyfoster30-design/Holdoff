@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HoldOff</string>
+    <string name="app_tagline">The pause between you and your worst self.</string>
+
+    <!-- Navigation -->
+    <string name="nav_dialer">Dialer</string>
+    <string name="nav_messages">Messages</string>
+    <string name="nav_filter">Filter</string>
+    <string name="nav_companions">Companions</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dialer -->
+    <string name="dialer_title">Keypad</string>
+    <string name="call_history">Recent</string>
+    <string name="call_incoming">Incoming call</string>
+    <string name="call_outgoing">Calling…</string>
+    <string name="call_active">On call</string>
+    <string name="call_ended">Call ended</string>
+    <string name="btn_answer">Answer</string>
+    <string name="btn_decline">Decline</string>
+    <string name="btn_end_call">End</string>
+    <string name="btn_mute">Mute</string>
+    <string name="btn_speaker">Speaker</string>
+    <string name="btn_hold">Hold</string>
+    <string name="btn_keypad">Keypad</string>
+    <string name="btn_add_call">Add call</string>
+
+    <!-- SMS -->
+    <string name="messages_title">Messages</string>
+    <string name="compose_hint">Type a message…</string>
+    <string name="btn_send">Send</string>
+    <string name="btn_analyze">Analyze with HoldOff</string>
+    <string name="new_message">New message</string>
+    <string name="search_conversations">Search conversations</string>
+
+    <!-- Filter / Verdict -->
+    <string name="filter_title">Filter</string>
+    <string name="filter_subtitle">Should you hold off?</string>
+    <string name="verdict_send">SEND</string>
+    <string name="verdict_wait">WAIT</string>
+    <string name="verdict_no_send">DO NOT SEND</string>
+    <string name="verdict_analyzing">Analyzing…</string>
+    <string name="pattern_detected">Pattern detected</string>
+    <string name="reframe_label">What you\'re actually feeling</string>
+    <string name="rewrite_label">A better version</string>
+    <string name="copy_rewrite">Copy this version</string>
+    <string name="spiral_lock_title">Spiral Lock Active</string>
+    <string name="spiral_lock_message">You\'ve gotten 3 DO NOT SEND verdicts in a row. Take a breath. The filter is locked for %1$s.</string>
+    <string name="spiral_watch">Spiral Watch — %1$d/3</string>
+
+    <!-- Companions -->
+    <string name="companions_title">Companions</string>
+    <string name="companion_sadie_name">Sadie ✨</string>
+    <string name="companion_sadie_tagline">Secure-leaning guide. Warm, grounded, gently challenging.</string>
+    <string name="companion_stacy_name">Stacy</string>
+    <string name="companion_stacy_tagline">Fearful-avoidant. Raw honesty and dark humor.</string>
+    <string name="companion_danny_name">Danny</string>
+    <string name="companion_danny_tagline">Dismissive-avoidant. Calm, logical, decodes the other side.</string>
+    <string name="companion_dan_name">Dan</string>
+    <string name="companion_dan_tagline">The hype coach. Direct, energetic, no-nonsense.</string>
+    <string name="chat_hint">Talk to %1$s…</string>
+    <string name="mental_health_disclaimer">%1$s is an AI companion, not a licensed therapist. If you\'re in crisis, call or text 988.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_ai_mode">AI Mode</string>
+    <string name="settings_ai_on_device">On-device (Private)</string>
+    <string name="settings_ai_cloud">Cloud (More powerful)</string>
+    <string name="settings_ai_mode_desc">On-device AI keeps your messages private. Cloud AI uses HoldOff\'s servers.</string>
+    <string name="settings_accessibility">Accessibility</string>
+    <string name="settings_font_size">Text size</string>
+    <string name="settings_high_contrast">High contrast mode</string>
+    <string name="settings_reduce_motion">Reduce motion</string>
+    <string name="settings_haptic">Haptic feedback</string>
+    <string name="settings_default_apps">Default apps</string>
+    <string name="settings_set_default_dialer">Set as default phone app</string>
+    <string name="settings_set_default_sms">Set as default SMS app</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_data_disclosure">AI Data Disclosure</string>
+    <string name="settings_clear_history">Clear verdict history</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_sign_in">Sign in to HoldOff</string>
+    <string name="settings_sign_out">Sign out</string>
+
+    <!-- Permissions -->
+    <string name="perm_rationale_phone">HoldOff needs phone permission to work as your default dialer and run the AI filter on calls.</string>
+    <string name="perm_rationale_sms">HoldOff needs SMS permission to work as your default messaging app and run the AI filter before you send messages.</string>
+    <string name="perm_rationale_contacts">HoldOff needs contacts access to show caller names and let you message your contacts.</string>
+    <string name="perm_rationale_notifications">HoldOff needs notification permission to alert you to incoming calls and messages.</string>
+
+    <!-- AI Disclosure -->
+    <string name="ai_disclosure_title">How HoldOff uses AI</string>
+    <string name="ai_disclosure_body">When you choose to analyze a message, HoldOff reads its content to generate a verdict. In on-device mode, this happens entirely on your phone — nothing leaves your device. In cloud mode, the message text is sent to HoldOff\'s secure servers for processing and is not stored after analysis. You can always choose not to analyze a message.</string>
+    <string name="ai_disclosure_agree">I understand</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome">Welcome to HoldOff</string>
+    <string name="onboarding_subtitle">The pause between you and your worst self.</string>
+    <string name="onboarding_step1_title">Filter your messages</string>
+    <string name="onboarding_step1_desc">Before you send that text, let HoldOff\'s AI tell you if it\'s a SEND, WAIT, or DO NOT SEND.</string>
+    <string name="onboarding_step2_title">On-device AI</string>
+    <string name="onboarding_step2_desc">Your messages stay on your phone. The AI runs locally — nothing leaves your device.</string>
+    <string name="onboarding_step3_title">Your AI companions</string>
+    <string name="onboarding_step3_desc">Talk to Sadie, Stacy, Danny, or Dan — AI companions who understand attachment theory.</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_set_default">Set as default phone &amp; SMS app</string>
+    <string name="onboarding_skip">Skip for now</string>
+
+    <!-- Accessibility content descriptions -->
+    <string name="cd_answer_call">Answer incoming call</string>
+    <string name="cd_decline_call">Decline incoming call</string>
+    <string name="cd_end_call">End current call</string>
+    <string name="cd_mute_call">Toggle mute</string>
+    <string name="cd_speaker_call">Toggle speakerphone</string>
+    <string name="cd_dialpad_key">Dial %1$s</string>
+    <string name="cd_delete_digit">Delete last digit</string>
+    <string name="cd_companion_avatar">%1$s companion avatar</string>
+    <string name="cd_send_message">Send message</string>
+    <string name="cd_analyze_message">Analyze message with HoldOff AI</string>
+    <string name="cd_verdict_result">Verdict: %1$s</string>
+    <string name="cd_back">Go back</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_new_message">Compose new message</string>
+</resources>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ── HoldOff Brand Colors ── -->
+    <color name="holdoff_purple">#7C3AED</color>
+    <color name="holdoff_purple_light">#A78BFA</color>
+    <color name="holdoff_purple_container">#3B1A6E</color>
+    <color name="holdoff_lavender">#C4B5FD</color>
+    <color name="holdoff_rose">#F43F5E</color>
+    <color name="holdoff_bg">#0D0A1A</color>
+    <color name="holdoff_surface">#1A1530</color>
+    <color name="holdoff_surface_variant">#251E3E</color>
+    <color name="holdoff_text">#F5F3FF</color>
+    <color name="holdoff_text_muted">#8B7EAA</color>
+    <color name="holdoff_error">#F43F5E</color>
+
+    <!-- ── Verdict Colors ── -->
+    <color name="verdict_send">#10B981</color>
+    <color name="verdict_send_bg">#0D2E22</color>
+    <color name="verdict_wait">#F59E0B</color>
+    <color name="verdict_wait_bg">#2D2008</color>
+    <color name="verdict_no_send">#F43F5E</color>
+    <color name="verdict_no_send_bg">#2D0A14</color>
+
+    <!-- ── Companion Colors ── -->
+    <color name="companion_sadie">#A78BFA</color>
+    <color name="companion_stacy">#F472B6</color>
+    <color name="companion_danny">#60A5FA</color>
+    <color name="companion_dan">#34D399</color>
+
+    <!-- ── High Contrast Accessibility Colors ── -->
+    <color name="hc_primary">#FFFFFF</color>
+    <color name="hc_on_primary">#000000</color>
+    <color name="hc_surface">#000000</color>
+    <color name="hc_on_surface">#FFFFFF</color>
+    <color name="hc_background">#000000</color>
+    <color name="hc_on_background">#FFFFFF</color>
+
+    <!-- ── Utility ── -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    <color name="overlay_dark">#80000000</color>
+    <color name="divider">#1AFFFFFF</color>
+</resources>

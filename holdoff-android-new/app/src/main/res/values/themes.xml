@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base HoldOff theme — dark purple brand -->
+    <style name="Theme.HoldOff" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Brand colors -->
+        <item name="colorPrimary">@color/holdoff_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/holdoff_purple_container</item>
+        <item name="colorOnPrimaryContainer">@color/holdoff_purple_light</item>
+        <item name="colorSecondary">@color/holdoff_lavender</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorTertiary">@color/holdoff_rose</item>
+        <item name="colorSurface">@color/holdoff_surface</item>
+        <item name="colorOnSurface">@color/holdoff_text</item>
+        <item name="colorSurfaceVariant">@color/holdoff_surface_variant</item>
+        <item name="colorBackground">@color/holdoff_bg</item>
+        <item name="colorOnBackground">@color/holdoff_text</item>
+        <item name="colorError">@color/holdoff_error</item>
+        <item name="android:statusBarColor">@color/holdoff_bg</item>
+        <item name="android:navigationBarColor">@color/holdoff_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- In-call screen theme — full-screen dark -->
+    <style name="Theme.HoldOff.InCall" parent="Theme.HoldOff">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowShowWhenLocked">true</item>
+        <item name="android:windowTurnScreenOn">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- High contrast theme (accessibility) -->
+    <style name="Theme.HoldOff.HighContrast" parent="Theme.HoldOff">
+        <item name="colorPrimary">@color/hc_primary</item>
+        <item name="colorOnPrimary">@color/hc_on_primary</item>
+        <item name="colorSurface">@color/hc_surface</item>
+        <item name="colorOnSurface">@color/hc_on_surface</item>
+        <item name="colorBackground">@color/hc_background</item>
+        <item name="colorOnBackground">@color/hc_on_background</item>
+    </style>
+
+</resources>
