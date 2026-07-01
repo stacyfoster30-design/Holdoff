@@ -97,3 +97,69 @@
 [2026-06-28T06:32:31.313Z] [OAuth] Initialized with baseURL: https://api.manus.im
 [2026-06-28T06:32:31.546Z] Server running on http://localhost:3000/
 [2026-06-28T06:33:54.006Z] [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[2026-06-28T06:34:23.035Z] Dev server exited with code 0
+[2026-06-28T06:35:12.767Z] Starting dev server with command: pnpm run dev
+[2026-06-28T06:35:13.555Z] > holdoff-app@1.0.0 dev /home/ubuntu/holdoff-app
+[2026-06-28T06:35:13.555Z] > NODE_ENV=development tsx watch server/_core/index.ts
+[2026-06-28T06:35:15.325Z] [OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T06:35:15.585Z] Server running on http://localhost:3000/
+[2026-06-28T06:35:29.148Z] [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[2026-06-28T07:00:05.351Z] [Auth] Missing session cookie
+[2026-06-28T07:08:48.198Z] 7:08:48 AM [tsx] change in ./server/routers.ts Restarting...
+[2026-06-28T07:08:49.907Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:08:50.155Z] Server running on http://localhost:3000/
+[2026-06-28T07:11:57.806Z] 7:11:57 AM [tsx] change in ./server/_core/index.ts Restarting...
+[2026-06-28T07:11:59.407Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:11:59.651Z] Server running on http://localhost:3000/
+[2026-06-28T07:13:41.544Z] 7:13:41 AM [tsx] change in ./drizzle/schema.ts Restarting...
+[2026-06-28T07:13:43.371Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:13:43.632Z] Server running on http://localhost:3000/
+[2026-06-28T07:20:07.897Z] 7:20:07 AM [tsx] change in ./server/db.ts Restarting...
+[2026-06-28T07:20:10.132Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:20:10.405Z] Server running on http://localhost:3000/
+[2026-06-28T07:20:24.719Z] 7:20:24 AM [tsx] change in ./server/db.ts Restarting...
+[2026-06-28T07:20:26.168Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:20:26.388Z] Server running on http://localhost:3000/
+[2026-06-28T07:21:01.367Z] 7:21:01 AM [tsx] change in ./server/routers.ts Restarting...
+[2026-06-28T07:21:03.045Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:21:03.290Z] Server running on http://localhost:3000/
+[2026-06-28T07:21:11.177Z] 7:21:11 AM [tsx] change in ./server/routers.ts Restarting...
+[2026-06-28T07:21:12.713Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:21:12.957Z] Server running on http://localhost:3000/
+[2026-06-28T07:21:24.378Z] 7:21:24 AM [tsx] change in ./server/routers.ts Restarting...
+[2026-06-28T07:21:25.817Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:21:26.050Z] Server running on http://localhost:3000/
+[2026-06-28T07:22:13.694Z] 7:22:13 AM [tsx] change in ./server/routers.ts Restarting...
+[2026-06-28T07:22:15.238Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:22:15.471Z] Server running on http://localhost:3000/
+[2026-06-28T07:23:20.420Z] 7:23:20 AM [tsx] change in ./drizzle/schema.ts Restarting...
+[2026-06-28T07:23:22.009Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:23:22.250Z] Server running on http://localhost:3000/
+[2026-06-28T07:23:31.728Z] 7:23:31 AM [tsx] change in ./server/db.ts Restarting...
+[2026-06-28T07:23:33.381Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:23:33.637Z] Server running on http://localhost:3000/
+[2026-06-28T07:24:27.272Z] 7:24:27 AM [tsx] change in ./drizzle/schema.ts Restarting...
+[2026-06-28T07:24:29.081Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:24:29.330Z] Server running on http://localhost:3000/
+[2026-06-28T07:30:57.275Z] 7:30:57 AM [tsx] change in ./drizzle/schema.ts Restarting...
+[2026-06-28T07:30:58.929Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:30:59.168Z] Server running on http://localhost:3000/
+[2026-06-28T07:31:15.815Z] 7:31:15 AM [tsx] change in ./server/db.ts Restarting...
+[2026-06-28T07:31:17.432Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:31:17.674Z] Server running on http://localhost:3000/
+[2026-06-28T07:31:48.561Z] 7:31:48 AM [tsx] change in ./server/db.ts Restarting...
+[2026-06-28T07:31:50.210Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-28T07:31:50.455Z] Server running on http://localhost:3000/
+[2026-06-28T10:29:14.173Z] [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[2026-06-29T12:52:12.746Z] 12:52:12 PM [tsx] change in ./server/routers.ts Restarting...
+[2026-06-29T12:52:14.554Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-06-29T12:52:15.257Z] Server running on http://localhost:3000/
+[2026-07-01T23:23:55.420Z] Starting dev server with command: pnpm run dev
+[2026-07-01T23:23:58.065Z] > holdoff-app@1.0.0 dev /home/ubuntu/holdoff-app
+[2026-07-01T23:23:58.065Z] > NODE_ENV=development tsx watch server/_core/index.ts
+[2026-07-01T23:23:59.998Z] [OAuth] Initialized with baseURL: https://api.manus.im
+[2026-07-01T23:24:00.465Z] Server running on http://localhost:3000/
+[2026-07-01T23:25:50.924Z] 11:25:50 PM [tsx] change in ./server/_core/index.ts Restarting...
+[2026-07-01T23:25:52.490Z] c[OAuth] Initialized with baseURL: https://api.manus.im
+[2026-07-01T23:25:52.744Z] Server running on http://localhost:3000/
+[2026-07-01T23:25:58.295Z] [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`

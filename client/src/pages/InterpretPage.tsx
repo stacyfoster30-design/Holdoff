@@ -5,12 +5,16 @@ import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 
 type InterpretResult = {
-  detectedStyle: "Secure" | "Anxious" | "Avoidant" | "Fearful-Avoidant" | "Unclear";
-  confidence: "high" | "medium" | "low";
+  detectedStyle: string;
+  confidence: number | string;
   whatItMeans: string;
   howYouMightMisreadIt: string;
-  whatTheyNeed: string;
-  suggestedResponse: string | null;
+  attachmentStyleReasoning?: string;
+  redFlags?: string | null;
+  groundedResponse?: string | null;
+  // legacy compat
+  whatTheyNeed?: string;
+  suggestedResponse?: string | null;
 };
 
 const STYLE_COLORS: Record<string, string> = {
@@ -131,7 +135,7 @@ export default function InterpretPage() {
               <p className={`text-2xl font-display font-bold ${STYLE_COLORS[result.detectedStyle] || "text-foreground"}`}>
                 {result.detectedStyle}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">{CONFIDENCE_LABELS[result.confidence]}</p>
+              <p className="text-xs text-muted-foreground mt-1">{typeof result.confidence === 'string' ? CONFIDENCE_LABELS[result.confidence] : result.confidence >= 0.7 ? 'High confidence' : result.confidence >= 0.4 ? 'Medium confidence' : 'Low confidence'}</p>
             </div>
 
             {/* What it means */}
@@ -146,20 +150,29 @@ export default function InterpretPage() {
               <p className="text-sm leading-relaxed text-foreground/80">{result.howYouMightMisreadIt}</p>
             </div>
 
-            {/* What they need */}
-            <div className="holdoff-card border-sky-500/20 bg-sky-500/5">
-              <p className="text-xs text-sky-400 font-semibold uppercase tracking-wider mb-2">What they likely need</p>
-              <p className="text-sm leading-relaxed text-foreground/80">{result.whatTheyNeed}</p>
-            </div>
+            {/* Attachment reasoning */}
+            {result.attachmentStyleReasoning && (
+              <div className="holdoff-card border-sky-500/20 bg-sky-500/5">
+                <p className="text-xs text-sky-400 font-semibold uppercase tracking-wider mb-2">Why this style</p>
+                <p className="text-sm leading-relaxed text-foreground/80">{result.attachmentStyleReasoning}</p>
+              </div>
+            )}
+            {/* Red flags */}
+            {result.redFlags && (
+              <div className="holdoff-card border-rose-500/20 bg-rose-500/5">
+                <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider mb-2">Red flags</p>
+                <p className="text-sm leading-relaxed text-foreground/80">{result.redFlags}</p>
+              </div>
+            )}
 
-            {/* Suggested response */}
-            {result.suggestedResponse && (
+            {/* Grounded response */}
+            {(result.groundedResponse || result.suggestedResponse) && (
               <div className="holdoff-card">
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">A grounded response</p>
-                <p className="text-sm leading-relaxed text-foreground italic">"{result.suggestedResponse}"</p>
+                <p className="text-sm leading-relaxed text-foreground italic">"{result.groundedResponse || result.suggestedResponse}"</p>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(result.suggestedResponse!);
+                    navigator.clipboard.writeText((result.groundedResponse || result.suggestedResponse)!);
                     toast.success("Copied to clipboard");
                   }}
                   className="mt-3 text-xs text-primary hover:underline"

@@ -19,6 +19,7 @@ import ContactDetailPage from "./pages/ContactDetailPage";
 import ChroniclePage from "./pages/ChroniclePage";
 import PricingPage from "./pages/PricingPage";
 import FounderStoryPage from "./pages/FounderStoryPage";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const APP_TABS = ["/filter", "/interpret", "/companions", "/journal", "/community"];
 
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/chronicle" component={ChroniclePage} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/story" component={FounderStoryPage} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

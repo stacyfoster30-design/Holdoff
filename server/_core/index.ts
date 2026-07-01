@@ -34,6 +34,20 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Security headers for mental-health app
+  app.use((_req, res, next) => {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  });
+  // Health check endpoint for deployment platforms (Render/Railway/Cloud Run)
+  app.get(["/api/health", "/healthz"], (_req, res) => {
+    res.json({ status: "ok", service: "holdoff", timestamp: Date.now() });
+  });
+
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   // tRPC API

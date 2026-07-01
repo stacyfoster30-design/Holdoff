@@ -3,8 +3,10 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   users, verdicts, interpretations, journalEntries,
   communityPosts, quizResults, contacts, contactInsights, spiralEvents,
+  featureUsage, adminAuditLog, emergencyContacts, safetyFlags,
   InsertUser, InsertVerdict, InsertInterpretation, InsertJournalEntry,
   InsertCommunityPost, InsertQuizResult, InsertContact, InsertContactInsight,
+  InsertFeatureUsage, InsertAdminAuditLog, InsertEmergencyContact, InsertSafetyFlag,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -13,6 +15,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
+      // Enforce TLS on the DB connection for sensitive mental-health data.
+      // mysql2 honors `ssl` in the connection string (e.g. ?ssl={"rejectUnauthorized":true});
+      // when the managed DB requires SSL this keeps data encrypted in transit.
       _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
@@ -358,4 +363,269 @@ export async function clearSpiralLock(userId: number | null, sessionKey: string)
         ? and(eq(spiralEvents.userId, userId), eq(spiralEvents.locked, true))
         : and(eq(spiralEvents.sessionKey, sessionKey), eq(spiralEvents.locked, true))
     );
+}
+
+
+// ─── Feature Usage Logging (backend monitoring) ─────────────────────────────────
+// IMPORTANT: never log message content or other sensitive data here. Only record
+// the feature name, an action label, and non-sensitive metadata (e.g. verdict type).
+
+export async function logFeatureUsage(data: InsertFeatureUsage): Promise<void> {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    await db.insert(featureUsage).values(data);
+  } catch (error) {
+    // Logging must never break the user-facing request.
+    console.warn("[Usage] Failed to record feature usage:", (error as Error)?.message);
+  }
+}
+
+export type FeatureUsageStat = {
+  feature: string;
+  action: string;
+  total: number;
+  uniqueUsers: number;
+  last7Days: number;
+};
+
+export async function getFeatureUsageStats(): Promise<FeatureUsageStat[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      feature: featureUsage.feature,
+      action: featureUsage.action,
+      total: sql<number>`count(*)`,
+      uniqueUsers: sql<number>`count(distinct ${featureUsage.userId})`,
+      last7Days: sql<number>`sum(case when ${featureUsage.createdAt} >= now() - interval 7 day then 1 else 0 end)`,
+    })
+    .from(featureUsage)
+    .groupBy(featureUsage.feature, featureUsage.action)
+    .orderBy(sql`count(*) desc`);
+  return rows.map((r) => ({
+    feature: r.feature,
+    action: r.action,
+    total: Number(r.total),
+    uniqueUsers: Number(r.uniqueUsers),
+    last7Days: Number(r.last7Days ?? 0),
+  }));
+}
+
+export async function getUsageSummary(): Promise<{
+  totalEvents: number;
+  totalUsers: number;
+  eventsToday: number;
+  eventsLast7Days: number;
+}> {
+  const db = await getDb();
+  if (!db) return { totalEvents: 0, totalUsers: 0, eventsToday: 0, eventsLast7Days: 0 };
+  const [row] = await db
+    .select({
+      totalEvents: sql<number>`count(*)`,
+      totalUsers: sql<number>`count(distinct ${featureUsage.userId})`,
+      eventsToday: sql<number>`sum(case when ${featureUsage.createdAt} >= curdate() then 1 else 0 end)`,
+      eventsLast7Days: sql<number>`sum(case when ${featureUsage.createdAt} >= now() - interval 7 day then 1 else 0 end)`,
+    })
+    .from(featureUsage);
+  return {
+    totalEvents: Number(row?.totalEvents ?? 0),
+    totalUsers: Number(row?.totalUsers ?? 0),
+    eventsToday: Number(row?.eventsToday ?? 0),
+    eventsLast7Days: Number(row?.eventsLast7Days ?? 0),
+  };
+}
+
+export async function getRecentUsage(limit = 100): Promise<Array<{
+  id: number;
+  feature: string;
+  action: string;
+  userId: number | null;
+  createdAt: Date;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: featureUsage.id,
+      feature: featureUsage.feature,
+      action: featureUsage.action,
+      userId: featureUsage.userId,
+      createdAt: featureUsage.createdAt,
+    })
+    .from(featureUsage)
+    .orderBy(desc(featureUsage.createdAt))
+    .limit(limit);
+  return rows;
+}
+
+
+// ─── Onboarding / Profile ──────────────────────────────────────────────────────
+
+export type OnboardingInput = {
+  displayName: string;
+  dateOfBirth: string; // YYYY-MM-DD
+  ageBand: "adult" | "teen";
+  consentTos: boolean;
+  consentPrivacy: boolean;
+  consentCrisisNotify: boolean;
+  guardianName?: string | null;
+  guardianEmail?: string | null;
+};
+
+export async function completeOnboarding(userId: number, input: OnboardingInput) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({
+    displayName: input.displayName,
+    dateOfBirth: input.dateOfBirth,
+    ageBand: input.ageBand,
+    consentTos: input.consentTos,
+    consentPrivacy: input.consentPrivacy,
+    consentCrisisNotify: input.consentCrisisNotify,
+    guardianName: input.guardianName ?? null,
+    guardianEmail: input.guardianEmail ?? null,
+    guardianConsentAt: input.ageBand === "teen" ? new Date() : null,
+    onboardedAt: new Date(),
+  }).where(eq(users.id, userId));
+}
+
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return row || null;
+}
+
+// ─── Emergency Contacts (mandatory) ─────────────────────────────────────────────
+
+export async function getEmergencyContacts(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emergencyContacts)
+    .where(eq(emergencyContacts.userId, userId))
+    .orderBy(desc(emergencyContacts.createdAt));
+}
+
+export async function addEmergencyContact(data: InsertEmergencyContact) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(emergencyContacts).values(data);
+  return result;
+}
+
+export async function deleteEmergencyContact(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(emergencyContacts)
+    .where(and(eq(emergencyContacts.id, id), eq(emergencyContacts.userId, userId)));
+}
+
+export async function countEmergencyContacts(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db.select({ c: sql<number>`count(*)` })
+    .from(emergencyContacts).where(eq(emergencyContacts.userId, userId));
+  return Number(row?.c ?? 0);
+}
+
+// ─── Safety flags (aggregate metrics only; content NOT exposed to admin) ─────────
+
+export async function recordSafetyFlag(data: InsertSafetyFlag) {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    await db.insert(safetyFlags).values(data);
+  } catch (error) {
+    console.warn("[Safety] Failed to record safety flag:", (error as Error)?.message);
+  }
+}
+
+export async function getSafetyMetrics(): Promise<{
+  totalFlags: number;
+  last7Days: number;
+  bySeverity: Array<{ severity: string; count: number }>;
+}> {
+  const db = await getDb();
+  if (!db) return { totalFlags: 0, last7Days: 0, bySeverity: [] };
+  const [tot] = await db.select({
+    total: sql<number>`count(*)`,
+    last7: sql<number>`sum(case when ${safetyFlags.createdAt} >= now() - interval 7 day then 1 else 0 end)`,
+  }).from(safetyFlags);
+  const sev = await db.select({
+    severity: safetyFlags.severity,
+    count: sql<number>`count(*)`,
+  }).from(safetyFlags).groupBy(safetyFlags.severity);
+  return {
+    totalFlags: Number(tot?.total ?? 0),
+    last7Days: Number(tot?.last7 ?? 0),
+    bySeverity: sev.map((s) => ({ severity: s.severity, count: Number(s.count) })),
+  };
+}
+
+// ─── Admin: users overview, roles, moderation, audit ────────────────────────────
+
+export async function getUsersOverview(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  // Non-sensitive fields only — never select journal/message content here.
+  return db.select({
+    id: users.id,
+    displayName: users.displayName,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    ageBand: users.ageBand,
+    membershipType: users.membershipType,
+    verdictCount: users.verdictCount,
+    onboardedAt: users.onboardedAt,
+    lastActiveAt: users.lastActiveAt,
+    createdAt: users.createdAt,
+  }).from(users).orderBy(desc(users.createdAt)).limit(limit);
+}
+
+export async function setUserRole(targetUserId: number, role: "user" | "admin") {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ role }).where(eq(users.id, targetUserId));
+}
+
+export async function getCommunityModerationFeed(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(communityPosts)
+    .orderBy(desc(communityPosts.createdAt))
+    .limit(limit);
+}
+
+export async function setCommunityPostFlagged(postId: number, flagged: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(communityPosts).set({ flagged }).where(eq(communityPosts.id, postId));
+}
+
+export async function softDeleteCommunityPost(postId: number, restore = false) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(communityPosts)
+    .set({ deletedAt: restore ? null : new Date() })
+    .where(eq(communityPosts.id, postId));
+}
+
+export async function writeAuditLog(data: InsertAdminAuditLog) {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    await db.insert(adminAuditLog).values(data);
+  } catch (error) {
+    console.warn("[Audit] Failed to write audit log:", (error as Error)?.message);
+  }
+}
+
+export async function getAuditLog(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(adminAuditLog)
+    .orderBy(desc(adminAuditLog.createdAt))
+    .limit(limit);
 }

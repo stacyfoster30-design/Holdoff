@@ -12,6 +12,11 @@ vi.mock("./_core/llm", () => ({
   invokeLLM: vi.fn(),
 }));
 
+// ─── Mock context helpers ────────────────────────────────────────────────────
+vi.mock("./_core/context", () => ({
+  createContext: vi.fn(),
+}));
+
 // ─── Mock DB helpers to avoid real DB calls ──────────────────────────────────
 vi.mock("./db", () => ({
   saveVerdict: vi.fn().mockResolvedValue({ id: 1 }),
@@ -38,7 +43,12 @@ vi.mock("./db", () => ({
   updateUserAttachmentStyle: vi.fn().mockResolvedValue(true),
   incrementVerdictCount: vi.fn().mockResolvedValue(1),
   recordSpiralEvent: vi.fn().mockResolvedValue({ id: 1, consecutiveCount: 1, locked: false, lockedUntil: null }),
+  logFeatureUsage: vi.fn().mockResolvedValue({ id: 1 }),
+  getUsageSummary: vi.fn().mockResolvedValue({ totalUsers: 0, totalEvents: 0, eventsToday: 0, eventsLast7Days: 0 }),
+  getFeatureUsageStats: vi.fn().mockResolvedValue([]),
+  getRecentUsage: vi.fn().mockResolvedValue([]),
   getSpiralLock: vi.fn().mockResolvedValue(null),
+  getDb: vi.fn().mockReturnValue({}),
 }));
 
 // ─── Helper: create a mock InvokeResult ──────────────────────────────────────
@@ -100,15 +110,17 @@ describe("filter.analyze", () => {
     vi.clearAllMocks();
   });
 
-  it("returns a valid SEND verdict from the LLM", async () => {
+  it("returns a valid SEND verdict from the LLM (new prompt format)", async () => {
     const { invokeLLM } = await import("./_core/llm");
     vi.mocked(invokeLLM).mockResolvedValueOnce(
       mockLLMResult(JSON.stringify({
         verdict: "SEND",
-        explanation: "This message is grounded and clear.",
-        patternName: "Healthy Boundary",
-        reframe: "You are communicating your needs calmly.",
+        pattern: "Clean Accountability",
+        whats_happening: "This message is grounded and clear.",
+        grounded_voice: "You are communicating your needs calmly.",
         rewrite: null,
+        confidence: 0.9,
+        attachment_style: "SEC",
       }))
     );
 
@@ -117,24 +129,26 @@ describe("filter.analyze", () => {
     const result = await caller.filter.analyze({
       message: "I need some space to think things through.",
       context: "",
-      attachmentStyle: "Secure",
+      attachmentStyle: "secure",
     });
 
     expect(result.verdict).toBe("SEND");
     expect(result.explanation).toBeTruthy();
-    expect(result.patternName).toBe("Healthy Boundary");
+    expect(result.patternName).toBe("Clean Accountability");
     expect(result.rewrite).toBeNull();
   });
 
-  it("returns a DO NOT SEND verdict for reactive messages", async () => {
+  it("maps a HOLD verdict and triggers spiral tracking", async () => {
     const { invokeLLM } = await import("./_core/llm");
     vi.mocked(invokeLLM).mockResolvedValueOnce(
       mockLLMResult(JSON.stringify({
-        verdict: "DO NOT SEND",
-        explanation: "This message is reactive and may damage the relationship.",
-        patternName: "Anxious Reach",
-        reframe: "You are feeling abandoned and scared.",
-        rewrite: "I'm feeling disconnected. Can we talk when you have time?",
+        verdict: "HOLD",
+        pattern: "Reactive Spiral",
+        whats_happening: "This message is reactive and may damage the relationship.",
+        grounded_voice: "You are feeling abandoned and scared.",
+        rewrite: null,
+        confidence: 0.85,
+        attachment_style: "ANX",
       }))
     );
 
@@ -143,10 +157,35 @@ describe("filter.analyze", () => {
     const result = await caller.filter.analyze({
       message: "Why haven't you texted me back?! Do you even care?!",
       context: "They haven't replied in 2 hours",
-      attachmentStyle: "Anxious",
+      attachmentStyle: "anxious",
     });
 
-    expect(result.verdict).toBe("DO NOT SEND");
+    expect(result.verdict).toBe("HOLD");
+    expect(result.patternName).toBe("Reactive Spiral");
+    expect(result.spiralLock).not.toBeNull();
+  });
+
+  it("maps a REWRITE verdict and surfaces the rewrite", async () => {
+    const { invokeLLM } = await import("./_core/llm");
+    vi.mocked(invokeLLM).mockResolvedValueOnce(
+      mockLLMResult(JSON.stringify({
+        verdict: "REWRITE",
+        pattern: "Anxious Confession",
+        whats_happening: "You're apologizing for existing.",
+        grounded_voice: "Drop the self-flagellation.",
+        rewrite: "I'm feeling disconnected. Can we talk when you have time?",
+        confidence: 0.8,
+        attachment_style: "ANX",
+      }))
+    );
+
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.filter.analyze({
+      message: "i'm sorry for being too much, i always ruin everything",
+    });
+
+    expect(result.verdict).toBe("REWRITE");
     expect(result.rewrite).toBeTruthy();
   });
 
@@ -158,14 +197,22 @@ describe("filter.analyze", () => {
 
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
-    // Should not throw — falls back to default WAIT verdict
+    // Should not throw — falls back to default HOLD verdict
     const result = await caller.filter.analyze({
       message: "Test message",
       context: "",
-      attachmentStyle: "Secure",
+      attachmentStyle: "secure",
     });
 
-    expect(result.verdict).toBe("WAIT");
+    expect(result.verdict).toBe("HOLD");
+  });
+
+  it("returns the curated examples list", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const examples = await caller.filter.examples();
+    expect(Array.isArray(examples)).toBe(true);
+    expect(examples.length).toBe(12);
   });
 });
 
@@ -179,12 +226,13 @@ describe("interpret.analyze", () => {
     const { invokeLLM } = await import("./_core/llm");
     vi.mocked(invokeLLM).mockResolvedValueOnce(
       mockLLMResult(JSON.stringify({
-        detectedStyle: "Avoidant",
-        confidence: "high",
-        whatItMeans: "They need space and are pulling back.",
-        howYouMightMisreadIt: "You might think they don't care.",
-        whatTheyNeed: "They need time to process alone.",
-        suggestedResponse: "I understand. Take the time you need.",
+        detected_style: "Avoidant",
+        confidence: 0.9,
+        what_it_means: "They need space and are pulling back.",
+        how_you_might_misread_it: "You might think they don't care.",
+        attachment_style_reasoning: "They use distancing language under stress.",
+        red_flags: null,
+        grounded_response: "I understand. Take the time you need.",
       }))
     );
 
@@ -196,9 +244,8 @@ describe("interpret.analyze", () => {
     });
 
     expect(result.detectedStyle).toBe("Avoidant");
-    expect(result.confidence).toBe("high");
     expect(result.whatItMeans).toBeTruthy();
-    expect(result.suggestedResponse).toBeTruthy();
+    expect(result.groundedResponse).toBeTruthy();
   });
 
   it("falls back gracefully when LLM returns malformed JSON", async () => {
@@ -214,7 +261,6 @@ describe("interpret.analyze", () => {
     });
 
     expect(result.detectedStyle).toBe("Unclear");
-    expect(result.confidence).toBe("low");
   });
 });
 
@@ -244,9 +290,9 @@ describe("companion.chat", () => {
     expect(["neutral", "happy", "thinking"]).toContain(result.expression);
   });
 
-  it("supports all three companion personas", async () => {
+  it("supports all four companion personas", async () => {
     const { invokeLLM } = await import("./_core/llm");
-    const personas = ["sadie", "stacy", "danny"] as const;
+    const personas = ["sadie", "stacy", "danny", "dan"] as const;
 
     for (const persona of personas) {
       vi.mocked(invokeLLM).mockResolvedValueOnce(
@@ -334,6 +380,23 @@ describe("spiral.checkLock", () => {
     const result = await caller.spiral.checkLock({ sessionKey: "test-session" });
     expect(result).toBeDefined();
     expect(result.consecutiveCount).toBe(3);
+  });
+});
+
+// ─── Pricing Tests ────────────────────────────────────────────────────────────
+describe("pricing.plans", () => {
+  it("returns the list of paid plans with Stripe checkout links", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    const plans = await caller.pricing.plans();
+    expect(Array.isArray(plans)).toBe(true);
+    expect(plans.length).toBeGreaterThan(0);
+    for (const plan of plans) {
+      expect(plan.id).toBeTruthy();
+      expect(plan.label).toBeTruthy();
+      expect(plan.priceDisplay).toBeTruthy();
+      expect(Array.isArray(plan.features)).toBe(true);
+    }
   });
 });
 

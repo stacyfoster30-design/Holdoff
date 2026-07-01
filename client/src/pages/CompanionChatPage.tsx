@@ -21,7 +21,7 @@ const COMPANION_META: Record<string, {
     border: "border-emerald-500/30",
     bgGradient: "from-emerald-500/5 to-transparent",
     avatarPersona: "sadie",
-    introMessage: "Hey. I'm here. What's going on — I'm listening.",
+    introMessage: "Hey. I see you. What's going on — I'm listening.",
     prompts: [
       "I keep checking my phone for a reply...",
       "I don't know if I'm overreacting",
@@ -61,12 +61,12 @@ const COMPANION_META: Record<string, {
   },
   dan: {
     name: "Dan",
-    tagline: "Grounded. Direct. The resilience coach.",
+    tagline: "Not a feelings-and-emotions man. Which is not the same as not feeling.",
     accent: "text-sky-300",
     border: "border-sky-500/30",
     bgGradient: "from-sky-500/5 to-transparent",
     avatarPersona: "dan",
-    introMessage: "Hey. Let's talk. What's the situation — give me the full picture.",
+    introMessage: "What's going on. I'm listening.",
     prompts: [
       "I keep falling back into old patterns",
       "How do I stop being so reactive?",

@@ -13,11 +13,13 @@ const ATTACHMENT_STYLES = [
 ];
 
 type VerdictResult = {
-  verdict: "SEND" | "WAIT" | "DO NOT SEND";
+  verdict: "SEND" | "HOLD" | "REWRITE" | "WAIT" | "DO NOT SEND";
   explanation: string;
   patternName: string;
   reframe: string | null;
   rewrite: string | null;
+  confidence?: number;
+  attachmentStyle?: string | null;
   spiralLock?: {
     locked: boolean;
     lockedUntil: Date | null;
@@ -25,19 +27,35 @@ type VerdictResult = {
   } | null;
 };
 
-const VERDICT_CONFIG = {
+const VERDICT_CONFIG: Record<string, { icon: string; bg: string; text: string; label: string }> = {
   "SEND": {
     icon: "✓",
+    label: "SEND",
     bg: "bg-emerald-500/10 border-emerald-500/30",
     text: "text-emerald-400",
   },
+  "HOLD": {
+    icon: "⏸",
+    label: "HOLD",
+    bg: "bg-amber-500/10 border-amber-500/30",
+    text: "text-amber-400",
+  },
+  "REWRITE": {
+    icon: "✏",
+    label: "REWRITE",
+    bg: "bg-sky-500/10 border-sky-500/30",
+    text: "text-sky-400",
+  },
+  // legacy compat
   "WAIT": {
     icon: "⏸",
+    label: "HOLD",
     bg: "bg-amber-500/10 border-amber-500/30",
     text: "text-amber-400",
   },
   "DO NOT SEND": {
     icon: "✕",
+    label: "DO NOT SEND",
     bg: "bg-rose-500/10 border-rose-500/30",
     text: "text-rose-400",
   },
@@ -182,7 +200,7 @@ export default function FilterPage() {
               <div className="flex-1">
                 <h3 className="font-display font-bold text-rose-400 text-base mb-1">Spiral Lock Active</h3>
                 <p className="text-sm text-foreground/80 leading-relaxed mb-2">
-                  You've gotten 3 DO NOT SEND verdicts in a row. HoldOff is locking the filter for <strong>{timeRemaining || "1 hour"}</strong> to protect you from yourself.
+                  You've gotten several HOLD verdicts in a row. HoldOff is locking the filter for <strong>{timeRemaining || "1 hour"}</strong> to protect you from yourself.
                 </p>
                 <p className="text-xs text-muted-foreground">
                   This is the pause you didn't ask for but needed. Step away. Breathe. Talk to a companion instead.
@@ -283,7 +301,7 @@ export default function FilterPage() {
                 {verdictConfig?.icon}
               </div>
               <div className={`text-2xl font-display font-bold tracking-wider mb-3 ${verdictConfig?.text}`}>
-                {result.verdict}
+                {verdictConfig?.label || result.verdict}
               </div>
               {result.patternName && (
                 <div className="inline-block bg-white/5 rounded-full px-3 py-1 text-xs text-muted-foreground mb-3">
@@ -293,16 +311,16 @@ export default function FilterPage() {
               <p className="text-sm leading-relaxed text-foreground">{result.explanation}</p>
             </div>
 
-            {/* Spiral Lock warning after DO NOT SEND */}
-            {result.verdict === "DO NOT SEND" && result.spiralLock && (
+            {/* Spiral Lock warning after HOLD */}
+            {(result.verdict === "HOLD" || result.verdict === "DO NOT SEND") && result.spiralLock && (
               <div className="holdoff-card border-rose-500/30 bg-rose-500/5">
                 <p className="text-xs text-rose-400 font-medium uppercase tracking-wider mb-1">
-                  🌀 Spiral Watch — {result.spiralLock.consecutiveCount}/3
+                  🌀 Spiral Watch — {result.spiralLock.consecutiveCount}/5
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {result.spiralLock.consecutiveCount >= 3
-                    ? "You've hit 3 DO NOT SEND verdicts. Spiral Lock is now active."
-                    : `${3 - result.spiralLock.consecutiveCount} more DO NOT SEND verdict${3 - result.spiralLock.consecutiveCount !== 1 ? "s" : ""} will trigger a 1-hour Spiral Lock.`}
+                    ? "You've hit several HOLD verdicts. Spiral Lock is now active."
+                    : `${Math.max(0, 5 - result.spiralLock.consecutiveCount)} more HOLD verdict${5 - result.spiralLock.consecutiveCount !== 1 ? "s" : ""} will trigger a Spiral Lock.`}
                 </p>
               </div>
             )}
