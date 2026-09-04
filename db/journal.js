@@ -119,7 +119,33 @@ async function timeHeatmap(userId) {
 }
 
 /**
+ * Get patterns with recency in a single query (replaces N+1 daysSincePattern calls).
+ * Returns top patterns with days_since calculated efficiently.
+ */
+async function topPatternsWithRecency(userId, limit = 3) {
+  const { rows } = await pool.query(
+    `WITH top_pats AS (
+       SELECT pattern_name, COUNT(*) as count
+       FROM journal_entries
+       WHERE user_id = $1 AND pattern_name IS NOT NULL AND pattern_name != ''
+       GROUP BY pattern_name
+       ORDER BY count DESC
+       LIMIT $2
+     )
+     SELECT tp.pattern_name, tp.count,
+            FLOOR((EXTRACT(EPOCH FROM NOW()) - EXTRACT(EPOCH FROM MAX(je.created_at))) / 86400)::int as days_since
+     FROM top_pats tp
+     LEFT JOIN journal_entries je ON je.user_id = $1 AND je.pattern_name = tp.pattern_name
+     GROUP BY tp.pattern_name, tp.count
+     ORDER BY tp.count DESC`,
+    [userId, limit]
+  );
+  return rows;
+}
+
+/**
  * Recency: days since last entry for a given pattern name.
+ * @deprecated Use topPatternsWithRecency instead to avoid N+1 queries
  */
 async function daysSincePattern(userId, patternName) {
   const { rows } = await pool.query(
@@ -176,11 +202,12 @@ async function getStreak(userId) {
 }
 
 /**
- * Journal insights: top patterns, recency of common patterns, total entry count.
+ * Journal insights: top patterns with recency, time heatmap, and streak.
+ * Optimized: uses single query for patterns + recency instead of N+1.
  */
 async function getInsights(userId) {
-  const [patterns, heatmap, streak] = await Promise.all([
-    topPatterns(userId, 3),
+  const [patternsWithRecency, heatmap, streak] = await Promise.all([
+    topPatternsWithRecency(userId, 3), // Batched query instead of N+1
     timeHeatmap(userId),
     getStreak(userId),
   ]);
@@ -191,20 +218,41 @@ async function getInsights(userId) {
     { hour: null, count: 0 }
   );
 
-  // Recency for each top pattern
-  const patternsWithRecency = await Promise.all(
-    patterns.map(async (p) => {
-      const days = await daysSincePattern(userId, p.pattern_name);
-      return { ...p, days_since: days };
-    })
-  );
-
   return {
-    top_patterns: patternsWithRecency,
+    top_patterns: patternsWithRecency.map(p => ({
+      pattern_name: p.pattern_name,
+      count: p.count,
+      days_since: p.days_since,
+    })),
     time_heatmap: heatmap,
     peak_hour: peakHour.hour,
     streak: streak ?? { current_streak: 0, longest_streak: 0, total_entries: 0 },
   };
+}
+
+/**
+ * Ensure indexes exist for optimal query performance.
+ * Call once during startup migrations.
+ */
+async function ensureIndexes() {
+  try {
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_journal_entries_user_pattern
+      ON journal_entries(user_id, pattern_name)
+      WHERE pattern_name IS NOT NULL;
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_journal_entries_user_hour
+      ON journal_entries(user_id, hour_of_day);
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_journal_entries_user_created
+      ON journal_entries(user_id, created_at DESC);
+    `);
+    console.log('[journal] Indexes ensured');
+  } catch (err) {
+    console.warn('[journal] Index creation warning:', err.message);
+  }
 }
 
 module.exports = {
@@ -214,9 +262,11 @@ module.exports = {
   updateEntry,
   deleteEntry,
   topPatterns,
+  topPatternsWithRecency,
   timeHeatmap,
   daysSincePattern,
   touchStreak,
   getStreak,
   getInsights,
+  ensureIndexes,
 };
