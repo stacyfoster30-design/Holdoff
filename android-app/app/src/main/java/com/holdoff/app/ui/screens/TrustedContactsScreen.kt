@@ -19,16 +19,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.holdoff.app.data.model.TrustedContact
+import com.holdoff.app.data.prefs.TrustedContactsStore
 import com.holdoff.app.ui.theme.*
-
-data class TrustedContact(val name: String, val phone: String, val relation: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrustedContactsScreen(onBack: () -> Unit) {
-    var contacts by remember { mutableStateOf(listOf<TrustedContact>()) }
+    val context = LocalContext.current
+    // Persisted via TrustedContactsStore — contacts survive leaving the
+    // screen now, and the Spiral Lock engine reads the same store.
+    var contacts by remember { mutableStateOf(TrustedContactsStore.getContacts(context)) }
     var showAddForm by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
     var newPhone by remember { mutableStateOf("") }
@@ -121,7 +125,7 @@ fun TrustedContactsScreen(onBack: () -> Unit) {
                                 Text(contact.phone, color = OnDarkTextMuted, fontSize = 12.sp)
                             }
                             IconButton(onClick = {
-                                contacts = contacts.toMutableList().also { it.removeAt(idx) }
+                                contacts = TrustedContactsStore.removeContact(context, contact.phone)
                             }) {
                                 Icon(Icons.Default.Delete, "Remove", tint = Color(0xFFEF4444))
                             }
@@ -210,7 +214,9 @@ fun TrustedContactsScreen(onBack: () -> Unit) {
                             Button(
                                 onClick = {
                                     if (newName.isNotBlank() && newPhone.isNotBlank()) {
-                                        contacts = contacts + TrustedContact(newName, newPhone, newRelation)
+                                        contacts = TrustedContactsStore.addContact(
+                                            context, TrustedContact(newName, newPhone, newRelation)
+                                        )
                                         showAddForm = false; newName = ""; newPhone = ""
                                     }
                                 },

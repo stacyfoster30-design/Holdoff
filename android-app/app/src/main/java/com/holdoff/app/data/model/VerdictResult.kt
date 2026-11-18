@@ -9,6 +9,8 @@ data class VerdictResult(
     val patternInsights: List<String>,
     val suggestedResponse: String? = null,  // premium only
     val attachmentInsight: String? = null,  // premium only
+    /** Raw server safety level: "green" | "yellow" | "red" | "spiral" (drives the send gate). */
+    val safetyLevel: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
 

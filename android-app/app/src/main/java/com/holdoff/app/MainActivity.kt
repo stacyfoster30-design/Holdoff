@@ -1,5 +1,6 @@
 package com.holdoff.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,10 +28,20 @@ import com.holdoff.app.ui.theme.HoldOffTheme
  *   onboarding incomplete        -> ONBOARDING
  *   onboarded, signed out        -> LOGIN
  *   onboarded, signed in         -> HOME
+ *
+ * Deep links into a conversation:
+ *   - ACTION_SENDTO with an sms:/smsto: URI (HoldOff is the default
+ *     SMS app, so other apps hand "text this number" here), and
+ *   - the "incoming_phone" extra on notification taps.
+ * Both resolve to a thread in AppNavigation once HOME is reachable.
  */
 class MainActivity : ComponentActivity() {
+
+    private var pendingComposePhone by mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingComposePhone = extractComposePhone(intent)
         setContent {
             HoldOffTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -49,10 +60,29 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = startDestination,
                         isPremium = isPremium,
-                        onPremiumChanged = { isPremium = it }
+                        onPremiumChanged = { isPremium = it },
+                        composePhone = pendingComposePhone,
+                        onComposeHandled = { pendingComposePhone = null }
                     )
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingComposePhone = extractComposePhone(intent)
+    }
+
+    private fun extractComposePhone(intent: Intent?): String? {
+        if (intent == null) return null
+        if (intent.action == Intent.ACTION_SENDTO) {
+            // smsto:+15551234567 — the number is the scheme-specific part.
+            return intent.data?.schemeSpecificPart
+                ?.substringBefore('?')
+                ?.takeIf { it.isNotBlank() }
+        }
+        return intent.getStringExtra("incoming_phone")?.takeIf { it.isNotBlank() }
     }
 }

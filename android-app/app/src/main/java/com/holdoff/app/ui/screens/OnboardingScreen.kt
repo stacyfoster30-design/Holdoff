@@ -1,5 +1,7 @@
 package com.holdoff.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.holdoff.app.data.prefs.ConsentManager
+import com.holdoff.app.data.sms.DefaultSmsManager
 import com.holdoff.app.ui.components.SadieAvatar
 import com.holdoff.app.ui.components.SadieSize
 import com.holdoff.app.ui.theme.*
@@ -47,8 +50,10 @@ private const val PAGE_COUNT = 7
  *   2. Plain-words privacy disclosure + explicit, revocable consent (required)
  *   3. Setup mode: Full setup vs Limited manual-share mode (required choice)
  *
- * No SMS permissions and no default-messenger role are requested here.
- * Full-setup permissions are requested later, only during explicit setup.
+ * SMS permissions are not requested here. The default-messenger role
+ * is offered on the setup-mode page (Full setup only) and only on an
+ * explicit tap — the system's own chooser makes the final call, and
+ * skipping it changes nothing about onboarding.
  */
 @Composable
 fun OnboardingScreen(onFinish: () -> Unit) {
@@ -266,6 +271,12 @@ private fun PrivacyPoint(title: String, body: String) {
 
 @Composable
 private fun SetupModePage(selected: String?, onSelect: (String) -> Unit) {
+    val context = LocalContext.current
+    var isDefaultSmsApp by remember { mutableStateOf(DefaultSmsManager.isDefaultSmsApp(context)) }
+    val roleLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { isDefaultSmsApp = DefaultSmsManager.isDefaultSmsApp(context) }
+
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -281,7 +292,7 @@ private fun SetupModePage(selected: String?, onSelect: (String) -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "You can change this later in Settings. We never ask for SMS or default-messenger permissions during onboarding.",
+            "You can change this later in Settings.",
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = OnDarkTextMuted
@@ -289,14 +300,42 @@ private fun SetupModePage(selected: String?, onSelect: (String) -> Unit) {
         Spacer(Modifier.height(24.dp))
         ModeCard(
             title = "Full setup",
-            body = "Sync your SMS threads and contacts so Sadie can see patterns automatically. Permissions are requested step-by-step later, only when you choose to enable them.",
+            body = "HoldOff becomes your texting app, so Sadie can check every message before it sends — and actually hold the ones that would hurt. The system will ask you to confirm; nothing changes without your tap.",
             selected = selected == ConsentManager.MODE_FULL,
             onClick = { onSelect(ConsentManager.MODE_FULL) }
         )
+        if (selected == ConsentManager.MODE_FULL) {
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = {
+                    if (!isDefaultSmsApp) {
+                        roleLauncher.launch(DefaultSmsManager.createRoleRequestIntent(context))
+                    }
+                },
+                enabled = !isDefaultSmsApp,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VelvetPurple,
+                    disabledContainerColor = SurfaceVariant
+                )
+            ) {
+                Text(
+                    if (isDefaultSmsApp) "\u2705 HoldOff is your texting app"
+                    else "Make HoldOff my texting app",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Text(
+                "Optional — you can do this later in Settings, and switch back anytime.",
+                color = OnDarkTextMuted,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        }
         Spacer(Modifier.height(12.dp))
         ModeCard(
             title = "Limited mode (manual share)",
-            body = "Paste or share messages into HoldOff by hand. No SMS or contact permissions needed \u2014 everything works, just manually.",
+            body = "Paste or share messages into HoldOff by hand. No SMS or contact permissions needed \u2014 verdicts work, but HoldOff can't hold or send messages for you.",
             selected = selected == ConsentManager.MODE_MANUAL,
             onClick = { onSelect(ConsentManager.MODE_MANUAL) }
         )

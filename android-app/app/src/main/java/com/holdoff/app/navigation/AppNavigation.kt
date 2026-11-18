@@ -1,13 +1,17 @@
 package com.holdoff.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.holdoff.app.data.network.HoldOffApi
+import com.holdoff.app.data.prefs.TrustedContactsStore
+import com.holdoff.app.data.repository.SMSRepository
 import com.holdoff.app.ui.screens.CompanionScreen
 import com.holdoff.app.ui.screens.HomeScreen
 import com.holdoff.app.ui.screens.LoginScreen
@@ -21,6 +25,7 @@ import com.holdoff.app.ui.screens.ThreadDetailScreen
 import com.holdoff.app.ui.screens.QuizScreen
 import com.holdoff.app.ui.screens.TrustedContactsScreen
 import com.holdoff.app.ui.screens.VerdictScreen
+import com.holdoff.app.viewmodel.ThreadViewModel
 
 /**
  * All screen routes live here. One place to find and edit navigation.
@@ -49,8 +54,33 @@ fun AppNavigation(
     navController: NavHostController,
     startDestination: String,
     isPremium: Boolean,
-    onPremiumChanged: (Boolean) -> Unit = {}
+    onPremiumChanged: (Boolean) -> Unit = {},
+    composePhone: String? = null,
+    onComposeHandled: () -> Unit = {}
 ) {
+    // Deep link (SENDTO / notification tap): resolve the phone number
+    // to its thread and open it, once HOME is the active destination.
+    val navContext = LocalContext.current
+    LaunchedEffect(composePhone, startDestination) {
+        val phone = composePhone ?: return@LaunchedEffect
+        if (startDestination == Routes.HOME) {
+            val threads = SMSRepository(navContext).getAllThreads()
+            val match = threads.firstOrNull {
+                TrustedContactsStore.samePhone(it.phoneNumber, phone)
+            }
+            if (match != null) {
+                navController.navigate(Routes.threadDetail(match.threadId)) {
+                    launchSingleTop = true
+                }
+            }
+        }
+        onComposeHandled()
+    }
+    // ONE ThreadViewModel shared by the thread and verdict destinations
+    // (activity-scoped): the draft typed in the thread is the draft the
+    // verdict screen acts on, and its send buttons run the same gate.
+    val threadViewModel: ThreadViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable(Routes.ONBOARDING) {
@@ -92,7 +122,8 @@ fun AppNavigation(
             ThreadDetailScreen(
                 threadId = id,
                 onVerdictClick = { navController.navigate(Routes.verdict(id)) },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                vm = threadViewModel
             )
         }
 
@@ -108,7 +139,8 @@ fun AppNavigation(
                 onTrustedContactsClick = {
                     navController.navigate(Routes.TRUSTED) { launchSingleTop = true }
                 },
-                isPremium = isPremium
+                isPremium = isPremium,
+                vm = threadViewModel
             )
         }
 

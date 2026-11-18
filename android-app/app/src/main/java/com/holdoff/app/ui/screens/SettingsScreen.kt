@@ -2,6 +2,8 @@ package com.holdoff.app.ui.screens
 
 import android.content.Intent
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.holdoff.app.data.prefs.ConsentManager
+import com.holdoff.app.data.sms.DefaultSmsManager
 import com.holdoff.app.service.HoldOffAccessibilityService
 import com.holdoff.app.ui.theme.*
 import java.text.DateFormat
@@ -39,6 +42,10 @@ fun SettingsScreen(
     }
     var setupMode by remember { mutableStateOf(ConsentManager.getSetupMode(context)) }
     var showRevokeDialog by remember { mutableStateOf(false) }
+    var isDefaultSmsApp by remember { mutableStateOf(DefaultSmsManager.isDefaultSmsApp(context)) }
+    val roleLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { isDefaultSmsApp = DefaultSmsManager.isDefaultSmsApp(context) }
 
     val consentAt = remember { ConsentManager.consentGivenAt(context) }
     val consentDate = remember(consentAt) {
@@ -107,6 +114,47 @@ fun SettingsScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed)
                 ) {
                     Text("Revoke consent & reset onboarding")
+                }
+            }
+
+            // ── Default Texting App (SMS role) ─────────────────────────────
+            SettingsSection("Default Texting App") {
+                Text(
+                    "For HoldOff to truly hold a message before it sends, HoldOff has to be your texting app. " +
+                        "The system asks you directly — HoldOff can't take the role on its own, and you can switch back anytime in system settings.",
+                    color = OnDarkTextMuted,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "HoldOff is your texting app",
+                            color = OnDarkText,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            if (isDefaultSmsApp) "Active — sends run through Sadie's check first"
+                            else "Not active — verdicts are advice only, sending is off",
+                            color = if (isDefaultSmsApp) GlowPurple else ErrorRed,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            if (!isDefaultSmsApp) {
+                                roleLauncher.launch(DefaultSmsManager.createRoleRequestIntent(context))
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isDefaultSmsApp) SurfaceVariant else VelvetPurple
+                        )
+                    ) {
+                        Text(if (isDefaultSmsApp) "Active" else "Make default")
+                    }
                 }
             }
 

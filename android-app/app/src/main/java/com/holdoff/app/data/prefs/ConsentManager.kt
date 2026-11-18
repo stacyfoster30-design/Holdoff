@@ -11,8 +11,9 @@ import android.content.SharedPreferences
  * Revoking consent forces the app back through onboarding and
  * disables any feature that processes message content.
  *
- * Nothing here grants SMS/default-handler roles — those are requested
- * later, only during explicit Full-setup, never at onboarding.
+ * Nothing here grants SMS/default-handler roles — the default-SMS
+ * role is requested only on an explicit user tap (onboarding Full
+ * setup or Settings) via DefaultSmsManager, never silently.
  */
 object ConsentManager {
 

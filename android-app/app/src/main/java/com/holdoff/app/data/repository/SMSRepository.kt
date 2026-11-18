@@ -77,7 +77,8 @@ class SMSRepository(private val context: Context) {
         out
     }
 
-    private fun getPhoneForThread(threadId: String): String {
+    /** The other party's phone number for a thread ("" if unknown). */
+    fun getPhoneForThread(threadId: String): String {
         val smsUri = Uri.parse("content://sms")
         context.contentResolver.query(
             smsUri, arrayOf("address"),

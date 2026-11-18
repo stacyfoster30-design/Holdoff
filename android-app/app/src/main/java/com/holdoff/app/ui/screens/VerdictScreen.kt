@@ -210,10 +210,14 @@ fun VerdictScreen(
 
                     Spacer(Modifier.height(10.dp))
 
-                    // SEND ANYWAY button
+                    // SEND ANYWAY button — actually sends through
+                    // SmsSender now (was a no-op that just went back).
+                    // The verdict on this screen is the gate decision;
+                    // sendAnalyzedDraft still enforces Spiral Lock and
+                    // the default-SMS role before anything leaves.
                     if (verdict.verdict == Verdict.REACH_OUT) {
                         Button(
-                            onClick = onBack,
+                            onClick = { vm.sendAnalyzedDraft(threadId); onBack() },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp)
@@ -246,7 +250,7 @@ fun VerdictScreen(
                                             Text("Wait", color = SoftLavender)
                                         }
                                         Button(
-                                            onClick = onBack,
+                                            onClick = { vm.sendAnalyzedDraft(threadId); onBack() },
                                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
                                         ) { Text("Send It") }
                                     }
